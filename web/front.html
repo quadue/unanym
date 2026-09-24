@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark"><meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="Your communities. Your choice of what to share.">
+  <title>Your places · {{brand}}</title>
+  <link rel="icon" href="{{assets}}front-mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="{{assets}}front.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header"><a class="wordmark" href="{{home}}" aria-label="{{brand}} home"><img src="{{assets}}front-mark.svg" alt="" width="25" height="32">{{brand_mark}}</a><a class="sign-in" href="{{sign_in}}">Sign in</a></header>
+  <main id="main">
+    <section class="hero"><h1>One you.<br>Many places<span>.</span></h1><p>Your communities.<br>Your choice of what to share.</p></section>
+    <section class="example" aria-labelledby="example-title">
+      <div class="example-heading"><h2 id="example-title">Try an example</h2><span>Nothing is sent</span></div>
+      <div class="places" id="places">
+        <article class="place runners" id="place-runners" data-place="runners">
+          <h3><button class="place-select" type="button" data-select="runners" aria-expanded="false" aria-controls="editor-runners" disabled><span class="place-symbol" aria-hidden="true">↗</span><span>Northside Runners</span><span class="select-mark" aria-hidden="true">＋</span></button></h3>
+          <div class="place-body"><div class="activity"><p class="when">Saturday · 09:00</p><h4>A loop by<br>the river.</h4><div class="participants" aria-label="Example participants: Sam, Jo and six others"><span>S</span><span>J</span><small>+6</small></div><svg class="activity-art" viewBox="0 0 180 100" aria-hidden="true"><path d="M10 82C5 19 71 13 72 44s-24 55 23 41 46-72 78-56"/><circle cx="146" cy="19" r="10"/></svg></div><div class="receipt" aria-label="What Northside Runners receives"><span class="receipt-label">Shared</span><div class="receipt-person"><span class="avatar" aria-hidden="true">R</span><strong class="receipt-name">Rob</strong></div><div class="receipt-memberships"><span class="membership-chip"><span>Northside member</span></span></div></div></div>
+          <div id="editor-runners" class="editor-slot"></div>
+        </article>
+        <article class="place choir" id="place-choir" data-place="choir">
+          <h3><button class="place-select" type="button" data-select="choir" aria-expanded="false" aria-controls="editor-choir" disabled><span class="place-symbol" aria-hidden="true">♫</span><span>Riverside Choir</span><span class="select-mark" aria-hidden="true">＋</span></button></h3>
+          <div class="place-body"><div class="activity"><p class="when">Wednesday · 19:30</p><h4>Find our<br>harmony.</h4><div class="participants" aria-label="Example participants: Mia, Lee and four others"><span>M</span><span>L</span><small>+4</small></div><svg class="activity-art" viewBox="0 0 180 100" aria-hidden="true"><path d="M16 50c24-58 24 58 49 0s25 58 50 0 25 58 49 0M16 67c24-58 24 58 49 0s25 58 50 0 25 58 49 0"/></svg></div><div class="receipt" aria-label="What Riverside Choir receives"><span class="receipt-label">Shared</span><div class="receipt-person"><span class="avatar" aria-hidden="true">R</span><strong class="receipt-name">Robin</strong></div><div class="receipt-memberships"></div></div></div>
+          <div id="editor-choir" class="editor-slot"></div>
+        </article>
+        <article class="place repair" id="place-repair" data-place="repair">
+          <h3><button class="place-select" type="button" data-select="repair" aria-expanded="false" aria-controls="editor-repair" disabled><span class="place-symbol" aria-hidden="true">⌁</span><span>Repair Café</span><span class="select-mark" aria-hidden="true">＋</span></button></h3>
+          <div class="place-body"><div class="activity"><p class="when">Sunday · 11:00</p><h4>A second life<br>for things.</h4><div class="participants" aria-label="Example participants: Alex, Pat and three others"><span>A</span><span>P</span><small>+3</small></div><svg class="activity-art" viewBox="0 0 180 100" aria-hidden="true"><path d="M51 35h64v30c0 26-64 26-64 0V35Zm64 6h10c24 0 24 30-10 30M40 92h91M61 18l12 10m12-17-3 17m21-10-10 10"/></svg></div><div class="receipt" aria-label="What Repair Café receives"><span class="receipt-label">Not connected</span><div class="receipt-person" hidden><span class="avatar" aria-hidden="true">R</span><strong class="receipt-name"></strong></div><div class="receipt-memberships"></div></div></div>
+          <div id="editor-repair" class="editor-slot"></div>
+        </article>
+      </div>
+      <form id="sharing-form" class="sharing-form" hidden>
+        <div class="editor-heading"><h4>You</h4><button type="button" class="text-button" id="disconnect" hidden>Disconnect</button></div>
+        <label for="chosen-name">Name here</label><input id="chosen-name" name="name" maxlength="40" value="Robin" autocomplete="off" required>
+        <label class="membership-choice"><input id="share-membership" type="checkbox"><span class="membership-chip"><span id="membership-label">Repair Café member</span></span></label>
+        <div class="withheld"><svg viewBox="0 0 16 20" aria-hidden="true"><rect x="2" y="8" width="12" height="10" rx="2"/><path d="M4 8V5a4 4 0 0 1 8 0v3"/></svg><span>Email &amp; other connections stay out</span></div>
+        <button type="submit" class="share-button" id="share">Share with Repair Café <span aria-hidden="true">↑</span></button>
+        <details id="sharing-history" hidden><summary id="history-label">Previously shared</summary><p id="history-detail"></p><p>Disconnecting stops future access. Previous copies may remain.</p></details>
+      </form>
+      <div class="example-foot"><p id="sharing-status" role="status" aria-live="polite">Choose a place.</p><button class="text-button" id="reset" type="button" hidden>Reset example</button></div>
+      <noscript><p>Each place receives its own identifier and only the name and memberships you choose. <a href="{{sign_in}}">Sign in</a> to manage your connections.</p></noscript>
+    </section>
+  </main>
+  <footer class="site-footer"><span>Your places. Your choice.</span><div><a href="{{privacy}}">Privacy</a><a href="{{developers}}">Identity by Unanym <span aria-hidden="true">↗</span></a></div></footer>
+  <script type="module" src="{{assets}}front.js"></script>
+</body>
+</html>

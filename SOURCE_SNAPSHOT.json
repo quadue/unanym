@@ -1,0 +1,343 @@
+{
+  "format": "unanym-source-snapshot-v1",
+  "upstream_revision": "3c63d8bc777cada961f7f8d73bf33a87911c799b",
+  "notes": "Fresh source snapshot, without private Git history. Fixture-only names are neutralised; vendor hashes and protocol values are unchanged.",
+  "files": {
+    ".github/pull_request_template.md": {
+      "source": "release/github/.github/pull_request_template.md",
+      "sha256": "0366c2a9ad37ce4a9c4c13cb436c6d734b4b3b4fd875a30646550ff3570388d2"
+    },
+    ".github/workflows/verify.yml": {
+      "source": "release/github/.github/workflows/verify.yml",
+      "sha256": "43897a82e7ebad28764e18c15f776dc1def3e17e01b51ecada323779325a042d"
+    },
+    ".gitignore": {
+      "source": "release/github/.gitignore",
+      "sha256": "d038c8889f101ab55a9dbe7be417b4586dc137991d53bbff050a22967c01d1ee"
+    },
+    "AGENTS.md": {
+      "source": "release/github/AGENTS.md",
+      "sha256": "effa3e23ef6b9b2e0c1e0d504ecba26154a03795bcc249978a3e2ed42df5c563"
+    },
+    "clients.json": {
+      "source": "generated: empty installation registry",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "CONTRIBUTING.md": {
+      "source": "release/github/CONTRIBUTING.md",
+      "sha256": "f3b325ee645e0f9f21241861ed5e447b11d96172b437ee5a8d3b02082b7170b4"
+    },
+    "docs/compatibility.md": {
+      "source": "release/github/docs/compatibility.md",
+      "sha256": "7fb32e1d9cac01afea468b8b1bdf0df2530e003d683bee106587a2ca17115ac0"
+    },
+    "docs/contracts/community-v1.md": {
+      "source": "docs/contracts/community-v1.md",
+      "sha256": "2b9f1d5680bd2e8dd04bb7db4f3f98936b48bdb6e6c80d81492943b46ef092c7"
+    },
+    "docs/dependencies.json": {
+      "source": "generated",
+      "sha256": "4b8667b1954301fbd0b928f2f59855cb2d2f0349d5e722fdc0803c8a5bb952cb"
+    },
+    "docs/release-readiness.md": {
+      "source": "release/github/docs/release-readiness.md",
+      "sha256": "4b2edb4187130c45604569a6ac37b24eaca48e71578fedc8451316c73eb491b4"
+    },
+    "docs/release.md": {
+      "source": "release/github/docs/release.md",
+      "sha256": "5e11aeb43e3f54c8ff63744aa5bbec9aee789697c96c5f501140e40b8daf7297"
+    },
+    "docs/standalone.md": {
+      "source": "docs/standalone.md",
+      "sha256": "3ddb1b3a1cbacd2918b47a805f041a7a0ee038d0a38e655fb7b402621e4edce5"
+    },
+    "docs/static-html.md": {
+      "source": "release/github/docs/static-html.md",
+      "sha256": "e1c9a50830d6511db1bab93533ebbaf7bbf44ae652efc682506a35f1c4ba1041"
+    },
+    "examples/community/index.html": {
+      "source": "examples/community/index.html",
+      "sha256": "61ad4df30d8d6856188e48cbf1c24eb27380bf05204c9bc8cdd37dc80e012b20"
+    },
+    "integrations/wordpress/drop-identity/drop-identity.php": {
+      "source": "integrations/wordpress/drop-identity/drop-identity.php",
+      "sha256": "5d1bb3dcbda77f77e96c37d63eb6c11998d1b1c62985afee0e0c611f64debc42"
+    },
+    "integrations/wordpress/drop-identity/LICENSE": {
+      "source": "integrations/wordpress/drop-identity/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "integrations/wordpress/drop-identity/member.css": {
+      "source": "integrations/wordpress/drop-identity/member.css",
+      "sha256": "e49e93956e7a7bdd91b1d63aedec3fd48546cc376eb8472331b6f478f4de65d6"
+    },
+    "integrations/wordpress/drop-identity/memberships.php": {
+      "source": "integrations/wordpress/drop-identity/memberships.php",
+      "sha256": "48bc74993471a42b966d5abf1cc18d234e0b16db5d9f4bc74db354d064699183"
+    },
+    "integrations/wordpress/drop-identity/NOTICE": {
+      "source": "integrations/wordpress/drop-identity/NOTICE",
+      "sha256": "719ff48a81cac44e2c407ebe9f9312f3c5f7a3aa40322534362cebbb6f714862"
+    },
+    "LICENSE": {
+      "source": "LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "NOTICE": {
+      "source": "NOTICE",
+      "sha256": "719ff48a81cac44e2c407ebe9f9312f3c5f7a3aa40322534362cebbb6f714862"
+    },
+    "package-lock.json": {
+      "source": "package-lock.json",
+      "sha256": "5f31e028bfafb3b5f6adbc897830a350e18aec41cbd9b6a0e2c6612c27b1a7c9"
+    },
+    "package.json": {
+      "source": "package.json",
+      "sha256": "b5c5fa1a87ba974e27eb726bbb2f4bc1efd0bd57fd93d55409c8a0efc6f8b105"
+    },
+    "playwright.config.js": {
+      "source": "playwright.config.js",
+      "sha256": "6d1253fa3b278f224656cfdd9ce4e5b801675f5761c957094bd9f207f2600109"
+    },
+    "README.md": {
+      "source": "release/github/README.md",
+      "sha256": "90683346cc41f25925abf6d30c98d57339fa6de96105c3bba1ebe64443bf7f76"
+    },
+    "scripts/backup.js": {
+      "source": "scripts/backup.js",
+      "sha256": "d52444c981a362fb19a839f95c2125e446d37091516e5f54c47d078b46b4a595"
+    },
+    "scripts/build.js": {
+      "source": "release/github/scripts/build.js",
+      "sha256": "5350780bb0be0d256e15a2e39032a17ae206f09fd867e91dbe1527cd0a7c1bb3"
+    },
+    "scripts/check-release.js": {
+      "source": "release/github/scripts/check-release.js",
+      "sha256": "45a9360c7ea20c0293488de6ebea46748b5b9e648d016009f317b327cb7f8770"
+    },
+    "scripts/demo-addresses.js": {
+      "source": "scripts/demo-addresses.js",
+      "sha256": "481d54703554ac5a666461915a36309c67e96853221ebd4c4a69db5b653b2865"
+    },
+    "scripts/demo-independent.js": {
+      "source": "scripts/demo-independent.js",
+      "sha256": "360b83f68b8045bd2d15a1da44e869a4e057a4f08c954e1a44b938cdb716f300"
+    },
+    "scripts/demo.js": {
+      "source": "scripts/demo.js",
+      "sha256": "8dec14b44beee20394363892a3bd466fb07cce332e8ec639b17e74c609662c0e"
+    },
+    "scripts/fixture.js": {
+      "source": "scripts/fixture.js",
+      "sha256": "d76bf3dd2dc9a1a48cb2740901d75acb8aa41a04bd95bdfc3e4d944cc414b730"
+    },
+    "scripts/independent-fixture.js": {
+      "source": "scripts/independent-fixture.js",
+      "sha256": "6d3c70c78f030a348f8abbd1f741abfffef88dbcd111d90cf156126f77c66fef"
+    },
+    "scripts/prepare-wordpress-client.js": {
+      "source": "scripts/prepare-wordpress-client.js",
+      "sha256": "12ac285da9bd96d8302fca80fdd1487a6efbe6de134c16e32d12d932f23f7689"
+    },
+    "scripts/quickstart.js": {
+      "source": "release/github/scripts/quickstart.js",
+      "sha256": "02178fafa15588826cc0d39a5d8e32193a90f5a90f67a5f17ca0ce63cc8d10e4"
+    },
+    "scripts/restore.js": {
+      "source": "scripts/restore.js",
+      "sha256": "aa4ae417b566df9de280e7e68d9faadd98bcb5a39315a16d2dcdddc057f9d24b"
+    },
+    "scripts/static-starter-fixture.js": {
+      "source": "scripts/static-starter-fixture.js",
+      "sha256": "1960fb9b132a9fbaaedeb81ff5834e6dea12deb660a5363ff5a07c47f4d976dc"
+    },
+    "scripts/wordpress/lab.sh": {
+      "source": "scripts/wordpress/lab.sh",
+      "sha256": "bc0aa0d2b2e76f560c9a74ab3ac67927096c3a00195ff06ac04632fbad5eb4b4"
+    },
+    "scripts/wordpress/standalone-rehearse.js": {
+      "source": "scripts/wordpress/standalone-rehearse.js",
+      "sha256": "d0d1db065ff424a21f770bb1ad27630837a39418c42b65acf2445d1dec05741b"
+    },
+    "SECURITY.md": {
+      "source": "release/github/SECURITY.md",
+      "sha256": "1a95de5551a0ed7c5e58bb22f53c94c60e048c35e5b89b3a11d56d0996573725"
+    },
+    "src/accounts.js": {
+      "source": "src/accounts.js",
+      "sha256": "a5d97db2dc7a553528a4e1b28a832b065621dda628b493f1b9691be2e0697461"
+    },
+    "src/community-contract.js": {
+      "source": "src/community-contract.js",
+      "sha256": "96e8fd0942863ca3c39969fd487d7d38608845df8c1e6fe6bdf0a8781ee981d6"
+    },
+    "src/config.js": {
+      "source": "src/config.js",
+      "sha256": "cb15dbede565e7b2b69ebbb4ac9785135d64e34b6588a9901063d39df2423318"
+    },
+    "src/drop.js": {
+      "source": "src/drop.js",
+      "sha256": "431ea808441c3677bfeee6db2a77d5a2822d7f9b1b57a87efb81a4e15f09abf8"
+    },
+    "src/learn-view.js": {
+      "source": "src/learn-view.js",
+      "sha256": "d4c4e39b7086ebfe3c2fcda447580765981e94fdc47370d004ceb11af9d845d9"
+    },
+    "src/pact.js": {
+      "source": "src/pact.js",
+      "sha256": "ff6e2e87fdab4f87e21a61c1c20e9627be5f94d3b9ac84743dd036dfee3c07d5"
+    },
+    "src/presentation.js": {
+      "source": "src/presentation.js",
+      "sha256": "596b45df4c4a04efc8f330a14162084e79cb1f3aca354f00ec32c57581319a97"
+    },
+    "src/server.js": {
+      "source": "src/server.js",
+      "sha256": "0c36d548abe27c1f4aebad3283648aff6560b1d8cdc7295182865fc14f984d34"
+    },
+    "src/service.js": {
+      "source": "src/service.js",
+      "sha256": "fb7c099b151cdbe9b9c2bff1871714e6af918461a3c49743ebbde96afdea9405"
+    },
+    "src/standalone/accounts.js": {
+      "source": "src/standalone/accounts.js",
+      "sha256": "1d843a9bed132d15e4776058b7edccac6d0e9e0b7253355e23dec3413b3f68ba"
+    },
+    "src/standalone/lock.js": {
+      "source": "src/standalone/lock.js",
+      "sha256": "73075635cf0fe6f339268854a484d4b73b5234842b644b7d793fa8d7bb26d6d7"
+    },
+    "src/standalone/mail.js": {
+      "source": "src/standalone/mail.js",
+      "sha256": "6420ad8d27a7121b56bcf4edf2a089a0e84f558eb3657cf0d34ce148dcc885bb"
+    },
+    "src/standalone/routes.js": {
+      "source": "src/standalone/routes.js",
+      "sha256": "6a37309d763129eb3498b0e220366d274c2858124e4497988dff2959574bb11b"
+    },
+    "src/standalone/server.js": {
+      "source": "src/standalone/server.js",
+      "sha256": "46ad9aadf4cc72aa55ab35b71e119755265fa12b3a1bef1c6344c79163b208d7"
+    },
+    "src/standalone/views.js": {
+      "source": "src/standalone/views.js",
+      "sha256": "fb0dd5abe521136cce48cc7d84d7f3e1934d0942ac45ffa533c9a1eecbeed5d5"
+    },
+    "src/store.js": {
+      "source": "src/store.js",
+      "sha256": "6b137a0d52ff8d78a768f748cb3f20b0708c7d2e57c79f9c8e51537291d3d69e"
+    },
+    "src/views.js": {
+      "source": "src/views.js",
+      "sha256": "2d957d86a2465a4003b73961c5687ec41cf4f615f45a4c8cf3d8ce3cf31e2577"
+    },
+    "tests/browser/identity.spec.js": {
+      "source": "tests/browser/identity.spec.js",
+      "sha256": "27881223fee1ade8f21da8e082d2d73706e8975aef6be98d82761fd7600248e3"
+    },
+    "tests/browser/learn.spec.js": {
+      "source": "tests/browser/learn.spec.js",
+      "sha256": "803f5a65f72a72d1f0436a7f96d35987a8220d767ce5c0c622a81eba08806339"
+    },
+    "tests/browser/overview.spec.js": {
+      "source": "tests/browser/overview.spec.js",
+      "sha256": "505209a5384693a77296ea1360259c6e84c070d4c7556ca8f1f360b37330cfcf"
+    },
+    "tests/browser/static-starter.spec.js": {
+      "source": "tests/browser/static-starter.spec.js",
+      "sha256": "9c790826e522004a55fd414b9ea19effa3b1494752bd9d97bd16ecd32dcb73c6"
+    },
+    "tests/community-contract.test.js": {
+      "source": "tests/community-contract.test.js",
+      "sha256": "58480f5c4102bca8f79f267db07ae35c82d37696ad3581c7b0a77a208c344e04"
+    },
+    "tests/core.test.js": {
+      "source": "tests/core.test.js",
+      "sha256": "2f786e8154721777f4746469fdd59f5777da217302a32c628286c6f831c10811"
+    },
+    "tests/operations.test.js": {
+      "source": "tests/operations.test.js",
+      "sha256": "5763792feb0769332b794cc7b2ce42d4c0933f1796824530326311bba65adb4d"
+    },
+    "tests/standalone.test.js": {
+      "source": "tests/standalone.test.js",
+      "sha256": "84190f1aed5f8146adea28941a081968c66f8cbe8e62c5db1bc8d847ae9bedad"
+    },
+    "vendor/frrn-kernel/access.js": {
+      "source": "vendor/frrn-kernel/access.js",
+      "sha256": "5d1b681fbad869c9123fca4c6d1a5e6028cf610c7ff0245ec708610a7e808502"
+    },
+    "vendor/frrn-kernel/assent.js": {
+      "source": "vendor/frrn-kernel/assent.js",
+      "sha256": "c4cb7fc38ac607d2698e559fc8a7a64a7fecf933b32e22f9116e32fb651392b1"
+    },
+    "vendor/frrn-kernel/core.js": {
+      "source": "vendor/frrn-kernel/core.js",
+      "sha256": "3efbd3bcc131ae8d5dd386f692426605e1354aa17f433acab72445f8bf6ba2eb"
+    },
+    "vendor/frrn-kernel/event-order.js": {
+      "source": "vendor/frrn-kernel/event-order.js",
+      "sha256": "61a31c491988d300a65a2f02ed0dadcecacf6b925d729543e221c91087463227"
+    },
+    "vendor/frrn-kernel/event-schema.js": {
+      "source": "vendor/frrn-kernel/event-schema.js",
+      "sha256": "4b530e260a971f36779b39e98936d1a597004bc7e1f82332b44eb870686b4e86"
+    },
+    "vendor/frrn-kernel/events.js": {
+      "source": "vendor/frrn-kernel/events.js",
+      "sha256": "61b80fda9ce5c1df5d3c06fc5cc26703d0deed3d89dc4bf49e8ae8a720e29f99"
+    },
+    "vendor/frrn-kernel/identity.js": {
+      "source": "vendor/frrn-kernel/identity.js",
+      "sha256": "46ec68292d1bb278a8f722259a58ff4b725d81af898375df0bc23a754d8136f6"
+    },
+    "vendor/frrn-kernel/LICENSE": {
+      "source": "vendor/frrn-kernel/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "vendor/frrn-kernel/provenance.json": {
+      "source": "vendor/frrn-kernel/provenance.json",
+      "sha256": "47e30055c0a4ab5ffc934bcbe1548e720bd773b1917a2d8dbf421b27ca4ba8b0"
+    },
+    "web/client.js": {
+      "source": "web/client.js",
+      "sha256": "9b745428f7271a850a0ad0be036d5feda395f96a387d4909bd155f5602ef5810"
+    },
+    "web/consent.js": {
+      "source": "web/consent.js",
+      "sha256": "aa017649dc4a81234f2ed2c2bd72db0bdccb12f77719aebc8a18e369d8be9f30"
+    },
+    "web/developers.html": {
+      "source": "web/developers.html",
+      "sha256": "85e2f8949390873fb68211d0791aa374b0e923f808249445564674434d3b2717"
+    },
+    "web/front-mark-light.svg": {
+      "source": "web/front-mark-light.svg",
+      "sha256": "f3b76afd34a91ae3151d5f3ff012bb1657057af4757564cea776dece5dee4168"
+    },
+    "web/front-mark.svg": {
+      "source": "web/front-mark.svg",
+      "sha256": "f2a3e05ac2ef5cdeb01eab20430545f0ed990cb3cd287ad44973910880193aad"
+    },
+    "web/front.css": {
+      "source": "web/front.css",
+      "sha256": "27cf8e298cdeba345f6426279bcfee600db8378c60aca6c0fd2a2aa6b06b72bb"
+    },
+    "web/front.html": {
+      "source": "web/front.html",
+      "sha256": "5496ac4565bfa0ca9cf6677f30aa2d827cebe53d0b1983f57ecadf2d140706bb"
+    },
+    "web/front.js": {
+      "source": "web/front.js",
+      "sha256": "c6b62eba74fefced4c1eddb831744fb7d800df6e6a20abf1d1f7e18f462d8c2a"
+    },
+    "web/learn.js": {
+      "source": "web/learn.js",
+      "sha256": "8ff1f7cc7620c1aaa012c2c206ac9ccabf2a3b3620e3e27d716a7947d61a644c"
+    },
+    "web/style.css": {
+      "source": "web/style.css",
+      "sha256": "526b34622ab0af968f265c143e92adb909bf765da4514e392ece64f6acdf0c80"
+    }
+  }
+}

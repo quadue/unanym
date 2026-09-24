@@ -1,0 +1,23 @@
+// Prepare a reviewed registration package; never print or overwrite secrets.
+import {readFileSync,writeFileSync,mkdirSync,existsSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {randomBytes} from 'node:crypto';
+import {registeredClients} from '../src/config.js';
+process.umask(0o077);
+const [id,name,callback,output]=process.argv.slice(2);
+if(!id || !name || !callback || !output)throw new Error('Usage: node scripts/prepare-wordpress-client.js CLIENT_ID WEBSITE_NAME HTTPS_CALLBACK NEW_PRIVATE_DIRECTORY');
+if(!process.env.IDENTITY_ORIGIN)throw new Error('Set this installation’s IDENTITY_ORIGIN before preparing a client');
+const origin=new URL(process.env.IDENTITY_ORIGIN);
+if(origin.protocol!=='https:'||origin.username||origin.password||origin.pathname!=='/'||origin.search||origin.hash)throw new Error('IDENTITY_ORIGIN must be this installation’s HTTPS origin');
+const url=new URL(callback);if(url.protocol!=='https:' || url.username || url.password || url.hash)throw new Error('Provide the exact HTTPS callback shown by WordPress');
+const dir=resolve(output);if(existsSync(dir))throw new Error('Use a new private output directory');
+const clients=JSON.parse(readFileSync(process.env.IDENTITY_CLIENTS??'clients.json'));
+if(clients.some(c=>c.client_id===id))throw new Error('Client ID already registered. Do not replace it to relink existing accounts.');
+const secrets=process.env.IDENTITY_CLIENT_SECRETS?JSON.parse(readFileSync(process.env.IDENTITY_CLIENT_SECRETS)):{};
+const secret=randomBytes(32).toString('base64url');
+clients.push({client_id:id,name,description:'Sign in to '+name+'. Choose the name and memberships this website may see.',homepage:url.origin+'/',redirect_uris:[url.href],token_endpoint_auth_method:'client_secret_post',allow_refresh:true});secrets[id]=secret;
+registeredClients(structuredClone(clients),secrets);
+mkdirSync(dir,{mode:0o700});writeFileSync(resolve(dir,'clients.json'),JSON.stringify(clients,null,2),{mode:0o600});writeFileSync(resolve(dir,'client-secrets.json'),JSON.stringify(secrets,null,2),{mode:0o600});
+writeFileSync(resolve(dir,'website-setup.json'),JSON.stringify({issuer:origin.origin+'/identity/oidc',client_id:id,client_secret:secret,callback:url.href},null,2),{mode:0o600});
+writeFileSync(resolve(dir,'INSTALL.txt'),'Private proposal, not an activated registration. Review clients.json; back up the current registry and secret store; install both proposed files with mode 0600, set IDENTITY_CLIENT_SECRETS to the private secret file, then restart only the identity service. Deliver website-setup.json privately to the authorised site administrator. Never put secrets in Git or public tickets.\n');
+console.log('Prepared registration and a private website setup file in the specified directory. No live configuration changed.');

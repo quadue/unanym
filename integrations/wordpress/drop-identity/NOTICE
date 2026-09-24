@@ -1,0 +1,10 @@
+Unanym and its WordPress companion
+Copyright 2026 Ana and contributors.
+
+Project code is licensed under Apache License 2.0.
+Third-party packages retain their own licences. The OpenID Connect Generic
+Client WordPress plugin is installed separately and is GPL-2.0-or-later.
+
+The pinned copies in vendor/frrn-kernel originate from ana/frrn-kernel,
+revision 57b6b65e8975e27357d6459cff8c8fb785804ee1. The rights holder authorised these seven copies for Apache License 2.0
+on 2026-09-23. Their source bytes and pinned hashes remain unchanged.

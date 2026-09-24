@@ -1,0 +1,13 @@
+{
+  "repository": "ana/frrn-kernel",
+  "revision": "57b6b65e8975e27357d6459cff8c8fb785804ee1",
+  "files": {
+    "core.js": "3efbd3bcc131ae8d5dd386f692426605e1354aa17f433acab72445f8bf6ba2eb",
+    "identity.js": "46ec68292d1bb278a8f722259a58ff4b725d81af898375df0bc23a754d8136f6",
+    "event-schema.js": "4b530e260a971f36779b39e98936d1a597004bc7e1f82332b44eb870686b4e86",
+    "event-order.js": "61a31c491988d300a65a2f02ed0dadcecacf6b925d729543e221c91087463227",
+    "access.js": "5d1b681fbad869c9123fca4c6d1a5e6028cf610c7ff0245ec708610a7e808502",
+    "assent.js": "c4cb7fc38ac607d2698e559fc8a7a64a7fecf933b32e22f9116e32fb651392b1",
+    "events.js": "61b80fda9ce5c1df5d3c06fc5cc26703d0deed3d89dc4bf49e8ae8a720e29f99"
+  }
+}
