@@ -14,3 +14,11 @@
 - Tests and local mock email do not establish live delivery or human acceptance.
 - Publication and production operation require the owner's actual authorisation.
   The open acceptance items are in `docs/release-readiness.md`.
+
+- Optional FRRN account host: FRRN is the sole writer of its membership approvals.
+  Read only the versioned approval projection and explicitly authorised source
+  bindings. Never backfill approval from open joining, invitations or local resource
+  access. Keep legacy issuers on their existing contract.
+- WordPress's supported basic member area is one selected private page, checked
+  against current shared membership. Do not imply protection of public uploads,
+  custom APIs or other plugins. Preserve native administrator access.

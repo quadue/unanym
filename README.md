@@ -54,10 +54,19 @@ operator, configure the connection and select the organisations your site
 recognises. Existing members explicitly link from their WordPress profile.
 Accounts are never merged by name or email.
 
-The companion verifies the signed membership statement. Your site's server-side
-access policy decides what the member may access; installing the companion does
-not automatically protect posts, files or another plugin's content.
+For a simple member area, create a private WordPress page and select it with
+its required organisation under **Settings → Unanym**. Members choose to share
+that membership and the page checks current approval on every request. This
+needs no site-specific PHP. Existing content plugins and uploaded files need
+their own access policy.
 [Setup](docs/standalone.md#wordpress) · [Compatibility](docs/compatibility.md)
+
+## Use FRRN as the membership source
+
+When running alongside FRRN, use `npm run start:frrn`. FRRN holds the account and
+organiser's approval; Unanym reads it and handles per-website disclosure. There
+is no second member account or approval list. The default standalone installation
+continues to work without FRRN. [Authority and setup](docs/frrn-host.md).
 
 ## What the proof means
 

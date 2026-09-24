@@ -6,10 +6,10 @@ if(!process.argv[2] || !process.argv[3])throw new Error('Usage: node scripts/res
 const source=resolve(process.argv[2]),target=resolve(process.argv[3]);
 if(existsSync(target) && readdirSync(target).length)throw new Error('Restore requires a new empty destination');
 const manifest=JSON.parse(readFileSync(resolve(source,'manifest.json')));
-if(!['drop-identity-backup-v1','community-identity-backup-v1'].includes(manifest.format))throw new Error('Unknown backup format');
-const standalone=manifest.format==='community-identity-backup-v1';
-const allowed=['identity.db','keys.json','clients.json','client-secrets.json',...(standalone?['accounts.db','profile.json']:[])];
-for(const name of ['identity.db','keys.json','clients.json',...(standalone?['accounts.db','profile.json']:[])])if(!manifest.files?.[name])throw new Error('Incomplete backup');
+if(!['drop-identity-backup-v1','community-identity-backup-v1','frrn-account-identity-backup-v1'].includes(manifest.format))throw new Error('Unknown backup format');
+const standalone=manifest.format==='community-identity-backup-v1',frrn=manifest.format==='frrn-account-identity-backup-v1';
+const allowed=['identity.db','keys.json','clients.json','client-secrets.json',...(standalone?['accounts.db','profile.json']:frrn?['profile.json','frrn-sources.json']:[])];
+for(const name of ['identity.db','keys.json','clients.json',...(standalone?['accounts.db','profile.json']:frrn?['profile.json','frrn-sources.json']:[])])if(!manifest.files?.[name])throw new Error('Incomplete backup');
 for(const [name,hash] of Object.entries(manifest.files)){
   if(!allowed.includes(name) || createHash('sha256').update(readFileSync(resolve(source,name))).digest('hex')!==hash)throw new Error('Backup integrity check failed');
 }

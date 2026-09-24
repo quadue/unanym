@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-24T16:44:08.796Z",
+  "classification": "Isolated synthetic FRRN -> Unanym -> real WordPress rehearsal; no real mail, mandate or member acceptance",
+  "frrn_revision": "3e1555b911cf61acf693564de53a708d6032fdc6",
+  "frrn_dirty": false,
+  "wordpress": "7.1.2",
+  "generic": "3.11.3",
+  "contract": "community-v1",
+  "checks": [
+    "WordPress administrator connects the issuer, recognises an organisation and selects a private members page using forms.",
+    "Pending FRRN application supplies no shareable membership; signing in alone cannot open the WordPress page.",
+    "One organiser approval in FRRN reaches Unanym only after member consent, and opens the actual WordPress page without another account/approval store.",
+    "Membership grants no blanket private-page role; anonymous page, REST, search and feed responses withhold protected content.",
+    "A routine publish action cannot make the configured member page public.",
+    "Withdrawing the FRRN approval closes WordPress access on the next request; explicit reapproval restores it.",
+    "The member can withhold membership while keeping their FRRN approval.",
+    "Disconnecting the site ends that WordPress identity session; native administrator access stays available.",
+    "Disabling the identity plugin leaves the actual WordPress page private."
+  ]
+}

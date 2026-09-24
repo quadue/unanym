@@ -10,6 +10,7 @@ export {createService};
 if(process.argv[1] && resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
   process.umask(0o077);
   const config=configuration();
+  if(config.contract!=='legacy-firn')throw new Error('The compatibility host requires legacy-firn; use start:frrn or start:standalone for community-v1');
   if(!config.pactDb || !config.pactMode)throw new Error('PACT_DB_PATH and PACT_MODE_FILE are required');
   const service=createService(config,pactAdapter({path:config.pactDb,modeFile:config.pactMode}));
   const server=service.app.listen(config.port,config.host,()=>console.log('Unanym listening on port',config.port));

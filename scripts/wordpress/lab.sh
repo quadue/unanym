@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 lab_name="${UNANYM_LAB_NAME:-drop-identity}"
-case "$lab_name" in drop-identity|unanym-standalone|frrn-frontpage) ;; *) echo 'Unknown lab name' >&2; exit 1 ;; esac
+case "$lab_name" in drop-identity|unanym-standalone|frrn-frontpage|unanym-frrn) ;; *) echo 'Unknown lab name' >&2; exit 1 ;; esac
 wp_port="${UNANYM_WP_PORT:-4082}"
 db_port="${UNANYM_DB_PORT:-43306}"
 [[ "$wp_port" =~ ^[0-9]{4,5}$ && "$db_port" =~ ^[0-9]{4,5}$ ]]

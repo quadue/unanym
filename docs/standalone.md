@@ -120,13 +120,20 @@ sign-in only. PHP Sodium is required. No email is supplied; new accounts are
 Subscribers. Existing accounts link from their WordPress profile after ordinary
 sign-in, preserving their account, roles and email without email matching.
 
-**Site admission is still a site policy.** The helper supplies a current boolean
-for a server-side integration. It does not automatically protect existing posts,
-change roles, secure media URLs, or integrate every membership plugin. The lab
-uses an explicit test-only server-side access check and proves it changes with
-approval, revocation and disclosure. Before real onboarding, implement and test
-the site's actual protected feature, including REST, feeds, caches and assets.
-Ordinary WordPress admin access remains available independently.
+**Choose a simple member area.** Create a WordPress page with Private visibility.
+Settings → Unanym lets the site administrator select this page and one recognised
+organisation. Save the member area. The member landing screen then links to it.
+This uses current membership for one page, with no permanent role promotion.
+Withdrawing approval or withholding membership closes access on the next request.
+The configured page stays private if the companion is disabled, and cannot be
+accidentally published while configured. Native editors/admins retain their
+existing permissions.
+
+This is not automatic protection of existing public posts, uploaded files or
+other plugins. The selected page's content is protected; media URLs, caches,
+custom APIs and other membership plugins need their own reviewed policy. The
+helper remains available for other integrations. See [the complete setup and
+rehearsal](frrn-host.md#connect-a-wordpress-website).
 
 The public download routes remain gated. Build output is a staging artifact,
 not a public release. New HTML distribution is out of scope.

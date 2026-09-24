@@ -16,10 +16,10 @@ export function createStandalone(config,{bootstrapEmail,sendCode}) {
     const path=resolve(config.dir,'profile.json');
     if(existsSync(path)){
       const profile=JSON.parse(readFileSync(path,'utf8'));
-      if(profile.contract!==config.contract||profile.issuer!==config.issuer)throw new Error('Preserve the contract and issuer; migration must be explicit');
+      if(profile.contract!==config.contract||profile.issuer!==config.issuer||(profile.account_source && profile.account_source!=='standalone'))throw new Error('Preserve the contract and issuer; migration must be explicit');
     }else{
       if(existsSync(resolve(config.dir,'identity.db')))throw new Error('Use a new data directory for standalone v1; do not relabel legacy records');
-      writeFileSync(path,JSON.stringify({contract:config.contract,issuer:config.issuer}),{mode:0o600,flag:'wx'});
+      writeFileSync(path,JSON.stringify({contract:config.contract,issuer:config.issuer,account_source:'standalone'}),{mode:0o600,flag:'wx'});
     }
     accounts=standaloneAccounts({dir:config.dir,key:config.keys.cookie,bootstrapEmail,sendCode,cookieName:config.origin.startsWith('https:')?'__Host-community_account':'community_account'});
     service=createService(config,accounts.adapter,{mountRoutes:app=>standaloneRoutes(app,config,accounts)});

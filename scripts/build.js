@@ -13,8 +13,9 @@ writeFileSync('dist/starter/client-config.json',JSON.stringify({authority:'https
 writeFileSync('dist/starter/README.txt','Legacy regression fixture only. Not a supported onboarding package. The test host supplies its local configuration. Use the standalone WordPress guide for the supported pilot.\n');
 writeFileSync('dist/starter.zip',zipSync(Object.fromEntries(['index.html','app.js','style.css','client-source.js','client-config.json','README.txt','SETUP-HTML.md','LICENSE','NOTICE'].map(name=>[name,readFileSync('dist/starter/'+name)]))));
 
-const wordpress=['drop-identity.php','memberships.php','member.css','LICENSE','NOTICE'];
+const wordpress=['drop-identity.php','memberships.php','member-area.php','member.css','LICENSE','NOTICE'];
 const files=Object.fromEntries(wordpress.map(name=>['drop-identity/'+name,readFileSync('integrations/wordpress/drop-identity/'+name)]));
+files['drop-identity/frrn-host.md']=readFileSync('docs/frrn-host.md');
 files['drop-identity/SETUP.md']=readFileSync('docs/standalone.md');files['drop-identity/CONTRACT.md']=readFileSync('docs/contracts/community-v1.md');
 writeFileSync('dist/wordpress.zip',zipSync(files));
 console.log('Built service assets, WordPress staging package and legacy regression fixture.');

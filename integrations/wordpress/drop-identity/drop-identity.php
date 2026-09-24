@@ -8,6 +8,7 @@
  */
 if (!defined('ABSPATH')) exit;
 require_once __DIR__.'/memberships.php';
+require_once __DIR__.'/member-area.php';
 
 function drop_identity_config() { return get_option('drop_identity_config', []); }
 function drop_identity_name() { return drop_identity_config()['display_name']??'FRRN'; }
@@ -47,7 +48,8 @@ function drop_identity_settings() {
     echo '</table>';submit_button('Check and save connection');echo '</form>';
     if ($c) echo '<p><strong>Settings saved.</strong> Open your sign-in page in a private browser window and choose Continue with '.esc_html(drop_identity_name()).'.</p>';
     if (!empty($c['membership_key']['kid'])) echo '<p>Operator membership key fingerprint: <code>'.esc_html($c['membership_key']['kid']).'</code>. Confirm it with the operator.</p>';
-    echo '<h2>3. Test before inviting members</h2><ol><li>Use a fictional Unanym account. Choose a name and leave memberships private.</li><li>Check that the new WordPress user is a Subscriber with no email address.</li><li>Disconnect this website at Unanym, then reload a signed-in page. The Unanym session here must end.</li><li>Confirm your ordinary administrator sign-in still works.</li></ol>';
+    unanym_member_area_settings();
+    echo '<h2>4. Test before inviting members</h2><ol><li>Use a fictional Unanym account. Choose a name and leave memberships private.</li><li>Check that the new WordPress user is a Subscriber with no email address.</li><li>Disconnect this website at Unanym, then reload a signed-in page. The Unanym session here must end.</li><li>Confirm your ordinary administrator sign-in still works.</li></ol>';
     echo '<h2>Existing members</h2><p>They should sign in with their existing WordPress account first, open Profile and choose Connect this account to '.esc_html(drop_identity_name()).'. Accounts are never matched by name or email.</p>';
     echo '<h2>Email and access</h2><p>Unanym does not send email addresses. New accounts have no email address. Members can add one directly in their WordPress profile for site messages and password recovery. New Unanym accounts receive the Subscriber role; this does not confirm training or grant access to a private community.</p>';
     echo '<p>A Unanym connection lasts at most seven days. Each signed-in request checks access; a disconnected session ends on its next request. Service outages temporarily block Unanym sessions. Ordinary WordPress sessions remain usable. Do not cache signed-in pages.</p></div>';
@@ -82,7 +84,7 @@ add_action('admin_post_drop_identity_setup', function() {
         if (is_wp_error($keys) || wp_remote_retrieve_response_code($keys)!==200 || ($bundle['issuer']??null)!==$issuer || count($bundle['keys']??[])!==1 || !unanym_key_valid($bundle['keys'][0])) drop_identity_error('Could not verify the membership key supplied by this operator.');
         $membership_key=$bundle['keys'][0];
         if (isset($old['membership_key']) && $old['membership_key']['kid']!==$membership_key['kid']) drop_identity_error('The operator signing key changed. Arrange a reviewed key migration before reconnecting.');
-    } elseif (!$old) drop_identity_error('New websites require the community-v1 contract. Ask the operator for its standalone service.');
+    } elseif (!$old) drop_identity_error('New websites require the community-v1 contract. Ask the operator for a community-v1 service.');
     // Member-facing branding is separate from the component name and identity contract.
     $display_name='FRRN';
     $presentation=drop_identity_http(preg_replace('#/oidc$#','/presentation',$issuer));
@@ -239,6 +241,6 @@ add_action('template_redirect',function(){
     if (!isset($_GET['drop_member']) || !drop_identity_config()) return;
     if (!is_user_logged_in()) {wp_safe_redirect(wp_login_url(add_query_arg('drop_member','1',home_url('/'))));exit;}
     $user=wp_get_current_user();nocache_headers();
-    ?><!doctype html><html <?php language_attributes(); ?>><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title><?php echo esc_html(get_bloginfo('name')); ?> — Your sign-in</title><link rel="stylesheet" href="<?php echo esc_url(plugins_url('member.css',__FILE__)); ?>"></head><body class="drop-member"><header><a href="<?php echo esc_url(home_url('/')); ?>"><?php echo esc_html(get_bloginfo('name')); ?></a></header><main><p class="drop-eyebrow">Your community website</p><h1>Welcome, <?php echo esc_html($user->display_name); ?>.</h1><p class="drop-lead">You’re signed in.</p><section class="drop-card"><h2>Your choice of what to share</h2><p>Your sign-in email address stays private. You can review your sharing choices or disconnect this website at any time.</p><a class="drop-button" href="<?php echo esc_url(home_url('/')); ?>">Visit the website <span aria-hidden="true">→</span></a><p><a href="<?php echo esc_url(preg_replace('#/oidc$#','/sites',drop_identity_config()['issuer'])); ?>">Manage what I share</a></p></section><p class="drop-quiet">Signing in does not confirm training or change this community’s membership rules.</p><footer><a href="<?php echo esc_url(wp_logout_url(home_url('/'))); ?>">Sign out of this website</a><a href="<?php echo esc_url(admin_url('profile.php')); ?>">Account details</a></footer></main></body></html><?php
+    ?><!doctype html><html <?php language_attributes(); ?>><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title><?php echo esc_html(get_bloginfo('name')); ?> — Your sign-in</title><link rel="stylesheet" href="<?php echo esc_url(plugins_url('member.css',__FILE__)); ?>"></head><body class="drop-member"><header><a href="<?php echo esc_url(home_url('/')); ?>"><?php echo esc_html(get_bloginfo('name')); ?></a></header><main><p class="drop-eyebrow">Your community website</p><h1>Welcome, <?php echo esc_html($user->display_name); ?>.</h1><p class="drop-lead">You’re signed in.</p><section class="drop-card"><h2>Your choice of what to share</h2><p>Your sign-in email address stays private. You can review your sharing choices or disconnect this website at any time.</p><a class="drop-button" href="<?php echo esc_url(home_url('/')); ?>">Visit the website <span aria-hidden="true">→</span></a><?php if ($member_area=unanym_member_area_url()) { ?><p><a class="drop-button" href="<?php echo esc_url($member_area); ?>">Open member area</a></p><?php } ?><p><a href="<?php echo esc_url(preg_replace('#/oidc$#','/sites',drop_identity_config()['issuer'])); ?>">Manage what I share</a></p></section><p class="drop-quiet">Signing in does not confirm training or change this community’s membership rules.</p><footer><a href="<?php echo esc_url(wp_logout_url(home_url('/'))); ?>">Sign out of this website</a><a href="<?php echo esc_url(admin_url('profile.php')); ?>">Account details</a></footer></main></body></html><?php
     exit;
 });

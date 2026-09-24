@@ -84,7 +84,7 @@ test('reconsent revokes old tokens but preserves only the authenticated current 
 
 test('WordPress staging package includes the exact verifier and current setup contract',()=>{
  const zip=unzipSync(readFileSync('dist/wordpress.zip'));
- for(const file of ['drop-identity.php','memberships.php','member.css'])assert.equal(Buffer.from(zip['drop-identity/'+file]).toString(),readFileSync('integrations/wordpress/drop-identity/'+file,'utf8'));
+ for(const file of ['drop-identity.php','memberships.php','member-area.php','member.css'])assert.equal(Buffer.from(zip['drop-identity/'+file]).toString(),readFileSync('integrations/wordpress/drop-identity/'+file,'utf8'));
  assert.match(Buffer.from(zip['drop-identity/CONTRACT.md']).toString(),/Community identity profile 1/);
  assert.match(Buffer.from(zip['drop-identity/SETUP.md']).toString(),/Standalone operator pilot/);
 });

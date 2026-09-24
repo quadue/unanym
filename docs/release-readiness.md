@@ -7,7 +7,8 @@ does not declare a production release or complete an international member pilot.
 
 - Fresh source snapshot with an explicit file inventory and kernel provenance.
 - Independent email-code account host and organisation-admin approval.
-- Neutral, versioned website contract and WordPress companion.
+- Neutral, versioned website contract and WordPress companion, including a selectable private member page.
+- Optional FRRN account source: one organiser approval, member consent and real local WordPress access tested end to end.
 - Fictional local quickstart, automated checks, installation and restore guide.
 - GitHub verification workflow with read-only permissions and pinned actions.
 - Draft security policy, compatibility boundary and contributor guidance.

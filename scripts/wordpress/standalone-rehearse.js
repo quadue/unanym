@@ -8,7 +8,7 @@ import {randomBytes} from 'node:crypto';
 import {configuration} from '../../src/config.js';
 import {createStandalone} from '../../src/standalone/server.js';
 const lab=process.env.UNANYM_LAB_NAME??'unanym-standalone';
-if(!['unanym-standalone','frrn-frontpage'].includes(lab))throw new Error('Use a dedicated standalone lab');
+if(!['unanym-standalone','frrn-frontpage','unanym-frrn'].includes(lab))throw new Error('Use a dedicated standalone lab');
 const origin='http://localhost:'+(process.env.UNANYM_WP_PORT??4302),issuer='http://127.0.0.1:'+(process.env.UNANYM_ISSUER_PORT??4300),container=lab+'-wp';
 const brand=process.env.IDENTITY_DISPLAY_NAME??'FRRN';
 const wp=(...args)=>execFileSync('docker',['exec',container,'php','/usr/local/bin/wp-cli.phar','--allow-root',...args],{encoding:'utf8',stdio:['pipe','pipe','pipe']}).trim();
@@ -34,7 +34,7 @@ try{
  // This dedicated lab may be rerun without touching another WordPress container.
  expect(execFileSync('docker',['inspect',container,'--format','{{index .Config.Labels "life.frrn.drop.rehearsal"}}'],{encoding:'utf8'}).trim()).toBe('wordpress');
  wp('transient','delete','--all');
- wp('eval',"delete_option('drop_identity_config');delete_option('openid_connect_generic_settings');foreach(get_users(['role'=>'subscriber']) as $u){require_once ABSPATH.'wp-admin/includes/user.php';wp_delete_user($u->ID);}");
+ wp('eval',"delete_option('drop_identity_config');delete_option('openid_connect_generic_settings');delete_option('unanym_member_area');foreach(get_users(['role'=>'subscriber']) as $u){require_once ABSPATH.'wp-admin/includes/user.php';wp_delete_user($u->ID);}");
  const operator=await browser.newPage();await identityLogin(operator,'operator@example.test');await operator.getByRole('link',{name:'Register an organisation',exact:true}).click();
  await operator.getByLabel('Organisation name').fill('Lakeside circle');await operator.getByLabel('Administrator email').fill('organiser@example.test');await operator.getByLabel('Authorisation reference').fill('Fictional appointment for this automated rehearsal');await operator.getByRole('button',{name:'Register organisation',exact:true}).click();await operator.waitForURL('**/identity/account');
  const organiser=await browser.newPage();await identityLogin(organiser,'organiser@example.test');await organiser.getByRole('link',{name:'Lakeside circle',exact:true}).click();await organiser.getByLabel('Member email').fill('member@example.test');await organiser.getByRole('button',{name:'Approve membership',exact:true}).click();await organiser.getByText('member@example.test',{exact:true}).waitFor();

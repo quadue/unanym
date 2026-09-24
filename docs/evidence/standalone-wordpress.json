@@ -1,0 +1,21 @@
+{
+  "date": "2026-09-24T16:36:48.263Z",
+  "classification": "Automated fictional standalone WordPress rehearsal; captured mail, no real delivery or human usability evidence",
+  "wordpress": "7.1.2",
+  "generic": "3.11.3",
+  "contract": "community-v1",
+  "memberBrand": "FRRN",
+  "checks": [
+    "A separately signed-in organisation admin approves the fictional member through the form.",
+    "Real WordPress setup selects v1 scopes, pins the operator key, recognises the organisation and uses the host name for member sign-in.",
+    "Email-code login creates a Subscriber without shared email; PHP verifies and accepts the selected organisation membership.",
+    "Revocation removes membership access on the next request without deleting the WordPress account; reapproval restores current evidence.",
+    "WordPress renews the v1 server-side session without another member login.",
+    "Withholding membership removes access even though organisation approval remains active.",
+    "Explicit linking preserves the existing WordPress account and email without creating a duplicate.",
+    "Issuer outage blocks connected access, preserves native admin login, and recovers.",
+    "Disconnect ends only that connection and revokes its refresh token.",
+    "A sign-in URL copied to another browser cannot create a WordPress session.",
+    "Account page fits a 375px viewport."
+  ]
+}

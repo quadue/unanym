@@ -18,7 +18,8 @@
     "start:standalone": "node src/standalone/server.js",
     "start:legacy": "node src/server.js",
     "quickstart": "node scripts/quickstart.js",
-    "check:release": "node scripts/check-release.js"
+    "check:release": "node scripts/check-release.js",
+    "start:frrn": "node src/frrn/server.js"
   },
   "dependencies": {
     "better-sqlite3": "12.11.1",

@@ -1,6 +1,7 @@
 # Community identity profile 1
 
-Implementation contract, 2026-09-24. New standalone deployments use this profile.
+Implementation contract, 2026-09-24. New standalone and explicitly configured
+FRRN-backed v1 deployments use this profile.
 It is not a claim of an adopted international standard or certified deployment.
 Existing clients remain on the explicitly separate legacy profile until migrated.
 
@@ -10,8 +11,8 @@ OpenID Connect authorization code + S256 PKCE remains the website interface.
 `openid profile` supplies the website-specific `sub` and chosen `name`. The
 account key is `(iss, sub)`. No account email, global persona or Pubky key is
 disclosed. A host and its registrations choose one contract profile; unknown host profiles
-fail. The standalone host serves v1 only, while the existing issuer retains its
-legacy profile. There is no mixed-profile upgrade at one issuer in this pilot.
+fail. New standalone and FRRN-backed hosts serve v1 only, while an existing
+legacy issuer retains its legacy profile. There is no mixed-profile upgrade at one issuer in this pilot.
 
 | Scope | Claim | Meaning |
 | --- | --- | --- |
