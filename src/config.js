@@ -48,6 +48,7 @@ export function registeredClients(clients,secrets={}) {
     if(Object.hasOwn(c,'client_secret'))throw new Error('Store client secrets in IDENTITY_CLIENT_SECRETS, never in the registry');
     c.token_endpoint_auth_method ??= 'none';
     if(c.allow_refresh!==undefined && typeof c.allow_refresh!=='boolean')throw new Error('allow_refresh must be boolean');
+    if(c.allow_confirmations!==undefined && typeof c.allow_confirmations!=='boolean')throw new Error('allow_confirmations must be boolean');
     if(!['none','client_secret_basic','client_secret_post'].includes(c.token_endpoint_auth_method))throw new Error('Unsupported client authentication method');
     if(c.token_endpoint_auth_method!=='none') {
       c.client_secret=secrets[c.client_id];
@@ -63,6 +64,10 @@ export function registeredClients(clients,secrets={}) {
     sectors.add([...hosts][0]);
     const homepage=new URL(c.homepage);
     if(!c.redirect_uris.some(u=>new URL(u).origin===homepage.origin))throw new Error('Homepage must belong to the registered website');
+    if(c.sharing_uri!==undefined){
+      const sharing=new URL(c.sharing_uri);
+      if(sharing.origin!==homepage.origin||sharing.username||sharing.password||sharing.hash)throw new Error('Sharing address must belong to the registered website');
+    }
   }
   if(new Set(clients.map(c=>c.client_id)).size!==clients.length) throw new Error('Duplicate client');
   return clients;

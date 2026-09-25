@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import {createHash,createHmac,randomBytes,randomInt,randomUUID,timingSafeEqual} from 'node:crypto';
 import {resolve} from 'node:path';
+import {confirmationLabel} from '../confirmation-contract.js';
 
 const hash=s=>createHash('sha256').update(s).digest('hex');
 export function emailAddress(value) {
@@ -27,6 +28,7 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
     CREATE TABLE IF NOT EXISTS administrators(organisation TEXT NOT NULL,account TEXT NOT NULL,PRIMARY KEY(organisation,account));
     CREATE TABLE IF NOT EXISTS memberships(id TEXT PRIMARY KEY,organisation TEXT NOT NULL,account TEXT NOT NULL,status TEXT NOT NULL,approved_at TEXT NOT NULL,valid_until TEXT,UNIQUE(organisation,account));
     CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY,at TEXT NOT NULL,actor TEXT NOT NULL,action TEXT NOT NULL,organisation TEXT,target TEXT,detail TEXT);
+    CREATE TABLE IF NOT EXISTS introductions(membership TEXT PRIMARY KEY,actor TEXT NOT NULL,confirmed_at TEXT NOT NULL,revoked_at TEXT);
   `);
   const bootstrap=bootstrapEmail?emailAddress(bootstrapEmail):null;
   const hmac=value=>createHmac('sha256',key).update(value).digest('hex');
@@ -125,7 +127,24 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
       .map(m=>({slug:m.id,name:m.name,organisation:{id:m.organisation,name:m.name},approvedAt:m.approved_at,validUntil:m.valid_until}));
   }
   function cleanup(){db.prepare('DELETE FROM challenges WHERE expires<?').run(now());db.prepare('DELETE FROM sessions WHERE expires<?').run(now());db.prepare('DELETE FROM limits WHERE start<?').run(now()-3600_000);}
-  const adapter={session,account,memberships,isOpen:()=>true,csrfBinding:req=>accountCookie(req,cookieName),loginURL:path=>'/identity/login?next='+encodeURIComponent(path),close:()=>db.close()};
-  return {db,adapter,cookieName,requestCode,verifyCode,isOperator,isAdministrator,organisations,createOrganisation,approve,revoke,listMembers,cleanup,
+  function confirmIntroduction(actor,organisation,id,confirmed){
+    requireAdministrator(actor,organisation);
+    const member=db.prepare('SELECT * FROM memberships WHERE id=? AND organisation=?').get(id,organisation);
+    if(!member)throw new Error('Membership not found.');
+    if(confirmed&&(member.account===actor||member.status!=='active'||(member.valid_until&&Date.parse(member.valid_until)<=now())))throw new Error('Choose another current member with an approved membership.');
+    db.transaction(()=>{
+      if(confirmed)db.prepare('INSERT OR REPLACE INTO introductions VALUES(?,?,?,NULL)').run(id,actor,timestamp());
+      else db.prepare('UPDATE introductions SET revoked_at=? WHERE membership=?').run(timestamp(),id);
+      audit(actor,confirmed?'introduction_confirmed':'introduction_withdrawn',organisation,member.account);
+    })();
+  }
+  function confirmations(id){
+    return memberships(id).flatMap(m=>{
+      const row=db.prepare('SELECT * FROM introductions WHERE membership=? AND revoked_at IS NULL').get(m.slug);
+      return row&&isAdministrator(row.actor,m.organisation.id)?[{slug:'introduction:'+m.slug,name:confirmationLabel,organisation:m.organisation,confirmedAt:row.confirmed_at,validUntil:m.validUntil}]:[];
+    });
+  }
+  const adapter={session,account,memberships,confirmations,isOpen:()=>true,csrfBinding:req=>accountCookie(req,cookieName),loginURL:path=>'/identity/login?next='+encodeURIComponent(path),close:()=>db.close()};
+  return {db,adapter,cookieName,requestCode,verifyCode,isOperator,isAdministrator,organisations,createOrganisation,approve,revoke,listMembers,confirmIntroduction,cleanup,
     logout:req=>db.prepare('DELETE FROM sessions WHERE digest=?').run(hash(accountCookie(req,cookieName)))};
 }

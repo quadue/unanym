@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import {pactAdapter} from '../pact.js';
+import {confirmationKind,confirmationLabel} from '../confirmation-contract.js';
 
 // Explicit operator-reviewed bindings, not a directory of all FRRN communities.
 export function validateSources(sources) {
@@ -7,6 +8,7 @@ export function validateSources(sources) {
   const communities=new Set(),organisations=new Set();
   const text=(x,max=200)=>typeof x==='string' && x.trim().length>0 && x.length<=max && !/[\x00-\x1f\x7f]/.test(x);
   for (const source of sources) {
+    if(source.confirmation_kinds!==undefined && (!Array.isArray(source.confirmation_kinds)||source.confirmation_kinds.length!==1||source.confirmation_kinds[0]!==confirmationKind)) throw new Error('Only explicit community introduction confirmations are supported');
     const id=source.organisation?.id;
     if (!text(source.community_id) || !text(id,500) || !/^(urn:|https:\/\/)/.test(id) || !text(source.organisation?.name,120)
       || !Array.isArray(source.approvers) || !source.approvers.length || source.approvers.length>50
@@ -27,6 +29,8 @@ export function frrnAccounts({path,modeFile,sources}) {
     const instance=db.prepare('SELECT instance_id FROM identity_source_instance WHERE id=1').get()?.instance_id;
     if (!instance) throw new Error('FRRN membership source version 1 is required');
     const read=db.prepare('SELECT * FROM identity_memberships_v1 WHERE user_id=? AND community_id=?');
+    const confirmationSources=bindings.filter(s=>s.confirmation_kinds?.includes(confirmationKind));
+    const readConfirmations=confirmationSources.length?db.prepare('SELECT * FROM identity_confirmations_v1 WHERE user_id=? AND community_id=?'):null;
     for (const source of bindings) {
       if (!db.prepare('SELECT 1 FROM communities WHERE id=?').get(source.community_id)) throw new Error('Unknown source community');
       for (const approver of source.approvers) if (!db.prepare("SELECT 1 FROM memberships WHERE community_id=? AND user_id=? AND role='steward' AND status='active'").get(source.community_id,approver.user_id)) throw new Error('An authorised approver must be a current FRRN organiser at setup');
@@ -40,6 +44,14 @@ export function frrnAccounts({path,modeFile,sources}) {
           .filter(row=>row.valid_until===null || Date.parse(row.valid_until)>Date.now()+1000)
           .map(row=>({slug:`frrn:${source.community_id}:${source.organisation.id}`,name:source.organisation.name,
             display_name:row.display_name,organisation:source.organisation,approvedAt:row.approved_at,validUntil:row.valid_until})));
+      },
+      confirmations(id){
+        if(!base.account(id))return [];
+        return confirmationSources.flatMap(source=>readConfirmations.all(id,source.community_id)
+          .filter(row=>source.approvers.some(a=>a.user_id===row.approved_by))
+          .filter(row=>source.approvers.some(a=>a.user_id===row.confirmed_by))
+          .filter(row=>row.valid_until===null||Date.parse(row.valid_until)>Date.now()+1000)
+          .map(row=>({slug:`introduction:${source.community_id}`,name:confirmationLabel,organisation:source.organisation,confirmedAt:row.confirmed_at,validUntil:row.valid_until})));
       },
       close(){base.close();db.close();}
     };

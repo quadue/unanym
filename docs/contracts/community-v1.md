@@ -183,3 +183,10 @@ public onboarding release. Actual-site policy, organisation mandate and real
 member acceptance remain required. The old HTML ZIP is a legacy regression
 fixture; HTML integration is outside the current scope. See `docs/standalone.md`
 for operation and `docs/release.md` for dated evidence.
+
+## Optional confirmations extension
+
+The separately enabled [confirmations extension](confirmations-v1.md) supplies
+one community introduction statement through its own scope, signed type and
+member selection. It never adds qualification fields to a membership statement
+or changes existing membership clients. Current operator custody is unchanged.

@@ -10,6 +10,7 @@ import {validateAccountAdapter} from './accounts.js';
 import {persona,signerFrom,consentReceipt,membershipReceipt} from './drop.js';
 import {page,consentView,sitesView,about,escape,rehearsalView} from './views.js';
 import {issueMembership,membershipKey} from './community-contract.js';
+import {issueConfirmation,confirmationLabel} from './confirmation-contract.js';
 import {standalonePage} from './standalone/views.js';
 import {frontPage,developerPage,displayName,developerURL} from './presentation.js';
 import {docsIndex,guidePage,guideNames,referencePage,referenceDocs} from './portal.js';
@@ -22,6 +23,8 @@ export function createService(config,pact,{mountRoutes}={}) {
   const base=config.basePath??'/identity';
   const standalone=config.contract==='community-v1';
   const membershipScope=standalone?'memberships.v1':'drop_memberships';
+  const supportsConfirmations=standalone&&typeof pact.confirmations==='function';
+  const confirmationsFor=id=>supportsConfirmations?pact.confirmations(id):[];
   const db=openStore(resolve(config.dir,'identity.db'));
   const encryption=Buffer.from(config.keys.encryption,'base64url');
   const issuerSigner=signerFrom(config.keys.drop);
@@ -41,11 +44,11 @@ export function createService(config,pact,{mountRoutes}={}) {
     clients:config.clients.map(c=>({client_id:c.client_id,client_name:c.name,redirect_uris:c.redirect_uris,
       response_types:['code'],grant_types:c.allow_refresh?['authorization_code','refresh_token']:['authorization_code'],
       token_endpoint_auth_method:c.token_endpoint_auth_method??'none',client_secret:c.client_secret,subject_type:'pairwise'})),
-    scopes:['openid','profile',...(standalone?['identity.v1','memberships.v1']:['drop_identity','drop_memberships']),...(config.clients.some(c=>c.allow_refresh)?['offline_access']:[])],
+    scopes:['openid','profile',...(standalone?['identity.v1','memberships.v1']:['drop_identity','drop_memberships']),...(supportsConfirmations?['confirmations.v1']:[]),...(config.clients.some(c=>c.allow_refresh)?['offline_access']:[])],
     clientAuthMethods:[...new Set(config.clients.map(c=>c.token_endpoint_auth_method??'none'))],
     jwks:{keys:[config.keys.oidc]},
     cookies:{keys:[config.keys.cookie],names:standalone?{session:'community_session',interaction:'community_interaction',resume:'community_resume'}:{session:'drop_session',interaction:'drop_interaction',resume:'drop_resume'},long:{httpOnly:true,sameSite:'lax'},short:{httpOnly:true,sameSite:'lax'}},
-    claims:{openid:['sub'],profile:['name'],...(standalone?{'identity.v1':['identity_v1'],'memberships.v1':['memberships_v1']}:{drop_identity:['drop_identity'],drop_memberships:['drop_memberships','drop_membership_receipt']})},
+    claims:{openid:['sub'],profile:['name'],...(standalone?{'identity.v1':['identity_v1'],'memberships.v1':['memberships_v1'],...(supportsConfirmations?{'confirmations.v1':['confirmations_v1']}:{})}:{drop_identity:['drop_identity'],drop_memberships:['drop_memberships','drop_membership_receipt']})},
     subjectTypes:['pairwise'],
     pairwiseIdentifier:async(ctx,id,client)=>(await persona(db,id,client.clientId,encryption)).subject,
     pkce:{required:()=>true},
@@ -66,7 +69,10 @@ export function createService(config,pact,{mountRoutes}={}) {
           identity_v1:{version:1,public_key:person.signer.pub,custody:'operator',operator:{id:config.issuer,name:config.operatorName}},
           memberships_v1:{version:1,statements:await Promise.all(shared.map(m=>issueMembership(config.keys.drop,{
             issuer:config.issuer,subject:person.subject,audience:clientId,organisation:m.organisation,approvedAt:m.approvedAt,validUntil:m.validUntil
-          })))}};
+          })))},
+          ...(supportsConfirmations&&registry.get(clientId)?.allow_confirmations?{confirmations_v1:{version:1,statements:await Promise.all(confirmationsFor(id).filter(c=>consent.confirmations.includes(c.slug)).map(c=>issueConfirmation(config.keys.drop,{
+            issuer:config.issuer,subject:person.subject,audience:clientId,organisation:c.organisation,confirmedAt:c.confirmedAt,validUntil:c.validUntil
+          })))}}:{})};
         return {sub:id,name:consent.name,
           drop_identity:{public_key:person.signer.pub,custody:'pact-hosted',format:'frrn-v2'},
           drop_memberships:shared.map(({slug,name})=>({slug,name,evidence:'current-pact-membership',training_verified:false})),
@@ -150,6 +156,7 @@ export function createService(config,pact,{mountRoutes}={}) {
     const client=registry.get(details.params.client_id);
     if(!client) return res.sendStatus(400);
     res.send(consentView({config,client,uid:details.uid,csrf:csrf(req,req.path+'/confirm'),memberships:pact.memberships(user.id),
+      confirmations:client.allow_confirmations?confirmationsFor(user.id):[],allowConfirmations:supportsConfirmations&&client.allow_confirmations,
       previous:connection(db,user.id,client.client_id),scopes:String(details.params.scope).split(' ')}));
   });
   app.post(base+'/interaction/:uid/confirm',body,protect,async(req,res)=>{
@@ -162,8 +169,13 @@ export function createService(config,pact,{mountRoutes}={}) {
     const available=pact.memberships(user.id);
     if(chosen.length>50 || chosen.some(x=>typeof x!=='string' || !available.some(m=>m.slug===x)) || (chosen.length && !String(details.params.scope).split(' ').includes(membershipScope))) return res.status(400).send('Choose only your current community memberships.');
     const memberships=[...new Set(chosen)];
+    const selected=req.body.confirmations===undefined?[]:Array.isArray(req.body.confirmations)?req.body.confirmations:[req.body.confirmations];
+    const availableConfirmations=confirmationsFor(user.id);
+    if(selected.length>50||selected.some(x=>typeof x!=='string'||!availableConfirmations.some(c=>c.slug===x))||
+      (selected.length&&(!registry.get(clientId)?.allow_confirmations||!String(details.params.scope).split(' ').includes('confirmations.v1'))))return res.status(400).send('Choose only your current confirmations requested by this website.');
+    const confirmations=[...new Set(selected)];
     const person=await persona(db,user.id,clientId,encryption);
-    await consentReceipt(db,person,{name,memberships,active:true},config);
+    await consentReceipt(db,person,{name,memberships,confirmations:supportsConfirmations?confirmations:undefined,active:true},config);
     // Old access cannot retain an earlier broader set of permissions.
     disconnect(db,user.id,clientId,{keepInteraction:details.uid});
     const grant=new provider.Grant({accountId:user.id,clientId});
@@ -171,6 +183,7 @@ export function createService(config,pact,{mountRoutes}={}) {
     if(details.prompt.details.missingOIDCClaims)grant.addOIDCClaims(details.prompt.details.missingOIDCClaims);
     const grantId=await grant.save();
     db.prepare('INSERT OR REPLACE INTO connections VALUES (?,?,?,?,?,?,?)').run(user.id,clientId,name,JSON.stringify(memberships),grantId,1,new Date().toISOString());
+    if(confirmations.length)db.prepare('INSERT OR REPLACE INTO confirmation_choices VALUES (?,?,?)').run(user.id,clientId,JSON.stringify(confirmations));
     await provider.interactionFinished(req,res,{consent:{grantId}},{mergeWithLastSubmission:true});
   });
   // The cancel button shares the confirmation CSRF token but never grants access.
@@ -187,13 +200,15 @@ export function createService(config,pact,{mountRoutes}={}) {
     const rows=db.prepare('SELECT client FROM connections WHERE account=? ORDER BY updated DESC').all(user.id)
       .map(({client})=>({...connection(db,user.id,client),site:registry.get(client)})).filter(x=>x.site);
     if(standalone){const current=pact.memberships(user.id);for(const row of rows)row.memberships=row.memberships.map(id=>current.find(m=>m.slug===id)?.name??'Membership no longer active');}
+    const currentConfirmations=confirmationsFor(user.id);
+    for(const row of rows)row.confirmations=row.confirmations.map(id=>{const c=currentConfirmations.find(c=>c.slug===id);return c?confirmationLabel+' · '+c.organisation.name:'Confirmation no longer active';});
     res.send(sitesView(config,rows,id=>csrf(req,base+'/sites/'+id+'/disconnect')));
   });
   app.post(base+'/sites/:client/disconnect',body,protect,async(req,res)=>{
     const user=account(req,res);if(!user)return;
     const row=connection(db,user.id,req.params.client);if(!row)return res.sendStatus(404);
     const person=await persona(db,user.id,row.client,encryption);
-    await consentReceipt(db,person,{name:row.name,memberships:[],active:false},config);
+    await consentReceipt(db,person,{name:row.name,memberships:[],confirmations:supportsConfirmations?[]:undefined,active:false},config);
     disconnect(db,user.id,row.client);res.redirect(303,base+'/sites');
   });
   app.get(base+'/sites/:client/receipt',async(req,res)=>{
@@ -216,7 +231,7 @@ export function createService(config,pact,{mountRoutes}={}) {
     if(pact.isOpen && !pact.isOpen())return;
     for(const {account:id} of db.prepare('SELECT DISTINCT account FROM personas').all()) if(!pact.account(id)) {
       db.transaction(()=>{
-        for(const table of ['personas','connections','receipts'])db.prepare('DELETE FROM '+table+' WHERE account=?').run(id);
+        for(const table of ['personas','connections','receipts','confirmation_choices'])db.prepare('DELETE FROM '+table+' WHERE account=?').run(id);
         db.prepare("DELETE FROM oidc WHERE json_extract(payload,'$.accountId')=?").run(id);
       })();
     }

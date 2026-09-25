@@ -1,6 +1,6 @@
 {
   "name": "unanym",
-  "version": "0.3.1",
+  "version": "0.4.0-rc.1",
   "private": true,
   "type": "module",
   "description": "Independently hosted community identity, selective disclosure and WordPress sign-in.",
@@ -20,7 +20,8 @@
     "quickstart": "node scripts/quickstart.js",
     "check:release": "node scripts/check-release.js",
     "start:frrn": "node src/frrn/server.js",
-    "demo:v1": "node scripts/demo-v1.js"
+    "demo:v1": "node scripts/demo-v1.js",
+    "simulate:wordpress": "node scripts/wordpress/simulate.js"
   },
   "dependencies": {
     "better-sqlite3": "12.11.1",

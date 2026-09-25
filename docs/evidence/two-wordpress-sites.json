@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-25T09:34:07.098Z",
+  "classification": "Isolated synthetic FRRN -> Unanym -> real WordPress rehearsal; no real mail, mandate or member acceptance",
+  "frrn_revision": "1dfc6a160bcf8ecfc5ca1020fbe27df26d953868",
+  "frrn_dirty": true,
+  "websites": 2,
+  "confirmations": true,
+  "wordpress": "7.1.2",
+  "generic": "3.11.3",
+  "contract": "community-v1",
+  "identity_base_path": "/identity/v1",
+  "checks": [
+    "WordPress administrator connects the issuer, recognises an organisation and selects a private members page using forms.",
+    "A second WordPress installation uses its own administrator session, database and client registration.",
+    "Pending FRRN application supplies no shareable membership; signing in alone cannot open the WordPress page.",
+    "An organiser separately confirms an introduction; it is not shared until chosen, WordPress verifies its source, and withdrawing it leaves membership access unchanged.",
+    "One organiser approval in FRRN reaches Unanym only after member consent, and opens the actual WordPress page without another account/approval store.",
+    "The second website starts with a blank name and no selected memberships; withholding there does not affect the first website.",
+    "The same approval opens both sites only after separate consent; names, identifiers and keys differ, email stays private and a statement cannot be replayed at the other site.",
+    "Membership grants no blanket private-page role; anonymous page, REST, search and feed responses withhold protected content.",
+    "A routine publish action cannot make the configured member page public.",
+    "Withdrawing the FRRN approval closes WordPress access on the next request; explicit reapproval restores it.",
+    "The member can withhold membership while keeping their FRRN approval and the other website\u2019s access.",
+    "Disconnecting the site ends that WordPress identity session; native administrator access stays available.",
+    "Disconnecting only the first website leaves the second usable; Change sharing reaches the saved choices directly, cancellation preserves them, and both native administrators retain access.",
+    "Disabling the identity plugin leaves the actual WordPress page private."
+  ],
+  "candidate": "0.4.0-rc.1",
+  "live_deployment_changed": false
+}

@@ -32,6 +32,14 @@ Stop it with Ctrl+C. It writes only to ignored `data/demo-v1/`. Use
 `UNANYM_DEMO_PORT` if port 4080 is occupied. The legacy compatibility fixture
 remains available as `npm run demo:independent`.
 
+## Simulate two connected websites
+
+The [two-site rehearsal](docs/two-site-simulation.md) runs a fictional FRRN
+community and two real local WordPress sites, including independent choices and
+withdrawal. The candidate also supports one [optional confirmation](docs/contracts/confirmations-v1.md):
+a community organiser records that its introduction was completed. This is
+separate from membership and is shared only when selected.
+
 ## Run your own identity service
 
 The standalone host has persistent email-code accounts, organisation-specific

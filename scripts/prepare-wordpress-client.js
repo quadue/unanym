@@ -15,7 +15,8 @@ const clients=JSON.parse(readFileSync(process.env.IDENTITY_CLIENTS??'clients.jso
 if(clients.some(c=>c.client_id===id))throw new Error('Client ID already registered. Do not replace it to relink existing accounts.');
 const secrets=process.env.IDENTITY_CLIENT_SECRETS?JSON.parse(readFileSync(process.env.IDENTITY_CLIENT_SECRETS)):{};
 const secret=randomBytes(32).toString('base64url');
-clients.push({client_id:id,name,description:'Sign in to '+name+'. Choose the name and memberships this website may see.',homepage:url.origin+'/',redirect_uris:[url.href],token_endpoint_auth_method:'client_secret_post',allow_refresh:true});secrets[id]=secret;
+const homepage=url.pathname.endsWith('/wp-admin/admin-ajax.php')?new URL('../',url).href:url.origin+'/';
+clients.push({client_id:id,name,description:'Sign in to '+name+'. Choose the name and memberships this website may see.',homepage,sharing_uri:new URL('?unanym_share=1',homepage).href,redirect_uris:[url.href],token_endpoint_auth_method:'client_secret_post',allow_refresh:true});secrets[id]=secret;
 registeredClients(structuredClone(clients),secrets);
 mkdirSync(dir,{mode:0o700});writeFileSync(resolve(dir,'clients.json'),JSON.stringify(clients,null,2),{mode:0o600});writeFileSync(resolve(dir,'client-secrets.json'),JSON.stringify(secrets,null,2),{mode:0o600});
 writeFileSync(resolve(dir,'website-setup.json'),JSON.stringify({issuer:origin.origin+identityBasePath(process.env.IDENTITY_BASE_PATH)+'/oidc',client_id:id,client_secret:secret,callback:url.href},null,2),{mode:0o600});

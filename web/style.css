@@ -15,3 +15,12 @@ input[type=email],input[type=date]{display:block;width:100%;box-sizing:border-bo
 .standalone .narrow h1{font-family:inherit;font-weight:570;line-height:1.12;letter-spacing:-.04em;font-size:clamp(34px,4.5vw,51px)}.standalone details code{display:block;overflow-wrap:anywhere;margin-bottom:20px}
 /* The hosted example website: a separate receiving site, deliberately plain. */
 .example-site header{border-bottom-style:dashed}.example-claims{margin:0}.example-claims dt{font-size:14px;color:var(--muted);margin-top:16px}.example-claims dt:first-child{margin-top:0}.example-claims dd{margin:4px 0 0;overflow-wrap:anywhere}.example-received{list-style:none;padding:0;margin:4px 0 0}.example-received li{margin-bottom:10px}.example-received small{display:block;font-size:14px;color:var(--muted)}
+
+/* Keep a small sharing decision small, including the optional confirmation. */
+.consent-space{margin-top:28px}.consent-recipient{font-size:15px;color:var(--muted);overflow-wrap:anywhere;margin-bottom:14px}
+.consent-space h1{font-size:clamp(30px,4vw,44px);margin-bottom:20px}
+.consent-flow{margin-top:20px}.consent-you,.consent-site{padding:22px}.consent-flow h2{margin-bottom:16px}
+.consent-space fieldset{margin:20px 0 14px}.consent-space .help{margin-bottom:12px}.consent-space .choice{padding:11px}
+.consent-preview{margin:16px 0;padding:16px}.consent-kept{margin-top:18px;padding-top:12px}
+.consent-details{margin-top:14px}.consent-details summary{min-height:44px}.consent-details .help:last-child{margin-bottom:0}
+@media(max-width:700px){.consent-you,.consent-site{padding:18px}.consent-space h1{max-width:13ch}.consent-preview>strong{font-size:21px}.consent-flow h2{font-size:20px}}

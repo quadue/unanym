@@ -81,3 +81,18 @@ test('versioned FRRN routes keep the legacy issuer separate and pin the new URL'
   assert.throws(()=>configuration({...env,IDENTITY_BASE_PATH:'/identity/../other'}),/Unsupported/);
  }finally{await new Promise(r=>server.close(r));service.close();f.close();}
 });
+
+test('FRRN confirmations require explicit source opt-in and both authorised decisions',()=>{
+ const f=sourceFixture();let adapter;
+ try{
+  f.db.exec('CREATE TABLE identity_confirmations_v1(user_id TEXT,community_id TEXT,approved_by TEXT,confirmed_by TEXT,confirmed_at TEXT,valid_until TEXT)');
+  f.db.prepare('INSERT INTO identity_confirmations_v1 VALUES(?,?,?,?,?,NULL)').run('robin','lakeside','sam','sam',new Date().toISOString());
+  adapter=frrnAccounts({path:f.path,modeFile:f.mode,sources:f.sources});assert.deepEqual(adapter.confirmations('robin'),[]);adapter.close();
+  const sources=[{...f.sources[0],confirmation_kinds:['community_introduction']}];
+  adapter=frrnAccounts({path:f.path,modeFile:f.mode,sources});assert.equal(adapter.confirmations('robin').length,1);assert.deepEqual(adapter.confirmations('sam'),[]);
+  f.db.prepare("UPDATE identity_confirmations_v1 SET confirmed_by='outsider'").run();assert.deepEqual(adapter.confirmations('robin'),[]);
+  f.db.prepare("UPDATE identity_confirmations_v1 SET confirmed_by='sam',approved_by='outsider'").run();assert.deepEqual(adapter.confirmations('robin'),[]);
+  f.db.prepare("UPDATE identity_confirmations_v1 SET approved_by='sam',valid_until='2000-01-01T00:00:00Z'").run();assert.deepEqual(adapter.confirmations('robin'),[]);
+  assert.throws(()=>validateSources([{...f.sources[0],confirmation_kinds:['qualified_counsellor']}]),/Only explicit/);
+ }finally{adapter?.close();f.close();}
+});

@@ -16,7 +16,7 @@ const wp=(...args)=>execFileSync('docker',['exec',container,'php','/usr/local/bi
 const work=mkdtempSync(join(tmpdir(),'unanym-wordpress-')),dir=join(work,'original'),mail=new Map(),secret=randomBytes(32).toString('base64url');
 mkdirSync(dir,{mode:0o700});
 const registry=join(dir,'clients.json'),secrets=join(dir,'secrets.json');
-writeFileSync(registry,JSON.stringify([{client_id:'wordpress-pilot',name:'Lakeside community',description:'Fictional WordPress acceptance fixture',homepage:origin,redirect_uris:[origin+'/wp-admin/admin-ajax.php?action=openid-connect-authorize'],token_endpoint_auth_method:'client_secret_post',allow_refresh:true}]));
+writeFileSync(registry,JSON.stringify([{client_id:'wordpress-pilot',name:'Lakeside community',description:'Fictional WordPress acceptance fixture',allow_confirmations:true,homepage:origin,redirect_uris:[origin+'/wp-admin/admin-ajax.php?action=openid-connect-authorize'],token_endpoint_auth_method:'client_secret_post',allow_refresh:true}]));
 writeFileSync(secrets,JSON.stringify({'wordpress-pilot':secret}),{mode:0o600});
 let settings={IDENTITY_ORIGIN:issuer,IDENTITY_BASE_PATH:'/identity',IDENTITY_CONTRACT:'community-v1',IDENTITY_OPERATOR_NAME:'Lakeside test operator',IDENTITY_DISPLAY_NAME:brand,IDENTITY_DATA_DIR:dir,IDENTITY_CLIENTS:registry,IDENTITY_CLIENT_SECRETS:secrets};
 let config=configuration(settings),service,server,moves=0;
@@ -28,8 +28,8 @@ const stop=async()=>{if(server){await new Promise((r,j)=>server.close(e=>e?j(e):
 // Hash instead of logging keys, client secrets, account records or session material.
 const digest=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const durableState=()=>digest({keys:config.keys,clients:config.clients,issuer:config.issuer,
- identity:['personas','connections','receipts'].map(table=>service.db.prepare('SELECT * FROM '+table+' ORDER BY rowid').all()),
- accounts:['accounts','operators','organisations','administrators','memberships','audit'].map(table=>service.accounts.db.prepare('SELECT * FROM '+table+' ORDER BY rowid').all())});
+ identity:['personas','connections','receipts','confirmation_choices'].map(table=>service.db.prepare('SELECT * FROM '+table+' ORDER BY rowid').all()),
+ accounts:['accounts','operators','organisations','administrators','memberships','introductions','audit'].map(table=>service.accounts.db.prepare('SELECT * FROM '+table+' ORDER BY rowid').all())});
 const replaceHost=async()=>{
  const before=durableState(),source=config.dir,backup=join(work,'backup-'+(++moves)),restored=join(work,'restored-'+moves);
  await stop();
@@ -66,6 +66,7 @@ try{
  const operator=await browser.newPage();await identityLogin(operator,'operator@example.test');await operator.getByRole('link',{name:'Register an organisation',exact:true}).click();
  await operator.getByLabel('Organisation name').fill('Lakeside circle');await operator.getByLabel('Administrator email').fill('organiser@example.test');await operator.getByLabel('Authorisation reference').fill('Fictional appointment for this automated rehearsal');await operator.getByRole('button',{name:'Register organisation',exact:true}).click();await operator.waitForURL('**/identity/account');
  const organiser=await browser.newPage();await identityLogin(organiser,'organiser@example.test');await organiser.getByRole('link',{name:'Lakeside circle',exact:true}).click();await organiser.getByLabel('Member email').fill('member@example.test');await organiser.getByRole('button',{name:'Approve membership',exact:true}).click();await organiser.getByText('member@example.test',{exact:true}).waitFor();
+ await organiser.getByText('Community introductions',{exact:true}).click();await organiser.getByRole('button',{name:'Confirm introduction',exact:true}).click();
  const org=service.accounts.db.prepare('SELECT id FROM organisations').get().id;
  await organiser.screenshot({path:join(output,'organisation.png'),fullPage:true});
  pass('A separately signed-in organisation admin approves the fictional member through the form.');
@@ -73,8 +74,8 @@ try{
  pageId=Number(wp('post','create','--post_type=page','--post_status=private','--post_title=Host move handbook','--post_content='+memberText,'--porcelain'));
  const area=origin+'/?page_id='+pageId;
  const a=await browser.newPage();await nativeLogin(a,'lab-admin','local-demo-only-2026');await a.goto(origin+'/wp-admin/options-general.php?page=drop-identity');
- await a.getByLabel('Identity service address',{exact:true}).fill(config.issuer);await a.getByLabel('Client ID',{exact:true}).fill('wordpress-pilot');await a.getByLabel('Client secret',{exact:true}).fill(secret);await a.getByLabel('Recognised organisation IDs').fill(org);await a.getByRole('button',{name:'Check and save connection'}).click();await expect(a.getByText('Settings saved.',{exact:true})).toBeVisible();
- expect(wp('eval',"echo get_option('openid_connect_generic_settings')['scope'];")).toBe('openid profile identity.v1 memberships.v1 offline_access');
+ await a.getByLabel('Identity service address',{exact:true}).fill(config.issuer);await a.getByLabel('Client ID',{exact:true}).fill('wordpress-pilot');await a.getByLabel('Client secret',{exact:true}).fill(secret);await a.getByLabel('Recognised organisation IDs').fill(org);await a.getByRole('checkbox',{name:'Receive community introduction confirmations'}).check();await a.getByRole('button',{name:'Check and save connection'}).click();await expect(a.getByText('Settings saved.',{exact:true})).toBeVisible();
+ expect(wp('eval',"echo get_option('openid_connect_generic_settings')['scope'];")).toBe('openid profile identity.v1 memberships.v1 offline_access confirmations.v1');
  await a.getByLabel('Members-only page',{exact:true}).selectOption(String(pageId));await a.getByLabel('Required organisation membership',{exact:true}).selectOption(org);await a.getByRole('button',{name:'Save member area',exact:true}).click();
  expect(await (await fetch(area)).text()).not.toContain(memberText);
  // A synthetic server-side access decision exercises the public plugin helper.
@@ -84,7 +85,7 @@ try{
  expect(wp('eval',"echo get_option('openid_connect_generic_settings')['login_button_text'];")).toBe('Continue with '+brand);
  pass('Real WordPress setup selects v1 scopes, pins the operator key, recognises the organisation and uses the host name for member sign-in.');
  const member=await browser.newContext();const p=await member.newPage();await p.goto(origin+'/wp-login.php');await p.getByRole('link',{name:'Continue with '+brand,exact:true}).click();await codeLogin(p,'member@example.test');
- await p.getByLabel('Your name on this website').fill('Robin');await p.getByRole('checkbox').check();await p.screenshot({path:join(output,'consent.png'),fullPage:true});await consent(p,'Robin',true);
+ await p.getByLabel('Your name on this website').fill('Robin');await p.locator('input[name=memberships]').check();await p.locator('input[name=confirmations]').check();await p.screenshot({path:join(output,'consent.png'),fullPage:true});await consent(p,'Robin',true);
  const users=JSON.parse(wp('user','list','--fields=ID,user_login,user_email,display_name,roles','--format=json')),robin=users.find(u=>u.display_name==='Robin');expect(robin.user_email).toBe('');expect(robin.roles).toBe('subscriber');
  expect((await p.goto(origin+'/?unanym_probe=1')).status()).toBe(200);await expect(p.getByText('Membership accepted',{exact:true})).toBeVisible();
  pass('Email-code login creates a Subscriber without shared email; PHP verifies and accepts the selected organisation membership.');
@@ -100,11 +101,12 @@ try{
  // Remove only the WordPress session; keep the identity service's separate login.
  await member.clearCookies({domain:'localhost'});
  await p.goto(origin+'/wp-login.php');await p.getByRole('link',{name:'Continue with '+brand,exact:true}).click();
- await expect(p.getByLabel('Your name on this website')).toHaveValue('Robin');await expect(p.getByRole('checkbox')).toBeChecked();
+ await expect(p.getByLabel('Your name on this website')).toHaveValue('Robin');await expect(p.locator('input[name=memberships]')).toBeChecked();await expect(p.locator('input[name=confirmations]')).toBeChecked();
  await p.getByRole('button',{name:'Allow and continue'}).click();await expect(p.getByRole('heading',{name:'Welcome, Robin.',exact:true})).toBeVisible();
  expect(wp('user','list','--format=count')).toBe(userCount);expect(websiteIdentity()).toBe(linkedIdentity);
  expect((await p.goto(area)).status()).toBe(200);await expect(p.getByText(memberText,{exact:true})).toBeVisible();
- pass('A new WordPress login after replacement reuses the same account and starts with the saved name and membership choice.');
+ await p.goto(origin+'/?drop_member=1');await expect(p.getByText('Community introduction completed',{exact:true})).toBeVisible();
+ pass('A new WordPress login after replacement reuses the same account and starts with the saved name, membership and confirmation choices.');
  await organiser.getByRole('button',{name:'Revoke membership'}).click();expect((await p.goto(origin+'/?unanym_probe=1')).status()).toBe(403);await p.goto(origin+'/wp-admin/profile.php');await expect(p.locator('#wpadminbar')).toBeVisible();
  expect((await p.goto(area)).status()).toBe(403);expect(await p.content()).not.toContain(memberText);
  await organiser.getByLabel('Member email').fill('member@example.test');await organiser.getByRole('button',{name:'Approve membership',exact:true}).click();await organiser.getByRole('button',{name:'Revoke membership'}).waitFor();expect((await p.goto(origin+'/?unanym_probe=1')).status()).toBe(200);

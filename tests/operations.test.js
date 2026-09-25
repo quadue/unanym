@@ -4,7 +4,7 @@ import {mkdtempSync,writeFileSync,readFileSync,rmSync,statSync,existsSync} from 
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {execFileSync} from 'node:child_process';
-import {configuration} from '../src/config.js';
+import {registeredClients,configuration} from '../src/config.js';
 import {openStore,disconnect} from '../src/store.js';
 import {validateAccountAdapter} from '../src/accounts.js';
 import {fixture} from '../scripts/fixture.js';
@@ -24,6 +24,8 @@ test('WordPress registration requires this operator’s origin and never changes
   assert.ok(proposed.client_secret.length>=32);assert.equal(statSync(join(out,'website-setup.json')).mode&0o777,0o600);
   assert.equal(readFileSync(registry,'utf8'),'[]');
   assert.throws(()=>execFileSync(process.execPath,args,{env,stdio:'pipe'}));
+  const nested=join(dir,'nested');execFileSync(process.execPath,['scripts/prepare-wordpress-client.js','nested-site','Nested website','https://community.example/sub/wp-admin/admin-ajax.php?action=openid-connect-authorize',nested],{env,stdio:'pipe'});
+  const registration=JSON.parse(readFileSync(join(nested,'clients.json')))[0];assert.equal(registration.homepage,'https://community.example/sub/');assert.equal(registration.sharing_uri,'https://community.example/sub/?unanym_share=1');
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
 
@@ -87,4 +89,10 @@ test('WordPress staging package includes the exact verifier and current setup co
  for(const file of ['drop-identity.php','memberships.php','member-area.php','member.css'])assert.equal(Buffer.from(zip['drop-identity/'+file]).toString(),readFileSync('integrations/wordpress/drop-identity/'+file,'utf8'));
  assert.match(Buffer.from(zip['drop-identity/CONTRACT.md']).toString(),/Community identity profile 1/);
  assert.match(Buffer.from(zip['drop-identity/SETUP.md']).toString(),/Standalone operator pilot/);
+});
+
+test('a sharing link stays on the registered website, including subdirectory WordPress installs',()=>{
+ const c={client_id:'example',name:'Example',homepage:'https://website.example/community/',sharing_uri:'https://website.example/community/?unanym_share=1',redirect_uris:['https://website.example/community/wp-admin/admin-ajax.php?action=openid-connect-authorize']};
+ assert.doesNotThrow(()=>registeredClients([structuredClone(c)]));
+ for(const sharing_uri of ['https://unrelated.example/','javascript:alert(1)','https://user:password@website.example/','https://website.example/#secret'])assert.throws(()=>registeredClients([{...c,sharing_uri}]));
 });

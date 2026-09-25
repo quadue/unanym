@@ -3,9 +3,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 lab_name="${UNANYM_LAB_NAME:-drop-identity}"
-case "$lab_name" in drop-identity|unanym-standalone|frrn-frontpage|unanym-frrn) ;; *) echo 'Unknown lab name' >&2; exit 1 ;; esac
+case "$lab_name" in drop-identity|unanym-standalone|frrn-frontpage|unanym-frrn|unanym-second) ;; *) echo 'Unknown lab name' >&2; exit 1 ;; esac
 wp_port="${UNANYM_WP_PORT:-4082}"
 db_port="${UNANYM_DB_PORT:-43306}"
+wp_host="${UNANYM_WP_HOST:-localhost}"
+[[ "$wp_host" = localhost || "$wp_host" = 127.0.0.1 ]]
 [[ "$wp_port" =~ ^[0-9]{4,5}$ && "$db_port" =~ ^[0-9]{4,5}$ ]]
 lab_root="$PWD/data/${lab_name}-wordpress-lab"
 if [ "$lab_name" = drop-identity ]; then lab_root="$PWD/data/wordpress-lab"; fi
@@ -55,6 +57,6 @@ for attempt in $(seq 1 40); do
 done
 docker cp "$lab_root/wp-cli.phar" ${lab_name}-wp:/usr/local/bin/wp-cli.phar
 docker cp "$lab_root/daggerhart-openid-connect-generic" ${lab_name}-wp:/var/www/html/wp-content/plugins/
-docker exec ${lab_name}-wp php /usr/local/bin/wp-cli.phar --allow-root core install --url=http://localhost:${wp_port} --title='Lakeside community' --admin_user=lab-admin --admin_password=local-demo-only-2026 --admin_email=admin@example.invalid --skip-email
+docker exec ${lab_name}-wp php /usr/local/bin/wp-cli.phar --allow-root core install --url=http://${wp_host}:${wp_port} --title='Lakeside community' --admin_user=lab-admin --admin_password=local-demo-only-2026 --admin_email=admin@example.invalid --skip-email
 docker exec ${lab_name}-wp php /usr/local/bin/wp-cli.phar --allow-root plugin activate daggerhart-openid-connect-generic drop-identity
-echo "Fictional WordPress ready at http://localhost:${wp_port}."
+echo "Fictional WordPress ready at http://${wp_host}:${wp_port}."

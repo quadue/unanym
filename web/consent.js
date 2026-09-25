@@ -1,6 +1,6 @@
 // A live receipt preview only. The issuer validates and enforces the form choices.
 const input=document.querySelector('#display-name');
-const memberships=[...document.querySelectorAll('input[name="memberships"]')];
+const memberships=[...document.querySelectorAll('input[name="memberships"], input[name="confirmations"]')];
 function preview(){
   document.querySelector('#consent-preview-name').textContent=input.value.trim()||'Your chosen name';
   const list=document.querySelector('#consent-preview-memberships');

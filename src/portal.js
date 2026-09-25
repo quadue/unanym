@@ -11,6 +11,8 @@ const ROOT=new URL('../',import.meta.url);
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 export const referenceDocs={
+  confirmations:{file:'docs/contracts/confirmations-v1.md',title:'Optional confirmations',summary:'One separately shared community introduction confirmation; no qualification or safety score.'},
+  simulation:{file:'docs/two-site-simulation.md',title:'Two-site simulation',summary:'Reproduce the fictional community and two WordPress sites; prepare a human trial.'},
   contract:{file:'docs/contracts/community-v1.md',title:'Identity v1 contract',summary:'What websites receive, the membership statement format and how the engine may be replaced.'},
   hosting:{file:'docs/standalone.md',title:'Standalone hosting',summary:'Run Unanym with its own email-code accounts and organisation administrators.'},
   'frrn-host':{file:'docs/frrn-host.md',title:'FRRN-backed hosting',summary:'Run Unanym beside FRRN, reading FRRN’s organiser approvals.'},
@@ -76,7 +78,8 @@ ${frrn?`<h2>Before you start</h2><p>Ask ${operator} to register your community a
 <h2>Choose memberships</h2><p>Tick only what you want this website to know. Memberships you leave unticked, and your other communities, stay private. The website then decides what a membership lets you do there.</p>
 <h2>If no memberships appear</h2><p>You can still choose a name and connect. Your organiser needs to approve your membership${frrn?' and the operator needs to register the community as a source':''} before it can appear here. Joining a community alone does not make its membership available to websites.</p>
 <h2>What every website receives</h2><ul><li>An identifier used only for that website</li><li>The name you chose for it</li><li>The memberships you ticked, each signed by the operator</li></ul><p>A website never receives your email address, your account, memberships you did not tick, or the identifiers other websites know you by.</p>
-<h2>Change what you share</h2><p>WordPress sites show the choice screen each time you sign in, so you can change your name or memberships then. On other websites, disconnect below and connect again.</p>
+<h2>Optional confirmations</h2><p>If your website supports them, you can separately share <strong>Community introduction completed</strong>, with the organisation that confirmed it. It is not selected automatically and does not certify training or safety.</p>
+<h2>Change what you share</h2><p>Choose <strong>Change sharing</strong> on a connected website or in My connections when available. WordPress also shows your choices each time you sign in. On other websites, disconnect below and connect again.</p>
 <h2>See and disconnect websites</h2><p><a href="${account}/sites">My connections</a> lists each website, the name it received and the memberships you shared. <strong>Disconnect</strong> stops new access at once; sign-in tokens already issued expire within five minutes. A website keeps what it already received, under its own rules. <strong>Download my signed record</strong> gives you the signed history of your choices for that website.</p>
 <h2>Who can connect the dots</h2><p>The service gives websites separate identifiers. ${operator[0].toUpperCase()+operator.slice(1)} holds the keys and can link your identities across websites, even when you use different names and share different memberships. A name or detail you share can still make you recognisable.</p>`,
     websites:()=>`<h1>For website owners</h1><p class="doc-lead">Let members sign in with ${brand} and open a members-only page for people an organisation has approved. You decide which organisations your site recognises.</p>

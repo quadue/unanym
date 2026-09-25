@@ -37,6 +37,7 @@ export async function consentReceipt(db,person,choice,config={}) {
   const event=await mintNode(person.signer,{face:'object',name:choice.active?'Website sharing permission':'Website disconnected',body:{
     schema:standalone?'community.identity.consent.v1':'drop.identity.consent.v1',website:person.client,displayName:choice.name,
     sharedCommunities:choice.memberships,permission:choice.active?'share':'withdraw',
+    ...(standalone&&choice.confirmations?{sharedConfirmations:choice.confirmations}:{}),
     custody:standalone?'operator':'pact-hosted',...(standalone?{operator:config.issuer}:{}),explanation:standalone?'Signed by the operator on the account holder’s request. The operator holds this website-specific key.':'Signed by Firn on the account holder’s request. The service holds this website-specific key.'
   }});
   db.prepare('INSERT INTO receipts(account,client,event) VALUES (?,?,?)').run(person.account,person.client,JSON.stringify(event));

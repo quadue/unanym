@@ -40,3 +40,11 @@ member journey. The [portability acceptance plan](portability.md) distinguishes
 automated local replacement from an independent operator's restore and a future
 two-homeserver test. Neither a signature nor a portable storage key alone proves
 continuous website accounts, current access or recoverability.
+
+## 0.4.0-rc.1 simulation boundary
+
+The candidate adds a separately chosen community introduction confirmation and
+an automated two-WordPress-site rehearsal. It does not make either source public,
+register real organisations/sites or establish unassisted usability. Review the
+new confirmation authority/disclosure paths with the existing auth review before
+public release. Keep the extension disabled for receiving sites until configured.

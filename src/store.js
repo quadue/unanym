@@ -10,6 +10,7 @@ export function openStore(path) {
     CREATE TABLE IF NOT EXISTS personas (account TEXT NOT NULL, client TEXT NOT NULL, subject TEXT NOT NULL UNIQUE, private_key TEXT NOT NULL, identity_event TEXT NOT NULL, PRIMARY KEY(account,client));
     CREATE TABLE IF NOT EXISTS connections (account TEXT NOT NULL, client TEXT NOT NULL, name TEXT NOT NULL, memberships TEXT NOT NULL, grant_id TEXT, active INTEGER NOT NULL, updated TEXT NOT NULL, PRIMARY KEY(account,client));
     CREATE TABLE IF NOT EXISTS receipts (id INTEGER PRIMARY KEY, account TEXT NOT NULL, client TEXT NOT NULL, event TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS confirmation_choices (account TEXT NOT NULL,client TEXT NOT NULL,selected TEXT NOT NULL,PRIMARY KEY(account,client));
   `);
   return db;
 }
@@ -39,7 +40,7 @@ export function adapterFor(db) {
 
 export function connection(db,account,client) {
   const row=db.prepare('SELECT * FROM connections WHERE account=? AND client=?').get(account,client);
-  return row ? {...row,memberships:JSON.parse(row.memberships)} : null;
+  return row ? {...row,memberships:JSON.parse(row.memberships),confirmations:JSON.parse(db.prepare('SELECT selected FROM confirmation_choices WHERE account=? AND client=?').get(account,client)?.selected??'[]')} : null;
 }
 
 export function disconnect(db,account,client,{keepInteraction=''}={}) {
@@ -49,5 +50,6 @@ export function disconnect(db,account,client,{keepInteraction=''}={}) {
     db.prepare("DELETE FROM oidc WHERE json_extract(payload,'$.accountId')=? AND json_extract(payload,'$.clientId')=? AND NOT(model='Interaction' AND id=?)").run(account,client,keepInteraction);
     if(keepInteraction)db.prepare("UPDATE oidc SET payload=json_remove(payload,'$.grantId') WHERE model='Interaction' AND id=?").run(keepInteraction);
     db.prepare('UPDATE connections SET active=0, grant_id=NULL, updated=? WHERE account=? AND client=?').run(new Date().toISOString(),account,client);
+    db.prepare('DELETE FROM confirmation_choices WHERE account=? AND client=?').run(account,client);
   })();
 }

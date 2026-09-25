@@ -10,6 +10,7 @@ import {randomBytes,createHash} from 'node:crypto';
 import {standaloneAccounts} from '../src/standalone/accounts.js';
 import {createStandalone} from '../src/standalone/server.js';
 import {configuration} from '../src/config.js';
+import {verifyConfirmation} from '../src/confirmation-contract.js';
 import {verifyMembership,membershipKey} from '../src/community-contract.js';
 
 test('email codes are browser-bound, one-use, limited, expiring and survive restart',async()=>{
@@ -63,7 +64,7 @@ test('standalone browser: email code, admin approval, consent, signed UserInfo, 
   const dir=mkdtempSync(join(tmpdir(),'unanym-flow-')),mail=new Map();
   const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));
   const origin='http://127.0.0.1:'+server.address().port,callback=origin+'/test/callback',client='test-website';
-  const registry=join(dir,'clients.json');writeFileSync(registry,JSON.stringify([{client_id:client,name:'Test community website',description:'Fictional test only',homepage:origin,redirect_uris:[callback]}]));
+  const registry=join(dir,'clients.json');writeFileSync(registry,JSON.stringify([{client_id:client,name:'Test community website',description:'Fictional test only',allow_confirmations:true,homepage:origin,redirect_uris:[callback]}]));
   const config=configuration({IDENTITY_CONTRACT:'community-v1',IDENTITY_ORIGIN:origin,IDENTITY_OPERATOR_NAME:'Test operator',IDENTITY_DISPLAY_NAME:'Harbour',IDENTITY_CLIENTS:registry,IDENTITY_DATA_DIR:dir});
   let service=createStandalone(config,{bootstrapEmail:'operator@example.test',sendCode:async m=>mail.set(m.email,m.code)});
   service.app.get('/test/callback',(_req,res)=>res.send('Returned to website'));
@@ -79,18 +80,31 @@ test('standalone browser: email code, admin approval, consent, signed UserInfo, 
     await operator.getByLabel('Organisation name').fill('Test circle');await operator.getByLabel('Administrator email').fill('admin@example.test');await operator.getByLabel('Authorisation reference').fill('Fictional appointment for this automated test');await operator.getByRole('button',{name:'Register organisation',exact:true}).click();await operator.waitForURL('**/identity/account');
     const admin=await browser.newPage();await login(admin,'admin@example.test');await admin.getByRole('link',{name:'Test circle',exact:true}).click();
     await admin.getByLabel('Member email').fill('member@example.test');await admin.getByRole('button',{name:'Approve membership',exact:true}).click();await admin.getByText('member@example.test',{exact:true}).waitFor();
+    await admin.getByText('Community introductions',{exact:true}).click();await admin.getByRole('button',{name:'Confirm introduction',exact:true}).click();
     const member=await browser.newPage();await login(member,'member@example.test');assert.equal(await member.getByText('Test circle',{exact:true}).count(),1);
     assert.equal((await (await fetch(origin+'/identity/presentation')).json()).display_name,'Harbour');
     const discovery=await (await fetch(config.issuer+'/.well-known/openid-configuration')).json();assert(discovery.scopes_supported.includes('memberships.v1'));assert(!discovery.scopes_supported.includes('drop_memberships'));
     const verifier=randomBytes(32).toString('base64url');
-    const auth=new URL(discovery.authorization_endpoint);auth.search=new URLSearchParams({client_id:client,redirect_uri:callback,response_type:'code',scope:'openid profile identity.v1 memberships.v1',state:'bound-in-test',nonce:'test-nonce',code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256'});
-    await member.goto(auth.href);await member.getByLabel('Your name on this website').fill('Robin');await member.getByRole('checkbox').check();await member.getByRole('button',{name:'Allow and continue'}).click();await member.waitForURL('**/test/callback?**');
+    const auth=new URL(discovery.authorization_endpoint);auth.search=new URLSearchParams({client_id:client,redirect_uri:callback,response_type:'code',scope:'openid profile identity.v1 memberships.v1 confirmations.v1',state:'bound-in-test',nonce:'test-nonce',code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256'});
+    await member.goto(auth.href);
+    assert.equal(await member.locator('.consent-details').evaluate(d=>d.open),false);await member.locator('.consent-details summary').click();assert.equal(await member.locator('.consent-details').evaluate(d=>d.open),true);await member.locator('.consent-details summary').click();
+    const form=member.locator('form[action$="/confirm"]'),action=await form.getAttribute('action'),csrf=await form.locator('[name=csrf]').inputValue();
+    const selectedConfirmation=await member.locator('input[name=confirmations]').inputValue();
+    for(const value of ['someone-elses-introduction',selectedConfirmation]){
+      config.clients[0].allow_confirmations=value!==selectedConfirmation;
+      const rejected=await member.request.post(origin+action,{headers:{Origin:origin},form:{csrf,name:'Robin',confirmations:value}});assert.equal(rejected.status(),400);
+    }
+    config.clients[0].allow_confirmations=true;
+    await member.getByLabel('Your name on this website').fill('Robin');await member.locator('input[name=memberships]').check();assert.equal(await member.locator('input[name=confirmations]').isChecked(),false);await member.locator('input[name=confirmations]').check();await member.getByRole('button',{name:'Allow and continue'}).click();await member.waitForURL('**/test/callback?**');
     const returned=new URL(member.url());assert.equal(returned.searchParams.get('state'),'bound-in-test');
     const tokenResponse=await fetch(discovery.token_endpoint,{method:'POST',body:new URLSearchParams({grant_type:'authorization_code',client_id:client,redirect_uri:callback,code:returned.searchParams.get('code'),code_verifier:verifier})});assert.equal(tokenResponse.status,200);const tokens=await tokenResponse.json();
     const info=()=>fetch(discovery.userinfo_endpoint,{headers:{Authorization:'Bearer '+tokens.access_token}});
     const claims=await (await info()).json();assert.equal(claims.name,'Robin');assert.equal(claims.identity_v1.custody,'operator');assert.equal(claims.memberships_v1.statements.length,1);assert.equal(JSON.stringify(claims).includes('member@example.test'),false);assert.equal(claims.drop_identity,undefined);
     const organisation=service.accounts.db.prepare('SELECT id FROM organisations').get().id;
     const publicKey=await membershipKey(config.keys.drop);const proof=await verifyMembership(claims.memberships_v1.statements[0],{signer:config.issuer,organisationId:organisation,subject:claims.sub,audience:client,mode:'operator_attested',publicKey});assert.equal(proof.organisation.name,'Test circle');
+    assert.equal(claims.confirmations_v1.statements.length,1);await verifyConfirmation(claims.confirmations_v1.statements[0],{signer:config.issuer,organisationId:organisation,subject:claims.sub,audience:client,publicKey});
+    await admin.getByText('Community introductions',{exact:true}).click();await admin.getByRole('button',{name:'Withdraw confirmation',exact:true}).click();const withdrawn=await (await info()).json();assert.equal(withdrawn.confirmations_v1.statements.length,0);assert.equal(withdrawn.memberships_v1.statements.length,1);
+
     // The actual PHP consumer independently verifies the same operator-signed statement.
     const php=`define('ABSPATH',true);function drop_identity_b64($s){return rtrim(strtr(base64_encode($s),'+/','-_'),'=');}require 'integrations/wordpress/drop-identity/memberships.php';$v=json_decode(stream_get_contents(STDIN),true);echo json_encode(unanym_memberships($v['claim'],$v['sub'],$v['config']));`;
     const runPHP=input=>{

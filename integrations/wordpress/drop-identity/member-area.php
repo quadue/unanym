@@ -50,7 +50,7 @@ add_action('template_redirect',function(){
     if (!$id || ((int)get_query_var('page_id')!==$id && (int)get_queried_object_id()!==$id)) return;
     nocache_headers();if (!defined('DONOTCACHEPAGE')) define('DONOTCACHEPAGE',true);
     if (!is_user_logged_in() || !current_user_can('read_post',$id)) {
-        $message='<p>This member area requires a current, shared membership accepted by this website.</p><p><a href="'.esc_url(wp_login_url(unanym_member_area_url())).'">Sign in or update sharing</a></p>';
+        $message='<p>This page needs an approved membership shared with this website.</p><p><a href="'.esc_url(add_query_arg('unanym_share','1',home_url('/'))).'">Sign in or update sharing</a></p>';
         wp_die($message,'Membership required',['response'=>403]);
     }
 },0);

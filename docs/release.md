@@ -105,3 +105,30 @@ This is a same-workstation service replacement test, not a physical host move,
 an independent operator's recovery, a Pubky integration or real-member acceptance.
 No authentication logic, wire format, live issuer or member data changed.
 The [portability plan](portability.md) records the separate two-homeserver gate.
+
+## 0.4.0-rc.1 — separate confirmations and two websites — 2026-09-25
+
+Unreleased candidate. A community organiser can separately confirm completion
+of its introduction. The standalone account host and the optional FRRN source
+both support it. Each receiving client must opt in, and each member chooses
+whether to share the confirmation. The signed type is separate from membership;
+WordPress checks and displays it without granting a new role or qualification.
+
+A direct Change sharing action returns to the website's consent choices. The
+consent screen names its recipient before the choices, uses shorter main copy,
+and puts signing details in a native expandable disclosure. Phone and desktop
+screens were inspected using fictional accounts.
+
+Local verification passed 29 Node tests and 17 browser tests in Unanym, and 120
+Node tests plus both community browser journeys in FRRN. Additional targeted
+browser verification covered expanding the explanation and rejecting a forged
+or client-disabled confirmation selection. Two actual local WordPress sites
+passed 14 approval/disclosure/withdrawal checks; the independent standalone
+rehearsal passed 14 checks including two service restores with confirmation and
+sharing state. See `docs/evidence/two-wordpress-sites.json` and
+`docs/evidence/standalone-confirmation-restore.json`.
+
+These are synthetic software results, not independent human acceptance or real
+mail delivery. The runner uses isolated fictional databases. No live source or
+client was registered, no production deployment changed, and no public GitHub
+release was made. The existing independent-review and member-trial gates remain.

@@ -2,12 +2,13 @@
 /**
  * Plugin Name: Unanym for community websites
  * Description: Guided Unanym setup, PKCE, explicit account linking and connection checks for OpenID Connect Generic Client.
- * Version: 0.3.1
+ * Version: 0.4.0-rc.1
  * Requires PHP: 8.1
  * Requires Plugins: daggerhart-openid-connect-generic
  */
 if (!defined('ABSPATH')) exit;
 require_once __DIR__.'/memberships.php';
+require_once __DIR__.'/confirmations.php';
 require_once __DIR__.'/member-area.php';
 
 function drop_identity_config() { return get_option('drop_identity_config', []); }
@@ -45,6 +46,7 @@ function drop_identity_settings() {
         echo '</td></tr>';
     }
     echo '<tr><th><label for="unanym-organisations">Recognised organisation IDs</label></th><td><textarea id="unanym-organisations" name="organisations" rows="4" class="large-text">'.esc_textarea(implode("\n",$c['organisations']??[])).'</textarea><p class="description">One stable ID per line, supplied by the organisation and operator. Empty means sign-in only. The site recognises operator-attested approvals for these organisations.</p></td></tr>';
+    echo '<tr><th>Optional confirmations</th><td><label><input type="checkbox" name="confirmations" value="1" '.checked(!empty($c['confirmations']),true,false).'>Receive community introduction confirmations</label><p class="description">Members choose whether to share them. This does not change access rules. The operator must enable this extension for your website.</p></td></tr>';
     echo '</table>';submit_button('Check and save connection');echo '</form>';
     if ($c) echo '<p><strong>Settings saved.</strong> Open your sign-in page in a private browser window and choose Continue with '.esc_html(drop_identity_name()).'.</p>';
     if (!empty($c['membership_key']['kid'])) echo '<p>Operator membership key fingerprint: <code>'.esc_html($c['membership_key']['kid']).'</code>. Confirm it with the operator.</p>';
@@ -72,6 +74,8 @@ add_action('admin_post_drop_identity_setup', function() {
     if (($d['issuer']??'')!==$issuer || !in_array('S256',$d['code_challenge_methods_supported']??[],true) || !in_array('client_secret_post',$d['token_endpoint_auth_methods_supported']??[],true) || !in_array('refresh_token',$d['grant_types_supported']??[],true)) drop_identity_error('The operator must enable a server-side WordPress client with renewable sessions first.');
     foreach (['authorization_endpoint','token_endpoint','userinfo_endpoint','jwks_uri'] as $key) if (!is_string($d[$key]??null) || !str_starts_with($d[$key],$issuer.'/')) drop_identity_error('Unexpected endpoint in discovery. Ask the operator to check the configuration.');
     $v1=in_array('identity.v1',$d['scopes_supported']??[],true) && in_array('memberships.v1',$d['scopes_supported']??[],true);
+    $confirmations=!empty($_POST['confirmations']);
+    if ($confirmations && (!$v1 || !in_array('confirmations.v1',$d['scopes_supported']??[],true))) drop_identity_error('This identity service does not offer community confirmations.');
     $contract=$v1?'community-v1':'legacy-firn';$membership_key=null;
     if ($old && ($old['contract']??'legacy-firn')!==$contract && get_users(['meta_key'=>'drop_identity_issuer','number'=>1,'fields'=>'ID'])) drop_identity_error('Existing accounts use a different contract. Plan an explicit migration before changing it.');
     $organisations=array_values(array_unique(array_filter(array_map('trim',explode("\n",wp_unslash($_POST['organisations']??''))))));
@@ -94,13 +98,13 @@ add_action('admin_post_drop_identity_setup', function() {
     }
     if ($display_name==='') $display_name='FRRN';
     $settings=['login_type'=>'button','login_button_text'=>'Continue with '.$display_name,'client_id'=>$id,'client_secret'=>$secret,
-        'scope'=>$v1?'openid profile identity.v1 memberships.v1 offline_access':'openid profile drop_identity drop_memberships offline_access','endpoint_login'=>$d['authorization_endpoint'],'endpoint_token'=>$d['token_endpoint'],'endpoint_userinfo'=>$d['userinfo_endpoint'],'endpoint_jwks'=>$d['jwks_uri'],'issuer'=>$issuer,
+        'scope'=>$v1?'openid profile identity.v1 memberships.v1 offline_access'.($confirmations?' confirmations.v1':''):'openid profile drop_identity drop_memberships offline_access','endpoint_login'=>$d['authorization_endpoint'],'endpoint_token'=>$d['token_endpoint'],'endpoint_userinfo'=>$d['userinfo_endpoint'],'endpoint_jwks'=>$d['jwks_uri'],'issuer'=>$issuer,
         'endpoint_end_session'=>'','identity_key'=>'sub','nickname_key'=>'name','displayname_format'=>'{name}',
         // Satisfy the generic formatter, then discard this non-deliverable value before user creation.
         'email_format'=>'{sub}@identity.invalid','link_existing_users'=>0,'identify_with_username'=>0,'create_if_does_not_exist'=>1,
         'token_refresh_enable'=>0,'enable_logging'=>0,'no_sslverify'=>0,'allow_internal_idp'=>drop_identity_local()?1:0,'state_time_limit'=>600,'alternate_redirect_uri'=>0,'redirect_user_back'=>0];
     update_option('openid_connect_generic_settings',$settings,false);
-    update_option('drop_identity_config',['issuer'=>$issuer,'client_id'=>$id,'secret'=>$secret,'contract'=>$contract,'display_name'=>$display_name,'membership_key'=>$membership_key,'organisations'=>$organisations,'token_endpoint'=>$d['token_endpoint'],'userinfo_endpoint'=>$d['userinfo_endpoint']],false);
+    update_option('drop_identity_config',['issuer'=>$issuer,'client_id'=>$id,'secret'=>$secret,'contract'=>$contract,'confirmations'=>$confirmations,'display_name'=>$display_name,'membership_key'=>$membership_key,'organisations'=>$organisations,'token_endpoint'=>$d['token_endpoint'],'userinfo_endpoint'=>$d['userinfo_endpoint']],false);
     wp_safe_redirect(admin_url('options-general.php?page=drop-identity'));exit;
 });
 
@@ -213,7 +217,8 @@ add_action('init',function(){
     $claim=json_decode(wp_remote_retrieve_body($r),true);
     if (($claim['sub']??null)!==$d['sub']) drop_identity_end_session();
     if (($c['contract']??'legacy-firn')==='community-v1') {
-        try {$GLOBALS['unanym_current_memberships']=unanym_memberships($claim['memberships_v1']??null,$d['sub'],$c);}
+        try {$GLOBALS['unanym_current_memberships']=unanym_memberships($claim['memberships_v1']??null,$d['sub'],$c);
+          if(!empty($c['confirmations']))$GLOBALS['unanym_current_confirmations']=unanym_confirmations($claim['confirmations_v1']??['version'=>1,'statements'=>[]],$d['sub'],$c);}
         catch (RuntimeException $e) {drop_identity_error('Membership could not be verified. Please contact the website administrator.',503);}
     } else $GLOBALS['drop_identity_current_memberships']=$claim['drop_memberships']??[];
     nocache_headers();
@@ -227,6 +232,15 @@ add_filter('login_message',function($message){
 });
 
 // A calm member landing page; the ordinary WordPress admin screens stay familiar.
+// Start a fresh, browser-bound consent journey without making members find login.
+// This GET grants nothing: the identity service still requires explicit consent.
+add_action('template_redirect',function(){
+    if (!isset($_GET['unanym_share']) || !drop_identity_config()) return;
+    nocache_headers();
+    $url=do_shortcode('[openid_connect_generic_auth_url]');
+    if (!str_starts_with($url,drop_identity_config()['issuer'].'/')) drop_identity_error('The sign-in plugin is not ready. Ask the site administrator.');
+    wp_redirect($url);exit;
+},-1);
 add_filter('openid-connect-generic-client-redirect-to',function($url){
     if (!drop_identity_config()) return $url;
     return add_query_arg('drop_member','1',home_url('/'));
@@ -241,6 +255,6 @@ add_action('template_redirect',function(){
     if (!isset($_GET['drop_member']) || !drop_identity_config()) return;
     if (!is_user_logged_in()) {wp_safe_redirect(wp_login_url(add_query_arg('drop_member','1',home_url('/'))));exit;}
     $user=wp_get_current_user();nocache_headers();
-    ?><!doctype html><html <?php language_attributes(); ?>><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title><?php echo esc_html(get_bloginfo('name')); ?> — Your sign-in</title><link rel="stylesheet" href="<?php echo esc_url(plugins_url('member.css',__FILE__)); ?>"></head><body class="drop-member"><header><a href="<?php echo esc_url(home_url('/')); ?>"><?php echo esc_html(get_bloginfo('name')); ?></a></header><main><p class="drop-eyebrow">Your community website</p><h1>Welcome, <?php echo esc_html($user->display_name); ?>.</h1><p class="drop-lead">You’re signed in.</p><section class="drop-card"><h2>Your choice of what to share</h2><p>Your sign-in email address stays private. You can review your sharing choices or disconnect this website at any time.</p><a class="drop-button" href="<?php echo esc_url(home_url('/')); ?>">Visit the website <span aria-hidden="true">→</span></a><?php if ($member_area=unanym_member_area_url()) { ?><p><a class="drop-button" href="<?php echo esc_url($member_area); ?>">Open member area</a></p><?php } ?><p><a href="<?php echo esc_url(preg_replace('#/oidc$#','/sites',drop_identity_config()['issuer'])); ?>">Manage what I share</a></p></section><p class="drop-quiet">Signing in does not confirm training or change this community’s membership rules.</p><footer><a href="<?php echo esc_url(wp_logout_url(home_url('/'))); ?>">Sign out of this website</a><a href="<?php echo esc_url(admin_url('profile.php')); ?>">Account details</a></footer></main></body></html><?php
+    ?><!doctype html><html <?php language_attributes(); ?>><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title><?php echo esc_html(get_bloginfo('name')); ?> — Your sign-in</title><link rel="stylesheet" href="<?php echo esc_url(plugins_url('member.css',__FILE__)); ?>"></head><body class="drop-member"><header><a href="<?php echo esc_url(home_url('/')); ?>"><?php echo esc_html(get_bloginfo('name')); ?></a></header><main><p class="drop-eyebrow">Your community website</p><h1>Welcome, <?php echo esc_html($user->display_name); echo preg_match('/[.!?…]$/u',$user->display_name)?'':'.'; ?></h1><p class="drop-lead">You’re signed in.</p><section class="drop-card"><?php if (!empty($GLOBALS['unanym_current_confirmations'])) { ?><h2>Shared confirmations</h2><ul><?php foreach ($GLOBALS['unanym_current_confirmations'] as $confirmation) { ?><li><strong>Community introduction completed</strong><br>Confirmed by <?php echo esc_html($confirmation['organisation']['name']); ?><br><small>Signed by the identity service operator</small></li><?php } ?></ul><?php } ?><h2>Your choice of what to share</h2><p>Your sign-in email address stays private. You can review your sharing choices or disconnect this website at any time.</p><a class="drop-button" href="<?php echo esc_url(home_url('/')); ?>">Visit the website <span aria-hidden="true">→</span></a><?php if ($member_area=unanym_member_area_url()) { ?><p><a class="drop-button" href="<?php echo esc_url($member_area); ?>">Open member area</a></p><?php } ?><p><a href="<?php echo esc_url(add_query_arg('unanym_share','1',home_url('/'))); ?>">Change sharing for this website</a></p><p><a href="<?php echo esc_url(preg_replace('#/oidc$#','/sites',drop_identity_config()['issuer'])); ?>">Manage what I share</a></p></section><p class="drop-quiet">Signing in does not confirm training or change this community’s membership rules.</p><footer><a href="<?php echo esc_url(wp_logout_url(home_url('/'))); ?>">Sign out of this website</a><a href="<?php echo esc_url(admin_url('profile.php')); ?>">Account details</a></footer></main></body></html><?php
     exit;
 });
