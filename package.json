@@ -1,6 +1,6 @@
 {
   "name": "unanym",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "type": "module",
   "description": "Independently hosted community identity, selective disclosure and WordPress sign-in.",

@@ -61,3 +61,26 @@ No wire contract, claim, scope, key or account mapping changed. New Node tests
 cover the renderer's escaping, every guide and reference route, and a browser run
 of the example (consent, verified claims, refusal of a reused or forged callback,
 and a declined change). This is software acceptance with fictional accounts.
+
+## 0.3.1 developer starting paths — 2026-09-25
+
+The overview now leads with member-controlled names and membership sharing, with
+immediate routes to the example, WordPress setup and independent hosting. The
+existing four screenshots and installation-specific guides remain. The Unanym
+wordmark returns to its own overview.
+
+Guides have section links that work without JavaScript. Commands and the download
+checksum have copy controls, with text selection if the clipboard is unavailable.
+Member guidance explains why an approved membership might not be available, and
+the example explains that its identity service still records sharing choices.
+The contract states explicitly that the operator can link website identities.
+
+Only the companion's package version and bundled documentation change; WordPress
+access logic, authentication, account mappings and the membership contract format
+are unchanged.
+
+Validation: 26 Node tests and 17 Chromium tests passed, plus the nine-check
+FRRN-to-WordPress rehearsal with fictional accounts. Portal checks include
+320px layouts, guide links without JavaScript, exact clipboard copying and its
+selection fallback. The mobile contents adjustment passed the portal checks
+again after the full suite.

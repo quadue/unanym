@@ -2,6 +2,7 @@ import {readFileSync} from 'node:fs';
 import {renderMarkdown} from './markdown.js';
 import {displayName,developerURL} from './presentation.js';
 import {exampleClient,exampleURL} from './example-site.js';
+import {documentLayout} from './docs-layout.js';
 
 // Audience guides and rendered reference documents for community-v1 hosts.
 // Guides describe the implemented behaviour only; FRRN-backed and standalone
@@ -28,7 +29,7 @@ function shell(config,{title,body,current}) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="color-scheme" content="dark"><title>${escape(title)} · Unanym</title><link rel="stylesheet" href="${base}/assets/front.css"><link rel="icon" href="${base}/assets/front-mark.svg" type="image/svg+xml"></head>
 <body class="developer"><a class="skip" href="#main">Skip to content</a><header class="site-header"><a class="wordmark" href="${escape(developerURL(config))}">unanym</a><nav class="doc-nav" aria-label="Documentation">${nav}<a href="${escape(home)}">${brand} ↗</a></nav></header><main id="main">
 ${body}
-</main><footer class="site-footer"><span>Unanym · identity integration</span><a href="${escape(home)}">Back to ${brand}</a></footer></body></html>`;
+</main><footer class="site-footer"><span>Unanym · identity integration</span><a href="${escape(home)}">Back to ${brand}</a></footer><script type="module" src="${base}/assets/developer.js"></script></body></html>`;
 }
 
 export function docsIndex(config) {
@@ -36,7 +37,7 @@ export function docsIndex(config) {
   const summaries={organisers:'Approve who belongs, and end an approval.',members:'Choose your name and what each website sees. Disconnect when you want.',websites:'Connect a WordPress site and open a members-only page.',operators:'Run the service, register websites, back up and recover.'};
   const reference=Object.entries(referenceDocs).filter(([key])=>key!==(config.accountSource==='frrn'?'hosting':'frrn-host'));
   const example=exampleClient(config)?`<p class="dev-note">Want to see it first? <a href="${escape(exampleURL(config))}">Try the example website</a>.</p>`:'';
-  return shell(config,{title:'Guides',current:'guides',body:`<section class="hero"><div><p class="eyebrow">Guides</p><h1>Three decisions,<br>three people.</h1><p>An organisation approves a membership. A member chooses which websites receive it. Each website decides what it allows. Each guide covers one role.</p></div></section>
+  return shell(config,{title:'Guides',current:'guides',body:`<section class="hero"><div><p class="eyebrow">Guides</p><h1>What would you<br>like to do?</h1><p>Connect a website, manage memberships, choose what to share or run the service.</p></div></section>
 <div class="guide-grid">${guides.map(name=>`<a class="dev-panel guide-card" href="${docs}${name}"><h2>${guideTitles[name]}</h2><p>${summaries[name]}</p></a>`).join('')}</div>
 <section class="doc-reference"><h2>Reference</h2><ul>${reference.map(([key,doc])=>`<li><a href="${docs}${key}">${doc.title}</a><span>${doc.summary}</span></li>`).join('')}</ul></section>${example}`});
 }
@@ -46,7 +47,7 @@ export function referencePage(config,key) {
   const source=readFileSync(new URL(doc.file,ROOT),'utf8');
   const raw={contract:'community-v1.md',hosting:'standalone.md'}[key];
   const base=config.basePath??'/identity';
-  return shell(config,{title:doc.title,current:key==='contract'?'contract':'guides',body:`<article class="doc">${renderMarkdown(source,{links})}${raw?`<p class="doc-source"><a href="${base}/docs/${raw}">Plain-text version</a></p>`:''}</article>`});
+  return shell(config,{title:doc.title,current:key==='contract'?'contract':'guides',body:documentLayout(`${renderMarkdown(source,{links})}${raw?`<p class="doc-source"><a href="${base}/docs/${raw}">Plain-text version</a></p>`:''}`)});
 }
 
 export function guidePage(config,name) {
@@ -73,12 +74,14 @@ ${frrn?`<h2>Before you start</h2><p>Ask ${operator} to register your community a
 <h2>Connect a website</h2><p>On a participating website, choose <strong>Continue with ${brand}</strong>. Sign in if asked${frrn?' with your FRRN account':' with a code sent to your email address'}. Before anything is shared, you see exactly what this website will receive.</p>
 <h2>Choose a name for this website</h2><p>A first name or a pseudonym is enough. Each website can know you by a different name.</p>
 <h2>Choose memberships</h2><p>Tick only what you want this website to know. Memberships you leave unticked, and your other communities, stay private. The website then decides what a membership lets you do there.</p>
+<h2>If no memberships appear</h2><p>You can still choose a name and connect. Your organiser needs to approve your membership${frrn?' and the operator needs to register the community as a source':''} before it can appear here. Joining a community alone does not make its membership available to websites.</p>
 <h2>What every website receives</h2><ul><li>An identifier used only for that website</li><li>The name you chose for it</li><li>The memberships you ticked, each signed by the operator</li></ul><p>A website never receives your email address, your account, memberships you did not tick, or the identifiers other websites know you by.</p>
 <h2>Change what you share</h2><p>WordPress sites show the choice screen each time you sign in, so you can change your name or memberships then. On other websites, disconnect below and connect again.</p>
 <h2>See and disconnect websites</h2><p><a href="${account}/sites">My connections</a> lists each website, the name it received and the memberships you shared. <strong>Disconnect</strong> stops new access at once; sign-in tokens already issued expire within five minutes. A website keeps what it already received, under its own rules. <strong>Download my signed record</strong> gives you the signed history of your choices for that website.</p>
-<h2>Who can connect the dots</h2><p>Websites cannot link your accounts through this service. ${operator[0].toUpperCase()+operator.slice(1)} holds the keys and can link your identities across websites, even when you use different names and share different memberships. A name or detail you share can still make you recognisable.</p>`,
+<h2>Who can connect the dots</h2><p>The service gives websites separate identifiers. ${operator[0].toUpperCase()+operator.slice(1)} holds the keys and can link your identities across websites, even when you use different names and share different memberships. A name or detail you share can still make you recognisable.</p>`,
     websites:()=>`<h1>For website owners</h1><p class="doc-lead">Let members sign in with ${brand} and open a members-only page for people an organisation has approved. You decide which organisations your site recognises.</p>
 <h2>What you need</h2><ul><li>WordPress with PHP 8.1 or newer and the Sodium extension</li><li>The <strong>OpenID Connect Generic Client</strong> plugin (tested with 3.11.3)</li><li>The Unanym companion plugin, from the <a href="${escape(developerURL(config))}">download on the overview page</a></li><li>A staging copy of your site to test on first</li></ul>
+<h2>Who registers your website?</h2><p>An operator runs the identity service and registers the websites it connects. This installation is run by ${escape(config.operatorName||'its service operator')}. Agree registration with the person providing your community’s identity service before entering connection settings. Downloading the plugin does not register your site.</p><p>If you want to run a separate service for your community, start with <a href="${docs}operators">the operator guide</a>.</p>
 <h2>Connect your site</h2><ol><li>Install both plugins on the staging site.</li><li>In <strong>Settings → Unanym</strong>, copy the callback address and send it to the operator. They register your site and send you a client ID and secret through a private channel.</li><li>Enter the issuer <code>${issuer}</code>, the client ID and the secret, and save. The plugin records the operator’s membership key; check its fingerprint with the operator.</li><li>Add the ID of each organisation your site recognises. The operator or the organisation gives you these. With none added, members can sign in but share no memberships with your site.</li></ol>
 <h2>Open a members-only page</h2><ol><li>Create a page and set its visibility to <strong>Private</strong>.</li><li>In <strong>Settings → Unanym</strong>, choose that page and the organisation it requires, and save the member area.</li><li>Members who share that membership see <strong>Open member area</strong> after signing in.</li></ol>
 <p>Access is checked on every visit and is never a permanent role. The page stays private if the companion is disabled, and cannot be published by accident while it is the member area. Your editors and administrators keep their usual access.</p>
@@ -96,6 +99,6 @@ ${frrn?`<h2>Before you start</h2><p>Ask ${operator} to register your community a
 <h2>Check the service</h2><p><code>${base}/health</code> reports the service, its version and its contract.</p>
 <h2>Before real members</h2><p>Name a security contact, test email delivery to real inboxes, and record each organisation’s actual appointment of its approvers. Tests and fictional rehearsals do not establish any of these.</p>`
   }[name];
-  return shell(config,{title:guideTitles[name],current:'guides',body:`<article class="doc">${body()}<p class="doc-source"><a href="${docs}">All guides</a></p></article>`});
+  return shell(config,{title:guideTitles[name],current:'guides',body:documentLayout(`${body()}<p class="doc-source"><a href="${docs}">All guides</a></p>`)});
 }
 export const guideNames=guides;

@@ -19,6 +19,8 @@ legacy issuer retains its legacy profile. There is no mixed-profile upgrade at o
 | `identity.v1` | `identity_v1` | `{version:1, public_key:<Ed25519 hex>, custody:"operator", operator:{id:<issuer>, name:<display label>}}` |
 | `memberships.v1` | `memberships_v1` | `{version:1, statements:[<compact signed JWT>, ...]}` containing only selected, currently approved memberships |
 
+The service operator can link a member's identities across websites connected to this service, even when the member uses different names and shares different memberships.
+
 The operator custodies the website key even if the member signs in through Ring.
 Sign-in method does not change key custody or authorise publication of a Pubky
 identifier. A later holder-key profile requires a separate proof and custody

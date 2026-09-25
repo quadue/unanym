@@ -49,7 +49,7 @@ test('guides and reference documents render for a community-v1 host, with the op
     }
     assert.match((await get('/identity/docs/members')).text,/The operator \(Test &lt;operator&gt;\)/);
     assert.match((await get('/identity/docs/organisers')).text,/Revoke membership/,'a standalone host describes its own administrator screens');
-    const contract=await get('/identity/docs/contract');assert.match(contract.text,/<h2 id="changing-the-underlying-engine">/);
+    const contract=await get('/identity/docs/contract');assert.match(contract.text,/<h2 id="changing-the-underlying-engine" tabindex="-1">/);
     for(const name of ['hosting','frrn-host','release-notes'])assert.equal((await get('/identity/docs/'+name)).status,200);
     assert.match((await get('/identity/docs/community-v1.md')).type,/text\/plain/,'the raw contract stays available');
     assert.equal((await (await fetch(h.origin+'/identity/health')).json()).version,version);
@@ -83,5 +83,51 @@ test('the hosted example is a real receiving site: consent, verified claims, no 
     assert.equal(await page.getByLabel('Your name on this website').inputValue(),'Robin','a change starts from the previous choice');
     await page.getByRole('button',{name:'Not now'}).click();await page.waitForURL('**/identity/example/callback**');
     assert.equal(await page.locator('h1').innerText(),'You chose not to connect.');
+  }finally{await browser.close();await h.close();}
+});
+
+test('developer paths and guide contents work on a phone with and without scripts',async()=>{
+  const h=await host(),browser=await chromium.launch();
+  try{
+    for(const javaScriptEnabled of [false,true]){
+      const context=await browser.newContext({javaScriptEnabled,viewport:{width:320,height:740}});
+      const page=await context.newPage();
+      await page.goto(h.origin+'/identity/developers');
+      await page.getByRole('link',{name:'unanym',exact:true}).click();
+      assert.equal(new URL(page.url()).pathname,'/identity/developers','the component wordmark keeps visitors in its own site');
+      await page.getByRole('link',{name:'Get started',exact:true}).click();
+      assert.equal(new URL(page.url()).hash,'#get-started');
+      await page.getByRole('link',{name:'WordPress setup →'}).click();
+      await page.getByText('On this page',{exact:true}).click();
+      await page.getByRole('navigation',{name:'On this page'}).getByRole('link',{name:'Who registers your website?'}).click();
+      assert.equal(new URL(page.url()).hash,'#who-registers-your-website');
+      assert.equal(await page.locator('#who-registers-your-website').count(),1);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+      await page.goto(h.origin+'/identity/docs/contract');
+      await page.getByText('On this page',{exact:true}).click();
+      const targets=await page.getByRole('navigation',{name:'On this page'}).locator('a').evaluateAll(links=>links.map(a=>a.hash.slice(1)));
+      assert.ok(targets.length>3);
+      for(const target of targets)assert.equal(await page.locator('[id="'+target+'"]').count(),1);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+      await context.close();
+    }
+  }finally{await browser.close();await h.close();}
+});
+
+test('copy controls copy exact commands and provide a selection fallback when clipboard is unavailable',async()=>{
+  const h=await host(),browser=await chromium.launch();
+  try{
+    const context=await browser.newContext({permissions:['clipboard-read','clipboard-write']});
+    const page=await context.newPage();
+    await page.goto(h.origin+'/identity/developers');
+    await page.getByText('Try it locally with fictional members',{exact:true}).click();
+    await page.getByRole('button',{name:'Copy quickstart command'}).click();
+    await page.getByRole('status').filter({hasText:'Copied'}).waitFor();
+    assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),'npm run quickstart');
+    await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{value:{writeText:async()=>{throw Error('Unavailable');}}}));
+    await page.getByRole('button',{name:'Copy quickstart command'}).click();
+    await page.getByRole('status').filter({hasText:'Text selected.'}).waitFor();
+    assert.equal(await page.evaluate(()=>getSelection().toString()),'npm run quickstart');
+    await context.close();
   }finally{await browser.close();await h.close();}
 });

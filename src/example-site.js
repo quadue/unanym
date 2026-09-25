@@ -102,7 +102,7 @@ function shell(config,title,body) {
   const base=config.basePath??'/identity';
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="robots" content="noindex,nofollow"><title>${escape(title)} · Example website</title><link rel="stylesheet" href="${base}/assets/style.css"></head><body class="example-site">
   <a class="skip" href="#main">Skip to content</a><header><a class="brand" href="${base}/example/">Example website <span class="brand-sub">a demonstration receiving site</span></a></header>
-  <main id="main">${body}</main><footer><span>Run by ${escape(config.operatorName)} to show what a website receives. It keeps nothing after you leave this page.</span></footer></body></html>`;
+  <main id="main">${body}</main><footer><span>Run by ${escape(config.operatorName)}. This example keeps no member profile. The identity service records your connection and sharing choices.</span></footer></body></html>`;
 }
 
 function welcome(config,client) {
@@ -111,6 +111,7 @@ function welcome(config,client) {
   <p class="lead small">This example is registered with ${brand} the same way a community website is. Sign in, choose a name and any memberships to share, and this page shows what arrived.</p>
   <div class="actions"><a class="button" href="${base}/example/start">Continue with ${brand} →</a></div>
   <p class="help">You will see what is shared before you continue. Registered as “${escape(client.name)}”.</p>
+  <p class="help">No memberships yet? You can still try choosing a name. Memberships appear only when an approved record is available to share. <a href="${base}/docs/members#if-no-memberships-appear">How memberships become available</a>.</p>
   <h2>What stays out</h2><p>Your email, your ${brand} account, memberships you do not tick, and the identifiers other websites know you by.</p></section>`);
 }
 
@@ -125,7 +126,7 @@ function result(config,client,{claims,memberships}) {
   const list=memberships.length?'<ul class="example-received">'+memberships.map(m=>m.verified
     ?`<li><strong>${escape(m.proof.organisation.name)}</strong><small>Approved ${date(m.proof.membership.approved_at)} · ${m.proof.membership.valid_until?'until '+date(m.proof.membership.valid_until):'no scheduled end'} · signed by the operator, signature valid</small></li>`
     :`<li><strong>${escape(m.decoded?.organisation?.name??'Unrecognised statement')}</strong><small>Not verified by this example. It checks operator-signed statements only.</small></li>`).join('')+'</ul>'
-    :'<p>No memberships. You shared none, or none are approved for you yet.</p>';
+    :`<p>No memberships were shared. You chose none, or no approved membership is available yet. <a href="${base}/docs/members#if-no-memberships-appear">What to do next</a>.</p>`;
   const raw=JSON.stringify({...claims,memberships_v1:claims.memberships_v1&&{...claims.memberships_v1,statements:memberships.map(m=>m.proof??m.decoded??'unreadable')}},null,2);
   return shell(config,'What arrived',`<section class="narrow"><p class="eyebrow">Connected through ${brand}</p><h1>Hello, ${escape(claims.name)}.</h1>
   <p class="lead small">This is everything the example website received for this visit.</p>

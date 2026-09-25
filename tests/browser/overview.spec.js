@@ -70,8 +70,8 @@ test('front page without scripts retains the places and actual sign-in link',asy
 
 test('the footer opens Unanym integration docs, while sign-in stays FRRN',async({page})=>{
  await page.goto(front);await page.getByRole('link',{name:'Identity by Unanym',exact:false}).click();
- await expect(page).toHaveTitle('Unanym · Website integration');await expect(page.getByRole('heading',{name:'The identity system behind FRRN.'})).toBeVisible();
- await expect(page.getByRole('heading',{name:'Start with WordPress'})).toBeVisible();
+ await expect(page).toHaveTitle('Unanym · Website integration');await expect(page.getByRole('heading',{name:'Identity for community websites.'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Connect WordPress'})).toBeVisible();
  await page.getByRole('link',{name:'Hosting guide'}).click();await expect(page.locator('body')).toContainText('Standalone operator pilot');
  await page.goto(front);await page.getByRole('link',{name:'Sign in',exact:true}).click();await expect(page).toHaveTitle('Local demo sign-in · FRRN');
  await expect(page.getByRole('button',{name:'Continue as Robin'})).toBeVisible();

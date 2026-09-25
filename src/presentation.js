@@ -13,10 +13,10 @@ export function frontPage(config,{assets=(config.basePath??'/identity')+'/assets
 const release=()=>{try{return JSON.parse(readFileSync(new URL('../dist/release.json',import.meta.url),'utf8'));}catch{return {};}};
 export function developerPage(config,{assets=(config.basePath??'/identity')+'/assets/',home=config.accountSource==='frrn'?config.origin+'/':(config.basePath??'/identity')+'/'}={}) {
   const base=config.basePath??'/identity',built=release(),frrn=config.accountSource==='frrn';
-  return render(template('developers.html'),{assets,home,brand:displayName(config),issuer:config.issuer??'Supplied by your operator',
+  return render(template('developers.html'),{assets,home,developer_home:developerURL(config),brand:displayName(config),issuer:config.issuer??'Supplied by your operator',
     scopes:config.contract==='legacy-firn'?'openid profile drop_identity drop_memberships':'openid profile identity.v1 memberships.v1',
     contract:config.contract??'community-v1',wordpress_download:base+'/wordpress.zip',download_hidden:config.demo||config.wordpressDownload?'':'hidden',
-    documentation:base+'/docs/'+(frrn?'frrn-host':'hosting'),contract_doc:base+'/docs/contract',guides:base+'/docs/',websites_guide:base+'/docs/websites',
+    documentation:base+'/docs/'+(frrn?'frrn-host':'hosting'),contract_doc:base+'/docs/contract',guides:base+'/docs/',websites_guide:base+'/docs/websites',operators_guide:base+'/docs/operators',
     release_notes:base+'/docs/release-notes',version:built.version??'',wordpress_checksum:built.wordpress_sha256??'',
     tested_wordpress:built.tested?.wordpress??'',tested_generic:built.tested?.openid_connect_generic??'',
     example_url:exampleClient(config)?exampleURL(config):'',example_hidden:exampleClient(config)?'':'hidden',
