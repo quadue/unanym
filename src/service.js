@@ -170,7 +170,12 @@ export function createService(config,pact,{mountRoutes}={}) {
     disconnect(db,user.id,clientId,{keepInteraction:details.uid});
     const grant=new provider.Grant({accountId:user.id,clientId});
     grant.addOIDCScope(String(details.params.scope));
-    if(details.prompt.details.missingOIDCClaims)grant.addOIDCClaims(details.prompt.details.missingOIDCClaims);
+    // This is a replacement grant: "missing" describes only the difference
+    // from the previous grant. Include all explicitly requested claims, or a
+    // returning member gets sent through consent again for an already-shared name.
+    const requestedClaims=details.params.claims?JSON.parse(details.params.claims):{};
+    const claimNames=['id_token','userinfo'].flatMap(part=>Object.keys(requestedClaims[part]??{}));
+    grant.addOIDCClaims([...new Set([...claimNames,...(details.prompt.details.missingOIDCClaims??[])])]);
     const grantId=await grant.save();
     db.prepare('INSERT OR REPLACE INTO connections VALUES (?,?,?,?,?,?,?)').run(user.id,clientId,name,JSON.stringify(memberships),grantId,1,new Date().toISOString());
     await provider.interactionFinished(req,res,{consent:{grantId}},{mergeWithLastSubmission:true});

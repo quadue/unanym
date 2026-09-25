@@ -25,6 +25,7 @@ async function connect(page,{name='Robin',membership=false}={}){
 test('a standard explicit ID-token name request returns only the consented name',async({page})=>{
  await page.route(origin+'/identity/oidc/auth?**',async route=>{
   const url=new URL(route.request().url());url.searchParams.set('claims',JSON.stringify({id_token:{name:{essential:true}}}));
+  url.searchParams.set('prompt','consent');
   await route.continue({url:url.href});
  });
  const response=page.waitForResponse(r=>r.url()===origin+'/identity/oidc/token'&&r.request().method()==='POST');
@@ -34,6 +35,16 @@ test('a standard explicit ID-token name request returns only the consented name'
  expect(claims.name).toBe('Name for this website');
  expect(claims).not.toHaveProperty('email');
  expect(claims).not.toHaveProperty('drop_memberships');
+ const again=page.waitForResponse(r=>r.url()===origin+'/identity/oidc/token'&&r.request().method()==='POST');
+ await page.locator('#change').click();
+ await page.getByLabel('Your name on this website').fill('Changed for this website');
+ await page.getByRole('button',{name:'Allow and continue'}).click();
+ await expect(page.locator('#signed-in')).toBeVisible();
+ const next=await (await again).json();
+ const nextClaims=JSON.parse(Buffer.from(next.id_token.split('.')[1],'base64url'));
+ expect(nextClaims.name).toBe('Changed for this website');
+ expect(nextClaims.sub).toBe(claims.sub);
+ expect(nextClaims).not.toHaveProperty('email');
 });
 test('real OIDC roundtrip: selective disclosure, signed proof, disconnect and denied re-use',async({page,context})=>{
  await connect(page,{membership:true});
