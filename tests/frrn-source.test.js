@@ -71,7 +71,9 @@ test('versioned FRRN routes keep the legacy issuer separate and pin the new URL'
   const redirect=await fetch(origin+'/identity/v1/sites',{redirect:'manual'});
   assert.equal(redirect.headers.get('location'),'/?next=%2Fidentity%2Fv1%2Fsites');
   const html=await (await fetch(origin+'/identity/v1/developers')).text();
-  assert.match(html,/\/identity\/v1\/assets\/front.css/);assert.match(html,/\/identity\/v1\/docs\/standalone.md/);
+  assert.match(html,/\/identity\/v1\/assets\/front.css/);assert.match(html,/\/identity\/v1\/docs\/frrn-host/);assert.match(html,/\/identity\/v1\/docs\/contract/);
+  for(const path of ['/identity/v1/docs/frrn-host','/identity/v1/docs/contract','/identity/v1/docs/organisers'])assert.equal((await fetch(origin+path)).status,200);
+  assert.match(await (await fetch(origin+'/identity/v1/docs/organisers')).text(),/Manage community → Membership approvals/,'a FRRN-backed host describes FRRN organiser screens');
   assert.equal((await fetch(origin+'/identity/v1/wordpress.zip')).status,200);
   assert.equal((await fetch(origin+'/identity/v1/starter.zip')).status,409);
   assert.throws(()=>configuration({...env,IDENTITY_BASE_PATH:'/identity'}),/original contract and issuer/);

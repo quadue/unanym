@@ -12,8 +12,11 @@ import {page,consentView,sitesView,about,escape,rehearsalView} from './views.js'
 import {issueMembership,membershipKey} from './community-contract.js';
 import {standalonePage} from './standalone/views.js';
 import {frontPage,developerPage,displayName,developerURL} from './presentation.js';
+import {docsIndex,guidePage,guideNames,referencePage,referenceDocs} from './portal.js';
+import {mountExample} from './example-site.js';
 
 const ROOT=fileURLToPath(new URL('../',import.meta.url));
+const VERSION=JSON.parse(readFileSync(resolve(ROOT,'package.json'),'utf8')).version;
 export function createService(config,pact,{mountRoutes}={}) {
   validateAccountAdapter(pact);
   const base=config.basePath??'/identity';
@@ -115,21 +118,28 @@ export function createService(config,pact,{mountRoutes}={}) {
   app.get(base+'/wordpress',(_req,res)=>res.send(developerPage(config)));
   app.get(base+'/presentation',(_req,res)=>res.json({display_name:displayName(config),developer_url:developerURL(config)}));
   for(const [name,path] of [['standalone.md','docs/standalone.md'],['community-v1.md','docs/contracts/community-v1.md']])app.get(base+'/docs/'+name,(_req,res)=>res.type('text/plain').sendFile(resolve(ROOT,path)));
+  app.get(base+'/docs',(_req,res)=>res.redirect(base+'/docs/'));
+  app.get(base+'/docs/',(_req,res)=>res.send(docsIndex(config)));
+  for(const name of guideNames)app.get(base+'/docs/'+name,(_req,res)=>res.send(guidePage(config,name)));
+  for(const key of Object.keys(referenceDocs))app.get(base+'/docs/'+key,(_req,res)=>res.send(referencePage(config,key)));
   app.get(base+'/learn',(_req,res)=>res.send(standalone?standalonePage(config,'home'):learnView(config)));
   // Local interaction review. The service name is Unanym; identifiers stay stable.
   if(config.demo)app.get(base+'/overview',(_req,res)=>res.send(frontPage(config,{home:base+'/',signIn:standalone?base+'/account':pact.loginURL(base+'/sites')})));
   if(!standalone)app.get(base+'/rehearsal',(_req,res)=>res.send(rehearsalView(config)));
   const evaluationDownload=(file,name)=>(_req,res)=>config.demo?res.download(resolve(ROOT,'dist/'+file),name):res.status(409).send('This legacy evaluation package is not released for new websites. Contact the operator about the versioned contract.');
   app.get(base+'/wordpress.zip',(req,res)=>standalone&&config.wordpressDownload?res.download(resolve(ROOT,'dist/wordpress.zip'),'unanym-wordpress.zip'):evaluationDownload('wordpress.zip','drop-identity-wordpress.zip')(req,res));
-  app.get(base+'/health',(_req,res)=>res.json({service:standalone?'community-identity':'drop-identity',version:'0.2.0',contract:config.contract}));
+  app.get(base+'/health',(_req,res)=>res.json({service:standalone?'community-identity':'drop-identity',version:VERSION,contract:config.contract}));
   if(standalone)app.get(base+'/membership-keys',async(_req,res)=>res.set('Access-Control-Allow-Origin','*').json({issuer:config.issuer,keys:[await membershipKey(config.keys.drop)]}));
   app.get(base+'/keys',(_req,res)=>res.set('Access-Control-Allow-Origin','*').json({format:'frrn-v2',issuer:config.issuer,public_key:issuerSigner.pub}));
   app.use(base+'/assets',express.static(resolve(ROOT,'dist/assets'),{etag:true}));
   app.get(base+'/starter.zip',evaluationDownload('starter.zip','drop-identity-starter.zip'));
-  if(!standalone)app.get(base+'/example/',(_req,res)=>res.send(readFileSync(resolve(ROOT,'dist/example/index.html'),'utf8')));
-  app.get(base+'/example/client-config.json',(_req,res)=>res.json({authority:config.issuer,client_id:'developer-demo',site_name:'Example community',redirect_uri:config.origin+base+'/example/'}));
-  app.get(base+'/example/app.js',(_req,res)=>res.sendFile(resolve(ROOT,'dist/assets/client.js')));
-  app.get(base+'/example/style.css',(_req,res)=>res.sendFile(resolve(ROOT,'dist/assets/style.css')));
+  // The legacy browser example is a regression fixture; community-v1 uses a server-side example.
+  if(!standalone){
+    app.get(base+'/example/',(_req,res)=>res.send(readFileSync(resolve(ROOT,'dist/example/index.html'),'utf8')));
+    app.get(base+'/example/client-config.json',(_req,res)=>res.json({authority:config.issuer,client_id:'developer-demo',site_name:'Example community',redirect_uri:config.origin+base+'/example/'}));
+    app.get(base+'/example/app.js',(_req,res)=>res.sendFile(resolve(ROOT,'dist/assets/client.js')));
+    app.get(base+'/example/style.css',(_req,res)=>res.sendFile(resolve(ROOT,'dist/assets/style.css')));
+  }else mountExample(app,config);
   app.get(base+'/interaction/:uid',async(req,res)=>{
     const details=await provider.interactionDetails(req,res);
     const user=account(req,res);if(!user)return;

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Unanym for community websites
  * Description: Guided Unanym setup, PKCE, explicit account linking and connection checks for OpenID Connect Generic Client.
- * Version: 0.2.0
+ * Version: 0.3.0
  * Requires PHP: 8.1
  * Requires Plugins: daggerhart-openid-connect-generic
  */

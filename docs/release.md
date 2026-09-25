@@ -36,3 +36,28 @@ private-page, withdrawal and administrator-access checks using isolated fictiona
 accounts. The optional v1 WordPress download is operator-enabled; legacy and HTML
 starters remain gated. This is software acceptance, not real-member adoption or
 an independent security review.
+
+## 0.3.0 developer overview and guides — 2026-09-25
+
+The developer overview now shows the organiser → member → website journey with
+screenshots of fictional data, a hosted example website, a versioned WordPress
+download and guides for organisers, members, website owners and operators.
+Reference documents render as HTML; their plain-text versions remain.
+
+- **Example website.** An operator can register a client whose only redirect is
+  `<issuer path>/example/callback`. The service then offers a receiving site that
+  uses authorization code + S256 PKCE, verifies the ID token and each membership
+  statement, reads current UserInfo and stores nothing. Without that registration
+  nothing is mounted. The legacy browser example is unchanged.
+- **Reproducible package.** The WordPress ZIP uses a fixed timestamp, so its
+  SHA-256 in `dist/release.json` can be rebuilt from source. The overview shows
+  it with the version and the recorded WordPress/Generic Client test versions.
+- **Local quickstart** now runs the v1 contract with the example website
+  (`npm run demo:v1`). `scripts/capture-screens.js` regenerates the screenshots.
+- The contract gains the conditions for replacing the OIDC engine. The FRRN host
+  guide reflects that a community's only organiser can approve themselves.
+
+No wire contract, claim, scope, key or account mapping changed. New Node tests
+cover the renderer's escaping, every guide and reference route, and a browser run
+of the example (consent, verified claims, refusal of a reused or forged callback,
+and a declined change). This is software acceptance with fictional accounts.

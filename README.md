@@ -22,12 +22,15 @@ Install Node.js 24 and npm, then run from this checkout:
 npm run quickstart
 ```
 
-Open `http://localhost:4080/identity/`. The receiving example website is at
-`http://127.0.0.1:4081/`. Robin and Sam are fictional accounts; this demonstration
-sends no email and does not read an existing community database. Its compatibility
-fixture uses the legacy contract; the actual standalone host below uses v1.
-Stop it with Ctrl+C. It writes only to ignored `data/demo-independent/`.
-Use `UNANYM_DEMO_PORT` and `UNANYM_DEMO_SITE_PORT` if those ports are occupied.
+Open `http://localhost:4080/identity/example/`, a receiving website registered
+like any other, and choose **Continue with FRRN**. Sign in as Robin (two approved
+memberships) or Sam (none), choose what to share, and the example shows exactly
+what arrived and verifies its signatures. The developer overview and guides are at
+`http://localhost:4080/identity/developers`. This uses the v1 contract with
+fictional accounts; it sends no email and reads no community database.
+Stop it with Ctrl+C. It writes only to ignored `data/demo-v1/`. Use
+`UNANYM_DEMO_PORT` if port 4080 is occupied. The legacy compatibility fixture
+remains available as `npm run demo:independent`.
 
 ## Run your own identity service
 

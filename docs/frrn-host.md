@@ -22,8 +22,9 @@ It is separate from removing that profile or leaving the community.
 Open joining, an invitation alone, historical membership, community creation
 and a local resource permission are not organiser-approved membership evidence.
 Migration does not backfill approvals. Existing members need an explicit
-organiser decision if they will share this type of evidence. A separate organiser
-must approve an organiser's own membership.
+organiser decision if they will share this type of evidence. A community's only
+organiser can approve their own membership; once it has a second organiser, the
+other one must approve it.
 
 The source is limited to configured community IDs and authorised approvers.
 Only active memberships with current agreement consent and a runnable community
