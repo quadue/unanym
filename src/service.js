@@ -77,7 +77,9 @@ export function createService(config,pact,{mountRoutes}={}) {
   });
   provider.proxy=true;
   const app=express();
-  const formOrigins=[...new Set(config.clients.flatMap(c=>c.redirect_uris.map(u=>new URL(u).origin)))].join(' ');
+  // Browsers can check the entire form-redirect chain: a hosted authentication
+  // backend returns the member to the website after its registered callback.
+  const formOrigins=[...new Set(config.clients.flatMap(c=>[new URL(c.homepage).origin,...c.redirect_uris.map(u=>new URL(u).origin)]))].join(' ');
   app.disable('x-powered-by');
   app.enable('strict routing');
   app.set('trust proxy','loopback');
