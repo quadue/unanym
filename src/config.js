@@ -62,7 +62,13 @@ export function registeredClients(clients,secrets={}) {
     if(hosts.size!==1 || sectors.has([...hosts][0]))throw new Error('Pilot registration requires one distinct hostname per website; shared OIDC sectors need an explicit migration');
     sectors.add([...hosts][0]);
     const homepage=new URL(c.homepage);
-    if(!c.redirect_uris.some(u=>new URL(u).origin===homepage.origin))throw new Error('Homepage must belong to the registered website');
+    if(homepage.username||homepage.password||homepage.hash||(homepage.protocol!=='https:'&&!(homepage.protocol==='http:'&&['localhost','127.0.0.1'].includes(homepage.hostname))))throw new Error('Invalid website homepage');
+    // A confidential website may use its own hosted authentication backend.
+    // Explicitly register that origin; never derive it from a login request.
+    if(c.authentication_origin!==undefined){
+      const auth=new URL(c.authentication_origin);
+      if(c.token_endpoint_auth_method==='none'||auth.origin!==c.authentication_origin||auth.protocol!=='https:'||!c.redirect_uris.every(u=>new URL(u).origin===auth.origin))throw new Error('Invalid website authentication origin');
+    }else if(!c.redirect_uris.some(u=>new URL(u).origin===homepage.origin))throw new Error('Homepage must belong to the registered website');
   }
   if(new Set(clients.map(c=>c.client_id)).size!==clients.length) throw new Error('Duplicate client');
   return clients;
