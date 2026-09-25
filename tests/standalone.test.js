@@ -11,6 +11,48 @@ import {standaloneAccounts} from '../src/standalone/accounts.js';
 import {createStandalone} from '../src/standalone/server.js';
 import {configuration} from '../src/config.js';
 import {verifyMembership,membershipKey} from '../src/community-contract.js';
+import {createLocalJWKSet,jwtVerify} from 'jose';
+
+test('standalone confidential sign-in stays on its own host and returns a chosen name without email',async()=>{
+  const dir=mkdtempSync(join(tmpdir(),'unanym-independent-login-')),mail=new Map();
+  const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));
+  const origin='http://127.0.0.1:'+server.address().port;
+  const callback=origin+'/test/callback',client='coco',secret='s'.repeat(48);
+  writeFileSync(join(dir,'clients.json'),JSON.stringify([{client_id:client,name:'CoCo',description:'Sign in to CoCo',homepage:origin,redirect_uris:[callback],token_endpoint_auth_method:'client_secret_basic'}]));
+  writeFileSync(join(dir,'secrets.json'),JSON.stringify({[client]:secret}));
+  const config=configuration({IDENTITY_CONTRACT:'community-v1',IDENTITY_ORIGIN:origin,IDENTITY_OPERATOR_NAME:'Unanym operator',IDENTITY_DISPLAY_NAME:'Unanym',IDENTITY_CLIENTS:join(dir,'clients.json'),IDENTITY_CLIENT_SECRETS:join(dir,'secrets.json'),IDENTITY_DATA_DIR:dir});
+  const service=createStandalone(config,{bootstrapEmail:'operator@example.test',sendCode:async m=>mail.set(m.email,m.code)});
+  service.app.get('/test/callback',(_req,res)=>res.send('Returned to CoCo'));
+  server.on('request',service.app);const browser=await chromium.launch();
+  try{
+    const discovery=await (await fetch(config.issuer+'/.well-known/openid-configuration')).json();
+    const jwks=createLocalJWKSet(await (await fetch(discovery.jwks_uri)).json());
+    const page=await browser.newPage(),navigations=[];
+    page.on('framenavigated',frame=>{if(frame===page.mainFrame())navigations.push(frame.url());});
+    let first;
+    for(let visit=0;visit<2;visit++){
+      const verifier=randomBytes(32).toString('base64url'),state=randomBytes(16).toString('hex'),nonce=randomBytes(16).toString('hex');
+      const url=new URL(discovery.authorization_endpoint);
+      url.search=new URLSearchParams({client_id:client,redirect_uri:callback,response_type:'code',scope:'openid profile',prompt:'consent',claims:JSON.stringify({id_token:{name:{essential:true}}}),state,nonce,code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256'});
+      await page.goto(url.href);
+      if(visit===0){
+        await page.waitForURL('**/identity/login?**');assert.equal(await page.title(),'Sign in · Unanym');
+        await page.getByLabel('Email address').fill('member@example.test');await page.getByRole('button',{name:'Send code',exact:true}).click();
+        await page.getByLabel('Sign-in code').fill(mail.get('member@example.test'));await page.getByRole('button',{name:'Sign in',exact:true}).click();
+      }
+      await page.getByLabel('Your name on this website').fill('Robin');
+      await page.getByRole('button',{name:'Allow and continue'}).click();await page.waitForURL(callback+'?**');
+      const returned=new URL(page.url());assert.equal(returned.searchParams.get('state'),state);
+      const response=await fetch(discovery.token_endpoint,{method:'POST',headers:{Authorization:'Basic '+Buffer.from(client+':'+secret).toString('base64')},body:new URLSearchParams({grant_type:'authorization_code',redirect_uri:callback,code:returned.searchParams.get('code'),code_verifier:verifier})});
+      assert.equal(response.status,200);const tokens=await response.json();
+      const {payload}=await jwtVerify(tokens.id_token,jwks,{issuer:config.issuer,audience:client});
+      assert.equal(payload.nonce,nonce);assert.equal(payload.name,'Robin');assert.equal(payload.email,undefined);assert.equal(payload.memberships_v1,undefined);
+      if(first)assert.equal(payload.sub,first);else first=payload.sub;
+    }
+    assert(navigations.every(url=>url.startsWith(origin+'/')||url.startsWith(callback)));
+    assert.equal(service.accounts.db.prepare('SELECT count(*) n FROM accounts').get().n,1);
+  }finally{await browser.close();await new Promise(r=>server.close(r));service.close();rmSync(dir,{recursive:true,force:true});}
+});
 
 test('email codes are browser-bound, one-use, limited, expiring and survive restart',async()=>{
   const dir=mkdtempSync(join(tmpdir(),'unanym-codes-')),mail=[];let now=Date.now();

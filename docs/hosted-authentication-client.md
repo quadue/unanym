@@ -36,3 +36,19 @@ External membership approval is not used for CoCo admission. A Supabase session
 has its own lifetime: disconnecting at Unanym stops future Unanym authentication,
 but does not revoke an already-issued CoCo session. Receiving sites must add
 current-membership checks before using memberships to protect any content.
+
+## Independent member sign-in
+
+Use the standalone entry point when the identity service has its own domain and
+email-code accounts. The FRRN adapter intentionally redirects unauthenticated
+members to FRRN and is not an independent sign-in installation. A public docs
+site alone does not supply an issuer: route the standalone service separately
+and register its discovery URL with the website's authentication backend.
+
+Treat this as a new issuer, with a new private data directory and client secret.
+Do not change an existing store's issuer or match accounts by email. Before
+switching an existing client, establish whether either side has linked members;
+a non-empty installation needs a deliberate, explicit continuity plan. Preserve
+older issuers for clients that still use them. The standalone regression covers
+cold email-code sign-in, the selected name in a verified ID token, no email
+claim, and a returning visit that retains its subject after one consent.
