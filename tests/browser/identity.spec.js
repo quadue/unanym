@@ -22,6 +22,19 @@ async function connect(page,{name='Robin',membership=false}={}){
  await page.getByRole('button',{name:'Allow and continue'}).click();
  await expect(page.locator('#signed-in')).toBeVisible();
 }
+test('a standard explicit ID-token name request returns only the consented name',async({page})=>{
+ await page.route(origin+'/identity/oidc/auth?**',async route=>{
+  const url=new URL(route.request().url());url.searchParams.set('claims',JSON.stringify({id_token:{name:{essential:true}}}));
+  await route.continue({url:url.href});
+ });
+ const response=page.waitForResponse(r=>r.url()===origin+'/identity/oidc/token'&&r.request().method()==='POST');
+ await connect(page,{name:'Name for this website'});
+ const tokens=await (await response).json();
+ const claims=JSON.parse(Buffer.from(tokens.id_token.split('.')[1],'base64url'));
+ expect(claims.name).toBe('Name for this website');
+ expect(claims).not.toHaveProperty('email');
+ expect(claims).not.toHaveProperty('drop_memberships');
+});
 test('real OIDC roundtrip: selective disclosure, signed proof, disconnect and denied re-use',async({page,context})=>{
  await connect(page,{membership:true});
  await expect(page.locator('#memberships')).toContainText('Lakeside');

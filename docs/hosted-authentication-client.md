@@ -26,7 +26,11 @@ redirect URI or CORS permission. The identifier still belongs to this client.
 
 For CoCo's first integration the only requested scopes are `openid profile`.
 Supabase verifies the issuer, signatures, audience and nonce and runs the OAuth
-code flow with PKCE. Email is optional and Unanym does not issue one. Existing
+code flow with PKCE. Its authorization parameters explicitly request
+`claims={"id_token":{"name":{"essential":true}}}` using OIDC's standard claims
+parameter, because this provider consumes the ID token rather than UserInfo.
+Only the member's chosen name is added; other profile/membership claims do not
+automatically move into ID tokens. Email is optional and Unanym does not issue one. Existing
 accounts use explicit Supabase `linkIdentity`; no email/name matching is added.
 External membership approval is not used for CoCo admission. A Supabase session
 has its own lifetime: disconnecting at Unanym stops future Unanym authentication,

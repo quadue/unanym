@@ -50,7 +50,7 @@ export function createService(config,pact,{mountRoutes}={}) {
     pairwiseIdentifier:async(ctx,id,client)=>(await persona(db,id,client.clientId,encryption)).subject,
     pkce:{required:()=>true},
     responseTypes:['code'],
-    features:{devInteractions:{enabled:false},revocation:{enabled:true},rpInitiatedLogout:{enabled:false}},
+    features:{devInteractions:{enabled:false},revocation:{enabled:true},rpInitiatedLogout:{enabled:false},claimsParameter:{enabled:true}},
     ttl:{AccessToken:300,AuthorizationCode:60,IdToken:300,Interaction:600,Session:1800,Grant:30*24*3600,
       RefreshToken:(_ctx,token)=>Math.max(1,7*24*3600-token.totalLifetime())},
     interactions:{policy,url:(_ctx,interaction)=>base+'/interaction/'+interaction.uid},
