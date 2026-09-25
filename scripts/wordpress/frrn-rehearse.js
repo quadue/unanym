@@ -31,7 +31,8 @@ const sources=[{community_id:community.id,organisation,approvers:[{user_id:owner
 const secret=randomBytes(32).toString('base64url'),registry=join(dir,'clients.json'),secrets=join(dir,'secrets.json');
 writeFileSync(registry,JSON.stringify([{client_id:'wordpress-pilot',name:'Example international website',description:'Fictional acceptance website',homepage:origin,redirect_uris:[origin+'/wp-admin/admin-ajax.php?action=openid-connect-authorize'],token_endpoint_auth_method:'client_secret_post',allow_refresh:true}]));
 writeFileSync(secrets,JSON.stringify({'wordpress-pilot':secret}),{mode:0o600});
-const config=configuration({IDENTITY_ORIGIN:issuer,IDENTITY_CONTRACT:'community-v1',IDENTITY_OPERATOR_NAME:'Example service operator',IDENTITY_DATA_DIR:join(dir,'identity'),IDENTITY_CLIENTS:registry,IDENTITY_CLIENT_SECRETS:secrets});
+const basePath=process.env.IDENTITY_BASE_PATH??'/identity';
+const config=configuration({IDENTITY_ORIGIN:issuer,IDENTITY_BASE_PATH:basePath,IDENTITY_CONTRACT:'community-v1',IDENTITY_OPERATOR_NAME:'Example service operator',IDENTITY_DATA_DIR:join(dir,'identity'),IDENTITY_CLIENTS:registry,IDENTITY_CLIENT_SECRETS:secrets});
 const service=createFrrn(config,{path:database,modeFile:mode,sources});
 const child=spawn(process.execPath,['dist/server/entry.mjs'],{cwd:root,env:{...process.env,HOST:'127.0.0.1',PORT:'4341',PACTLOOM_DB_PATH:database,PACTLOOM_RELEASE_MODE:'alpha',PACTLOOM_ALPHA_EMAILS:'organiser@example.test',PACTLOOM_DEV_LINKS:'1',PACTLOOM_DISABLE_WORKERS:'1',PACTLOOM_CODE_PEPPER:'synthetic-rehearsal-only',BREVO_API_KEY:'',MAIL_FROM:'',TURN_HOST:'',TURN_SHARED_SECRET:''},stdio:'ignore'});
 const childExit=once(child,'exit');
@@ -98,11 +99,11 @@ try {
  await reconnect(person,false);expect((await person.goto(area)).status()).toBe(403);expect(db.prepare('SELECT COUNT(*) n FROM identity_memberships_v1').get().n).toBe(1);
  pass('The member can withhold membership while keeping their FRRN approval.');
  await reconnect(person,true);
- const share=await context.newPage();await share.goto(issuer+'/identity/sites');await share.getByRole('button',{name:'Disconnect',exact:true}).click();await person.goto(area);await expect(person.getByText('Your FRRN connection ended.',{exact:false})).toBeVisible();
+ const share=await context.newPage();await share.goto(issuer+basePath+'/sites');await share.getByRole('button',{name:'Disconnect',exact:true}).click();await person.goto(area);await expect(person.getByText('Your FRRN connection ended.',{exact:false})).toBeVisible();
  pass('Disconnecting the site ends that WordPress identity session; native administrator access stays available.');
  await admin.goto(origin+'/wp-admin/');await expect(admin.locator('#wpadminbar')).toBeVisible();
  wp('plugin','deactivate','drop-identity');try{expect(await (await fetch(area)).text()).not.toContain(marker);}finally{wp('plugin','activate','drop-identity');}
  pass('Disabling the identity plugin leaves the actual WordPress page private.');
- writeFileSync(join(output,'frrn-rehearsal.json'),JSON.stringify({date:new Date().toISOString(),classification:'Isolated synthetic FRRN -> Unanym -> real WordPress rehearsal; no real mail, mandate or member acceptance',frrn_revision:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),frrn_dirty:!!execFileSync('git',['status','--porcelain'],{cwd:root,encoding:'utf8'}).trim(),wordpress:wp('core','version'),generic:'3.11.3',contract:'community-v1',checks:evidence},null,2));
+ writeFileSync(join(output,'frrn-rehearsal.json'),JSON.stringify({date:new Date().toISOString(),classification:'Isolated synthetic FRRN -> Unanym -> real WordPress rehearsal; no real mail, mandate or member acceptance',frrn_revision:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),frrn_dirty:!!execFileSync('git',['status','--porcelain'],{cwd:root,encoding:'utf8'}).trim(),wordpress:wp('core','version'),generic:'3.11.3',contract:'community-v1',identity_base_path:basePath,checks:evidence},null,2));
 } catch(error) {console.error(error.message.replace(/https?:\/\/\S+/g,'[URL withheld]'));process.exitCode=1;}
 finally {await browser.close();await new Promise(r=>gateway.close(r));service.close();child.kill('SIGTERM');await childExit;db.close();rmSync(dir,{recursive:true,force:true});}

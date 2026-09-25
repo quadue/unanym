@@ -1,11 +1,12 @@
 {
-  "date": "2026-09-24T16:44:08.796Z",
+  "date": "2026-09-25T05:04:06.346Z",
   "classification": "Isolated synthetic FRRN -> Unanym -> real WordPress rehearsal; no real mail, mandate or member acceptance",
   "frrn_revision": "3e1555b911cf61acf693564de53a708d6032fdc6",
   "frrn_dirty": false,
   "wordpress": "7.1.2",
   "generic": "3.11.3",
   "contract": "community-v1",
+  "identity_base_path": "/identity/v1",
   "checks": [
     "WordPress administrator connects the issuer, recognises an organisation and selects a private members page using forms.",
     "Pending FRRN application supplies no shareable membership; signing in alone cannot open the WordPress page.",

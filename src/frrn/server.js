@@ -20,7 +20,7 @@ export function createFrrn(config,{path,modeFile,sources}) {
       if (existsSync(resolve(config.dir,'identity.db')) || existsSync(resolve(config.dir,'accounts.db'))) throw new Error('Use a fresh directory for the FRRN v1 host');
       writeFileSync(profilePath,JSON.stringify(profile),{mode:0o600,flag:'wx'});
     }
-    service=createService({...config,accountSource:'frrn'},adapter,{mountRoutes:app=>app.get('/identity/account',(_req,res)=>res.redirect('/account'))});
+    service=createService({...config,accountSource:'frrn'},adapter,{mountRoutes:app=>app.get((config.basePath??'/identity')+'/account',(_req,res)=>res.redirect('/account'))});
     return {...service,close(){service.close();release();}};
   } catch(error) {adapter?.close();release();throw error;}
 }

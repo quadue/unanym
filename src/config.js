@@ -5,11 +5,13 @@ import {randomBytes,generateKeyPairSync} from 'node:crypto';
 export function configuration(env=process.env) {
   const contract=env.IDENTITY_CONTRACT??'legacy-firn';
   if(!['legacy-firn','community-v1'].includes(contract))throw new Error('Unknown identity contract');
+  const basePath=identityBasePath(env.IDENTITY_BASE_PATH);
+  if(contract==='legacy-firn' && basePath!=='/identity')throw new Error('Preserve the legacy issuer path');
   const operatorName=env.IDENTITY_OPERATOR_NAME?.trim();
   const displayName=env.IDENTITY_DISPLAY_NAME?.trim()||'FRRN';
   if(displayName.length>60||/[\x00-\x1f\x7f]/.test(displayName))throw new Error('Invalid member-facing name');
-  const developerURL=env.IDENTITY_DEVELOPER_URL??'/identity/developers';
-  if(developerURL!=='/identity/developers'){
+  const developerURL=env.IDENTITY_DEVELOPER_URL??basePath+'/developers';
+  if(developerURL!==basePath+'/developers'){
     const u=new URL(developerURL);
     if(u.username||u.password||u.hash||(u.protocol!=='https:'&&!(u.protocol==='http:'&&['localhost','127.0.0.1'].includes(u.hostname))))throw new Error('Invalid developer documentation URL');
   }
@@ -22,7 +24,7 @@ export function configuration(env=process.env) {
   if(contract==='community-v1')chmodSync(dir,0o700);
   if(existsSync(resolve(dir,'profile.json'))){
     const saved=JSON.parse(readFileSync(resolve(dir,'profile.json'),'utf8'));
-    if(saved.contract!==contract||saved.issuer!==origin+'/identity/oidc')throw new Error('Existing standalone data requires its original contract and issuer');
+    if(saved.contract!==contract||saved.issuer!==origin+basePath+'/oidc')throw new Error('Existing standalone data requires its original contract and issuer');
   }
   const keyPath=resolve(dir,'keys.json');
   if(!existsSync(keyPath)) {
@@ -35,7 +37,7 @@ export function configuration(env=process.env) {
   const clients=JSON.parse(readFileSync(env.IDENTITY_CLIENTS ?? './clients.json','utf8'));
   const secrets=env.IDENTITY_CLIENT_SECRETS ? JSON.parse(readFileSync(env.IDENTITY_CLIENT_SECRETS,'utf8')) : {};
   registeredClients(clients,secrets);
-  return {origin,issuer:origin+'/identity/oidc',dir,keys,clients,contract,operatorName,displayName,developerURL,port:Number(env.PORT ?? 4080),host:env.HOST ?? '127.0.0.1',
+  return {origin,basePath,wordpressDownload:contract==='community-v1'&&env.IDENTITY_WORDPRESS_DOWNLOAD==='1',issuer:origin+basePath+'/oidc',dir,keys,clients,contract,operatorName,displayName,developerURL,port:Number(env.PORT ?? 4080),host:env.HOST ?? '127.0.0.1',
     pactDb:env.PACT_DB_PATH,pactMode:env.PACT_MODE_FILE,
     demo:env.IDENTITY_DEMO==='1' && ['localhost','127.0.0.1'].includes(parsed.hostname)};
 }
@@ -64,4 +66,10 @@ export function registeredClients(clients,secrets={}) {
   }
   if(new Set(clients.map(c=>c.client_id)).size!==clients.length) throw new Error('Duplicate client');
   return clients;
+}
+
+// A separate v1 mount lets an existing legacy issuer keep its URL and subjects.
+export function identityBasePath(value='/identity') {
+  if(!['/identity','/identity/v1'].includes(value))throw new Error('Unsupported identity base path');
+  return value;
 }

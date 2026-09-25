@@ -98,6 +98,20 @@ public origin. This reuses the existing browser-bound FRRN session and sign-in
 return path. The identity host never receives account emails through its adapter.
 Keep the FRRN database and backup separate from the identity data directory.
 
+When keeping a legacy issuer on the same origin, set
+`IDENTITY_BASE_PATH=/identity/v1`. Route that exact path and its children to this
+host, with higher priority than the legacy `/identity` route. The new issuer is
+`https://your-frrn-host.example/identity/v1/oidc`; discovery, consent, assets and
+connection management stay below that path. The FRRN sign-in cookie remains on
+the same host. Standalone email accounts retain the default `/identity` path.
+Pass the same base-path setting when preparing WordPress client registrations.
+An existing identity profile cannot change its issuer path.
+
+After reviewing the built companion for your pilot, set
+`IDENTITY_WORDPRESS_DOWNLOAD=1` to offer it on the developer page. This enables
+only the v1 WordPress package; legacy and HTML starters remain gated. Distribution
+does not establish independent review or receiving-site acceptance.
+
 Use a fresh directory and explicitly registered v1 clients. Do not change an
 existing legacy issuer from `drop_*` to v1 in place. A distinct issuer changes
 `(iss, sub)` and therefore needs explicit account linking/migration. The host pins

@@ -22,3 +22,17 @@ that registry result is time-specific and is not an independent security review.
 
 GitHub CI, external review and real operator/member acceptance are distinct from
 these local results. See `docs/release-readiness.md` for the remaining gates.
+
+## Parallel FRRN issuer candidate — 2026-09-25
+
+The optional FRRN host supports `/identity/v1` alongside an unchanged legacy
+issuer. It preserves same-host sign-in and pins each installation to its original
+issuer path, keys and FRRN database instance. Versioned consent, assets, discovery
+and WordPress registration preparation use the same configured path.
+
+The release checks, 21 Node tests and 17 browser tests passed. A real local
+WordPress rehearsal at the versioned path passed all nine approval, consent,
+private-page, withdrawal and administrator-access checks using isolated fictional
+accounts. The optional v1 WordPress download is operator-enabled; legacy and HTML
+starters remain gated. This is software acceptance, not real-member adoption or
+an independent security review.

@@ -2,7 +2,7 @@
 import {readFileSync,writeFileSync,mkdirSync,existsSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {randomBytes} from 'node:crypto';
-import {registeredClients} from '../src/config.js';
+import {registeredClients,identityBasePath} from '../src/config.js';
 process.umask(0o077);
 const [id,name,callback,output]=process.argv.slice(2);
 if(!id || !name || !callback || !output)throw new Error('Usage: node scripts/prepare-wordpress-client.js CLIENT_ID WEBSITE_NAME HTTPS_CALLBACK NEW_PRIVATE_DIRECTORY');
@@ -18,6 +18,6 @@ const secret=randomBytes(32).toString('base64url');
 clients.push({client_id:id,name,description:'Sign in to '+name+'. Choose the name and memberships this website may see.',homepage:url.origin+'/',redirect_uris:[url.href],token_endpoint_auth_method:'client_secret_post',allow_refresh:true});secrets[id]=secret;
 registeredClients(structuredClone(clients),secrets);
 mkdirSync(dir,{mode:0o700});writeFileSync(resolve(dir,'clients.json'),JSON.stringify(clients,null,2),{mode:0o600});writeFileSync(resolve(dir,'client-secrets.json'),JSON.stringify(secrets,null,2),{mode:0o600});
-writeFileSync(resolve(dir,'website-setup.json'),JSON.stringify({issuer:origin.origin+'/identity/oidc',client_id:id,client_secret:secret,callback:url.href},null,2),{mode:0o600});
+writeFileSync(resolve(dir,'website-setup.json'),JSON.stringify({issuer:origin.origin+identityBasePath(process.env.IDENTITY_BASE_PATH)+'/oidc',client_id:id,client_secret:secret,callback:url.href},null,2),{mode:0o600});
 writeFileSync(resolve(dir,'INSTALL.txt'),'Private proposal, not an activated registration. Review clients.json; back up the current registry and secret store; install both proposed files with mode 0600, set IDENTITY_CLIENT_SECRETS to the private secret file, then restart only the identity service. Deliver website-setup.json privately to the authorised site administrator. Never put secrets in Git or public tickets.\n');
 console.log('Prepared registration and a private website setup file in the specified directory. No live configuration changed.');

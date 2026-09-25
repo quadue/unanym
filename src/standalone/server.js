@@ -9,6 +9,7 @@ import {smtpMailer} from './mail.js';
 import {dataLock} from './lock.js';
 
 export function createStandalone(config,{bootstrapEmail,sendCode}) {
+  if(config.basePath && config.basePath!=='/identity')throw new Error('Standalone accounts use the default identity path');
   if(config.contract!=='community-v1')throw new Error('Standalone hosts require community-v1');
   emailAddress(bootstrapEmail);
   const release=dataLock(config.dir);let accounts,service;

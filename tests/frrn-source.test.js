@@ -56,3 +56,26 @@ test('fresh FRRN host pins its source instance and cannot turn into a standalone
   assert.deepEqual(JSON.parse(readFileSync(join(restored,'profile.json'))),profile);
  }finally{f.close();}
 });
+
+test('versioned FRRN routes keep the legacy issuer separate and pin the new URL',async()=>{
+ const f=sourceFixture(),clients=join(f.dir,'clients.json');writeFileSync(clients,'[]');
+ const env={IDENTITY_ORIGIN:'http://127.0.0.1:4440',IDENTITY_BASE_PATH:'/identity/v1',IDENTITY_CONTRACT:'community-v1',IDENTITY_OPERATOR_NAME:'Test operator',IDENTITY_DATA_DIR:join(f.dir,'identity'),IDENTITY_CLIENTS:clients,IDENTITY_WORDPRESS_DOWNLOAD:'1'};
+ const config=configuration(env),service=createFrrn(config,{path:f.path,modeFile:f.mode,sources:[]});
+ const server=service.app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+ const origin='http://127.0.0.1:'+server.address().port;
+ try{
+  const discovery=await (await fetch(origin+'/identity/v1/oidc/.well-known/openid-configuration',{headers:{'x-forwarded-host':'127.0.0.1:4440'}})).json();
+  assert.equal(discovery.issuer,env.IDENTITY_ORIGIN+'/identity/v1/oidc');
+  for(const key of ['authorization_endpoint','token_endpoint','userinfo_endpoint','jwks_uri'])assert.ok(discovery[key].startsWith(discovery.issuer+'/'),key+': '+discovery[key]);
+  assert.equal((await fetch(origin+'/identity/oidc/.well-known/openid-configuration')).status,404);
+  const redirect=await fetch(origin+'/identity/v1/sites',{redirect:'manual'});
+  assert.equal(redirect.headers.get('location'),'/?next=%2Fidentity%2Fv1%2Fsites');
+  const html=await (await fetch(origin+'/identity/v1/developers')).text();
+  assert.match(html,/\/identity\/v1\/assets\/front.css/);assert.match(html,/\/identity\/v1\/docs\/standalone.md/);
+  assert.equal((await fetch(origin+'/identity/v1/wordpress.zip')).status,200);
+  assert.equal((await fetch(origin+'/identity/v1/starter.zip')).status,409);
+  assert.throws(()=>configuration({...env,IDENTITY_BASE_PATH:'/identity'}),/original contract and issuer/);
+  assert.throws(()=>configuration({...env,IDENTITY_CONTRACT:'legacy-firn'}),/legacy issuer path/);
+  assert.throws(()=>configuration({...env,IDENTITY_BASE_PATH:'/identity/../other'}),/Unsupported/);
+ }finally{await new Promise(r=>server.close(r));service.close();f.close();}
+});
