@@ -87,6 +87,8 @@ recognisable. Disconnecting stops future access, not copies already received.
 
 Optional Pubky Ring sign-in and organisation-held signing keys are distinct
 future adapters. This release does not implement them or require a wallet.
+The [portability design and acceptance plan](docs/portability.md) keeps storage
+choice separate from website accounts, consent and organisational authority.
 
 ## Development
 

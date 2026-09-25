@@ -32,3 +32,11 @@ does not declare a production release or complete an international member pilot.
 
 The first community's practice is an acceptance case, not an identity-core rule.
 Broader adoption remains unproven until other communities use the service.
+
+## Optional portability work
+
+Keep wallet sign-in, homeserver migration and peer replication outside the first
+member journey. The [portability acceptance plan](portability.md) distinguishes
+automated local replacement from an independent operator's restore and a future
+two-homeserver test. Neither a signature nor a portable storage key alone proves
+continuous website accounts, current access or recoverability.

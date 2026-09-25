@@ -84,3 +84,24 @@ FRRN-to-WordPress rehearsal with fictional accounts. Portal checks include
 320px layouts, guide links without JavaScript, exact clipboard copying and its
 selection fallback. The mobile contents adjustment passed the portal checks
 again after the full suite.
+
+## Unreleased — portability boundary and service replacement rehearsal
+
+The architecture keeps Pubky optional and ordinary WordPress sign-in independent
+of storage or peer networking. It distinguishes member-controlled keys, operator
+custody, organisation authority, contextual identities and current access. It
+does not promise deletion of a recipient's saved plaintext or keys.
+
+The standalone WordPress rehearsal now restores the service into a new directory
+with the old path retired, reloads configuration and keys from the restored files,
+and preserves the same website account, name, choices and actual private page.
+A changed issuer is refused. Withdrawal still closes the page; a second restore
+after disconnection keeps the old refresh token invalid while another member's
+connection remains usable. All fourteen checks passed with fictional accounts
+and captured mail. The script refuses a lab mounted from another plugin checkout.
+The release checks, build, 26 Node tests and 17 Chromium tests also passed.
+
+This is a same-workstation service replacement test, not a physical host move,
+an independent operator's recovery, a Pubky integration or real-member acceptance.
+No authentication logic, wire format, live issuer or member data changed.
+The [portability plan](portability.md) records the separate two-homeserver gate.

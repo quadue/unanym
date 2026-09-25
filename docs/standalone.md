@@ -165,6 +165,13 @@ the backup; preserve them securely separately. Snapshots contain emails, session
 and signing material, not just public configuration. Hash checks detect damage,
 not a malicious party rewriting both the backup and its manifest.
 
+Moving the service requires continued control of the same issuer domain and
+path, not merely possession of the signing key. Freeze the old writer before
+cutover. Preserve accounts, per-site subjects, approvals, sharing choices and
+withdrawals. A rollback after new writes must carry those writes forward; an
+older backup can otherwise revive withdrawn access. See the
+[portability boundaries and acceptance plan](portability.md).
+
 ## Reproduce acceptance
 
 ```sh
@@ -180,3 +187,7 @@ WordPress lab uses Docker and loopback ports 4300, 4302, 43316 with synthetic
 members and captured mail. It never uses production credentials or sends email.
 Use `reset` to remove only that labelled lab before recreating it. No successful
 fixture establishes human usability, delivered email or organisational mandate.
+The lab must mount this checkout's companion plugin. The standalone rehearsal
+also restores the service twice, checks the same WordPress account and actual
+private page after replacement, and confirms disconnection survives the second
+restore. This is a local service replacement, not a Pubky or physical host move.

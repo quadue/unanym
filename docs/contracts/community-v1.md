@@ -146,6 +146,27 @@ Evidence checked 2026-09-24: [Pubky authentication](https://pubky.org/explore/pu
 `docs/pubky-integration-rehearsal.md`. That rehearsal uses SDK approval standing
 in for Ring; it does not prove Ring UI integration or organisation approval.
 
+## Portability and privacy boundaries
+
+Storage and transport are replaceable adapters, not identity authority. Pubky
+is optional; changing the default needs a separate decision after migration and
+recovery acceptance. A storage move never changes the website's `(iss, sub)` or
+silently restores a withdrawn connection. Changing an issuer needs an explicit
+website-account migration. Keep organisation authority, sign-in method and key
+custody separate through every adapter.
+
+One person need not have one public key across contexts. No global key or
+cross-site link is disclosed by adding an account link. Public discovery must
+be an explicit choice: a host address alone may reveal a sensitive association.
+Private packets need encryption before any public storage or replication;
+encryption alone does not hide the communication graph.
+
+Deleting copies and keys under the operator's control cannot retract a
+recipient's saved plaintext or keys. Key loss, key replacement and account
+recovery require their own authority and continuity procedures. Signed history
+does not require permanent public storage. Current access still requires the
+freshness and withdrawal checks above.
+
 ## Legacy and release boundary
 
 `drop_identity`, `drop_memberships`, `pact-hosted` and
