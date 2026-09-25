@@ -28,12 +28,11 @@ PORT=4080
 ```
 
 Supply your own domain and operator. The origin has no trailing path or slash.
-`IDENTITY_DISPLAY_NAME` is the member-facing name (default `FRRN`); the operator
+`IDENTITY_DISPLAY_NAME` is the member-facing name (default `Unanym`); the operator
 name separately identifies who holds the records and signs statements. Optional
 `IDENTITY_DEVELOPER_URL` points the “Identity by Unanym” footer to your HTTPS
 documentation site. Its default is `/identity/developers`. Neither setting changes
-the issuer, claims, signing keys or account mappings. The FRRN operator's intended
-documentation host is `https://unanym.frrn.life`; its publication is separate.
+the issuer, claims, signing keys or account mappings. The public Unanym documentation is at `https://unanym.org`.
 Configure your process manager to load these variables, run the standalone start
 command, and restart after failure. Terminate TLS at the loopback reverse proxy;
 overwrite forwarded headers, enforce HTTPS, and never cache account/OIDC pages.
@@ -97,7 +96,7 @@ this organisation's membership. It does not prove training or personal safety.
 
 ## WordPress
 
-Members see “Continue with FRRN” by default, or the operator's configured display
+Members see “Continue with Unanym” by default, or the operator's configured display
 name. The plugin's administrative settings remain “Unanym”. Saving the connection
 reads the public `/identity/presentation` metadata and applies the member label;
 existing installations must save their connection again to refresh that label.
@@ -132,8 +131,7 @@ existing permissions.
 This is not automatic protection of existing public posts, uploaded files or
 other plugins. The selected page's content is protected; media URLs, caches,
 custom APIs and other membership plugins need their own reviewed policy. The
-helper remains available for other integrations. See [the complete setup and
-rehearsal](frrn-host.md#connect-a-wordpress-website).
+helper remains available for other integrations. See [the webmaster questions](webmaster-questions.md).
 
 The public download routes remain gated. Build output is a staging artifact,
 not a public release. New HTML distribution is out of scope.

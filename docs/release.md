@@ -1,5 +1,16 @@
 # Candidate evidence — 2026-09-24
 
+## 0.4.0-rc.3 — independent Unanym presentation
+
+Standalone installations and the WordPress fallback now use Unanym by default.
+Explicit operator branding still applies. The public documentation site is a
+separate read-only service: it opens no identity database and creates no member
+accounts. It includes a fictional practice flow and webmaster questions.
+FRRN remains an optional account-source integration; its host selects its own
+brand explicitly. Issuers, scopes, account mappings and existing approvals are
+unchanged. The public site can move domains independently of sign-in services.
+
+
 This is a fresh, private source candidate. `SOURCE_SNAPSHOT.json` identifies its
 upstream revision and file hashes. The private project's operational history and
 community material are not part of this repository.

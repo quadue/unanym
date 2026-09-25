@@ -3,10 +3,11 @@ export const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;'
 export function page(title,body,config={}) {
   const base=config.basePath??'/identity';
   const {demo=false,contract}=config,brand=escape(displayName(config)),mark=brand==='FRRN'?'frrn':brand;
+  const navigation=config.publicDocs?'<a href="/">For websites</a><a href="/docs/members">For members</a>':`<a href="${base}/sites">${contract==='community-v1'?'Your places':'My connections'}</a>${contract==='community-v1'?`<a href="${base}/records">Memberships</a>`:''}<a href="${contract==='community-v1'?base+'/account':'/'}">Your account</a>`;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="robots" content="noindex,nofollow"><title>${escape(title)} · ${brand}</title><link rel="stylesheet" href="${base}/assets/style.css"></head><body${contract==='community-v1'?' class="standalone"':''}>
-  <a class="skip" href="#main">Skip to content</a><header><a class="brand wordmark" href="${base}/" aria-label="${brand} home"><img src="${base}/assets/front-mark-light.svg" width="26" height="32" alt="">${mark}</a><nav aria-label="Account"><a href="${base}/sites">${contract==='community-v1'?'Your places':'My connections'}</a>${contract==='community-v1'?`<a href="${base}/records">Memberships</a>`:''}<a href="${contract==='community-v1'?base+'/account':'/'}">Your account</a></nav></header>
+  <a class="skip" href="#main">Skip to content</a><header><a class="brand wordmark" href="${base}/" aria-label="${brand} home"><img src="${base}/assets/front-mark-light.svg" width="26" height="32" alt="">${mark}</a><nav aria-label="${config.publicDocs?'Guides':'Account'}">${navigation}</nav></header>
   ${demo?'<aside class="demo-banner">Local demonstration · fictional accounts and communities</aside>':''}
-  <main id="main">${body}</main><footer><span>Your places. Your choice.</span><a href="${base}/about">Privacy</a><a href="${escape(developerURL(config))}">Identity by Unanym</a></footer></body></html>`;
+  <main id="main">${body}</main><footer><span>Your places. Your choice.</span><a href="${base}/${config.publicDocs?'docs/members#who-can-connect-the-dots':'about'}">Privacy</a><a href="${escape(developerURL(config))}">Identity by Unanym</a></footer></body></html>`;
 }
 
 export function consentView({config,client,uid,csrf,memberships,confirmations=[],allowConfirmations=false,previous,scopes}) {

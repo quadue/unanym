@@ -17,6 +17,7 @@ writeFileSync('dist/starter.zip',zipSync(Object.fromEntries(['index.html','app.j
 
 const wordpress=['drop-identity.php','memberships.php','confirmations.php','member-area.php','member.css','LICENSE','NOTICE'];
 const files=Object.fromEntries(wordpress.map(name=>['drop-identity/'+name,readFileSync('integrations/wordpress/drop-identity/'+name)]));
+files['drop-identity/webmaster-questions.md']=readFileSync('docs/webmaster-questions.md');
 files['drop-identity/frrn-host.md']=readFileSync('docs/frrn-host.md');
 files['drop-identity/SETUP.md']=readFileSync('docs/standalone.md');files['drop-identity/CONTRACT.md']=readFileSync('docs/contracts/community-v1.md');
 // A fixed timestamp makes the package byte-reproducible, so its published checksum can be rebuilt from source.

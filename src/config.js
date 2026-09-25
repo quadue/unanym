@@ -8,7 +8,7 @@ export function configuration(env=process.env) {
   const basePath=identityBasePath(env.IDENTITY_BASE_PATH);
   if(contract==='legacy-firn' && basePath!=='/identity')throw new Error('Preserve the legacy issuer path');
   const operatorName=env.IDENTITY_OPERATOR_NAME?.trim();
-  const displayName=env.IDENTITY_DISPLAY_NAME?.trim()||'FRRN';
+  const displayName=env.IDENTITY_DISPLAY_NAME?.trim()||'Unanym';
   if(displayName.length>60||/[\x00-\x1f\x7f]/.test(displayName))throw new Error('Invalid member-facing name');
   const developerURL=env.IDENTITY_DEVELOPER_URL??basePath+'/developers';
   if(developerURL!==basePath+'/developers'){

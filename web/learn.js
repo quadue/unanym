@@ -1,8 +1,9 @@
 // A local, fictional walkthrough. No account APIs, persistence or analytics.
 const root=document.querySelector('.learn');
+const brand=root.dataset.brand||'Unanym';
 const select=root.querySelector('#practice-name');
 const membership=root.querySelector('#practice-membership');
-const labels={start:'Start · At the fictional community website',choose:'Step 1 of 3 · Choosing with FRRN',connected:'Step 2 of 3 · Back at Garden community',manage:'Step 3 of 3 · My connections with FRRN',done:'Finished · Practice only'};
+const labels={start:'Start · At the fictional community website',choose:`Step 1 of 3 · Choosing with ${brand}`,connected:'Step 2 of 3 · Back at Garden community',manage:`Step 3 of 3 · My connections with ${brand}`,done:'Finished · Practice only'};
 function preview(){
  root.querySelectorAll('[data-preview-name]').forEach(el=>el.textContent=select.value);
  root.querySelectorAll('[data-preview-membership]').forEach(el=>el.textContent=membership.checked?'Membership: Meadow circle':'No community memberships');
@@ -25,7 +26,7 @@ const next=root.querySelector('#next-scene');
 const caption=root.querySelector('#story-caption');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 let timer=null,scene=-1;
-const captions=['1 of 3 · Sign in through FRRN. Each website keeps its own rules.','2 of 3 · Choose your name and any membership to share.','3 of 3 · Review your connections with FRRN. Disconnecting does not erase past sharing.'];
+const captions=[`1 of 3 · Sign in through ${brand}. Each website keeps its own rules.`,'2 of 3 · Choose your name and any membership to share.',`3 of 3 · Review your connections with ${brand}. Disconnecting does not erase past sharing.`];
 function show(index){scene=index;cards.forEach((el,i)=>el.classList.toggle('is-current',i===index));caption.textContent=captions[index];}
 function pause(){clearInterval(timer);timer=null;play.textContent=scene===2?'Watch again':scene<0?'Watch the steps':'Watch from the beginning';}
 play.addEventListener('click',()=>{

@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 lab_name="${UNANYM_LAB_NAME:-drop-identity}"
-case "$lab_name" in drop-identity|unanym-standalone|frrn-frontpage|unanym-frrn|unanym-second) ;; *) echo 'Unknown lab name' >&2; exit 1 ;; esac
+case "$lab_name" in drop-identity|unanym-standalone|frrn-frontpage|unanym-frrn|unanym-second|unanym-brand) ;; *) echo 'Unknown lab name' >&2; exit 1 ;; esac
 wp_port="${UNANYM_WP_PORT:-4082}"
 db_port="${UNANYM_DB_PORT:-43306}"
 wp_host="${UNANYM_WP_HOST:-localhost}"
@@ -51,10 +51,11 @@ docker run -d --name ${lab_name}-wp --label life.frrn.drop.rehearsal=wordpress -
   -v ${lab_name}-wp-lab:/var/www/html -v "$PWD/integrations/wordpress/drop-identity:/var/www/html/wp-content/plugins/drop-identity:ro" \
   wordpress:7.1.2-php8.3-apache@sha256:bb209c8ab111746f22f578b870d866eb3f3da6028998a608202b706675450ecd \
   bash -c "sed -i 's/Listen 80/Listen 127.0.0.1:${wp_port}/' /etc/apache2/ports.conf; exec docker-entrypoint.sh apache2-foreground" >/dev/null
-for attempt in $(seq 1 40); do
-  if docker exec ${lab_name}-wp-db mysqladmin --port=${db_port} -h127.0.0.1 ping --silent >/dev/null 2>&1 && docker exec ${lab_name}-wp test -f /var/www/html/wp-config.php; then break; fi
+for attempt in $(seq 1 300); do
+  if docker exec ${lab_name}-wp-db mysql --port=${db_port} -h127.0.0.1 -uroot drop_identity_lab -e "SELECT 1" >/dev/null 2>&1 && docker exec ${lab_name}-wp test -f /var/www/html/wp-config.php; then break; fi
   sleep 1
 done
+docker exec ${lab_name}-wp-db mysql --port=${db_port} -h127.0.0.1 -uroot drop_identity_lab -e "SELECT 1" >/dev/null
 docker cp "$lab_root/wp-cli.phar" ${lab_name}-wp:/usr/local/bin/wp-cli.phar
 docker cp "$lab_root/daggerhart-openid-connect-generic" ${lab_name}-wp:/var/www/html/wp-content/plugins/
 docker exec ${lab_name}-wp php /usr/local/bin/wp-cli.phar --allow-root core install --url=http://${wp_host}:${wp_port} --title='Lakeside community' --admin_user=lab-admin --admin_password=local-demo-only-2026 --admin_email=admin@example.invalid --skip-email

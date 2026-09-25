@@ -2,7 +2,7 @@ import {readFileSync} from 'node:fs';
 import {exampleClient,exampleURL} from './example-site.js';
 
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export const displayName=config=>config.displayName??'FRRN';
+export const displayName=config=>config.displayName??'Unanym';
 export const developerURL=config=>config.developerURL??(config.basePath??'/identity')+'/developers';
 const template=name=>readFileSync(new URL('../web/'+name,import.meta.url),'utf8');
 const render=(source,values)=>source.replace(/\{\{([a-z_]+)\}\}/g,(_match,key)=>escape(values[key]??''));
@@ -11,9 +11,9 @@ export function frontPage(config,{assets=(config.basePath??'/identity')+'/assets
 }
 // Written by the build next to the WordPress package; absent in an unbuilt checkout.
 const release=()=>{try{return JSON.parse(readFileSync(new URL('../dist/release.json',import.meta.url),'utf8'));}catch{return {};}};
-export function developerPage(config,{assets=(config.basePath??'/identity')+'/assets/',home=config.accountSource==='frrn'?config.origin+'/':(config.basePath??'/identity')+'/'}={}) {
+export function developerPage(config,{assets=(config.basePath??'/identity')+'/assets/',home=config.publicDocs?'/learn':config.accountSource==='frrn'?config.origin+'/':(config.basePath??'/identity')+'/'}={}) {
   const base=config.basePath??'/identity',built=release(),frrn=config.accountSource==='frrn';
-  return render(template('developers.html'),{assets,home,developer_home:developerURL(config),brand:displayName(config),issuer:config.issuer??'Supplied by your operator',
+  return render(template('developers.html'),{assets,home,home_label:config.publicDocs?'Member walkthrough':displayName(config)+' ↗',home_footer:config.publicDocs?'Try the member walkthrough':'Back to '+displayName(config),developer_home:developerURL(config),brand:displayName(config),issuer:config.issuer??'Supplied by your operator',
     scopes:config.contract==='legacy-firn'?'openid profile drop_identity drop_memberships':'openid profile identity.v1 memberships.v1',
     contract:config.contract??'community-v1',wordpress_download:base+'/wordpress.zip',download_hidden:config.demo||config.wordpressDownload?'':'hidden',
     documentation:base+'/docs/'+(frrn?'frrn-host':'hosting'),contract_doc:base+'/docs/contract',guides:base+'/docs/',websites_guide:base+'/docs/websites',operators_guide:base+'/docs/operators',

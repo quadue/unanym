@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Unanym for community websites
  * Description: Guided Unanym setup, PKCE, explicit account linking and connection checks for OpenID Connect Generic Client.
- * Version: 0.4.0-rc.1
+ * Version: 0.4.0-rc.3
  * Requires PHP: 8.1
  * Requires Plugins: daggerhart-openid-connect-generic
  */
@@ -12,7 +12,7 @@ require_once __DIR__.'/confirmations.php';
 require_once __DIR__.'/member-area.php';
 
 function drop_identity_config() { return get_option('drop_identity_config', []); }
-function drop_identity_name() { return drop_identity_config()['display_name']??'FRRN'; }
+function drop_identity_name() { return drop_identity_config()['display_name']??'Unanym'; }
 function drop_identity_local() { return wp_get_environment_type() === 'local'; }
 function drop_identity_http($url, $args = []) {
     $args = array_merge(['timeout'=>8, 'redirection'=>0], $args);
@@ -90,13 +90,13 @@ add_action('admin_post_drop_identity_setup', function() {
         if (isset($old['membership_key']) && $old['membership_key']['kid']!==$membership_key['kid']) drop_identity_error('The operator signing key changed. Arrange a reviewed key migration before reconnecting.');
     } elseif (!$old) drop_identity_error('New websites require the community-v1 contract. Ask the operator for a community-v1 service.');
     // Member-facing branding is separate from the component name and identity contract.
-    $display_name='FRRN';
+    $display_name='Unanym';
     $presentation=drop_identity_http(preg_replace('#/oidc$#','/presentation',$issuer));
     if (!is_wp_error($presentation) && wp_remote_retrieve_response_code($presentation)===200) {
         $appearance=json_decode(wp_remote_retrieve_body($presentation),true);
         if (is_string($appearance['display_name']??null) && strlen($appearance['display_name'])<=240 && !preg_match('/[\x00-\x1f\x7f]/',$appearance['display_name'])) $display_name=sanitize_text_field($appearance['display_name']);
     }
-    if ($display_name==='') $display_name='FRRN';
+    if ($display_name==='') $display_name='Unanym';
     $settings=['login_type'=>'button','login_button_text'=>'Continue with '.$display_name,'client_id'=>$id,'client_secret'=>$secret,
         'scope'=>$v1?'openid profile identity.v1 memberships.v1 offline_access'.($confirmations?' confirmations.v1':''):'openid profile drop_identity drop_memberships offline_access','endpoint_login'=>$d['authorization_endpoint'],'endpoint_token'=>$d['token_endpoint'],'endpoint_userinfo'=>$d['userinfo_endpoint'],'endpoint_jwks'=>$d['jwks_uri'],'issuer'=>$issuer,
         'endpoint_end_session'=>'','identity_key'=>'sub','nickname_key'=>'name','displayname_format'=>'{name}',

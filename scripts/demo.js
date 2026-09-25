@@ -23,7 +23,7 @@ if(source==='independent'){
   const {pactAdapter}=await import('../src/pact.js');
   f=fixture(dir);adapter=pactAdapter({path:f.path,modeFile:f.mode});
 }
-const config=configuration({IDENTITY_ORIGIN:identityOrigin,IDENTITY_DATA_DIR:resolve(dir,'identity'),IDENTITY_CLIENTS:resolve(dir,'clients.json'),IDENTITY_DEMO:'1',IDENTITY_DISPLAY_NAME:process.env.IDENTITY_DISPLAY_NAME,IDENTITY_DEVELOPER_URL:process.env.IDENTITY_DEVELOPER_URL});
+const config=configuration({IDENTITY_ORIGIN:identityOrigin,IDENTITY_DATA_DIR:resolve(dir,'identity'),IDENTITY_CLIENTS:resolve(dir,'clients.json'),IDENTITY_DEMO:'1',IDENTITY_DISPLAY_NAME:process.env.IDENTITY_DISPLAY_NAME??'FRRN',IDENTITY_DEVELOPER_URL:process.env.IDENTITY_DEVELOPER_URL});
 const service=createService(config,adapter);
 service.app.get('/',(req,res)=>{
   if(!req.query.next)return res.send(frontPage(config,{signIn:'/?next=/identity/sites'}));

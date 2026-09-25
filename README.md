@@ -5,9 +5,9 @@
 Let members sign in, choose a name for each website, and share only the
 memberships they select. Each website keeps its own accounts and admission rules.
 
-Unanym is the identity component behind FRRN, but runs on its own. You can use
-your own domain, operator and branding without a FRRN account or community
-database. Membership rules belong to your community.
+Run Unanym on your own domain, with your own operator and branding. It supplies
+accounts, organisation approvals and member-controlled sharing independently
+of any community platform. Membership rules belong to your community.
 
 **Status: private release candidate.** WordPress is the tested integration.
 Real member acceptance and an independent security review are still pending.
@@ -23,7 +23,7 @@ npm run quickstart
 ```
 
 Open `http://localhost:4080/identity/example/`, a receiving website registered
-like any other, and choose **Continue with FRRN**. Sign in as Robin (two approved
+like any other, and choose **Continue with Unanym**. Sign in as Robin (two approved
 memberships) or Sam (none), choose what to share, and the example shows exactly
 what arrived and verifies its signatures. The developer overview and guides are at
 `http://localhost:4080/identity/developers`. This uses the v1 contract with
@@ -78,7 +78,7 @@ its required organisation under **Settings → Unanym**. Members choose to share
 that membership and the page checks current approval on every request. This
 needs no site-specific PHP. Existing content plugins and uploaded files need
 their own access policy.
-[Setup](docs/standalone.md#wordpress) · [Compatibility](docs/compatibility.md)
+[Setup](docs/standalone.md#wordpress) · [Webmaster questions](docs/webmaster-questions.md) · [Compatibility](docs/compatibility.md)
 
 ## Use FRRN as the membership source
 
@@ -105,6 +105,14 @@ Optional Pubky Ring sign-in and organisation-held signing keys are distinct
 future adapters. This release does not implement them or require a wallet.
 The [portability design and acceptance plan](docs/portability.md) keeps storage
 choice separate from website accounts, consent and organisational authority.
+
+## Public website
+
+`npm run start:site` serves the independent Unanym overview, guides, fictional
+member practice and WordPress download at port 4386. Set `PUBLIC_ORIGIN`, `HOST`
+and `PORT` for deployment. Build assets first with `npm run build`. This entry
+point is documentation only: it opens no account database and has no sign-in or
+issuer endpoints. The public site can move domains without migrating accounts.
 
 ## Development
 

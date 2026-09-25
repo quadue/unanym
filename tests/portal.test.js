@@ -43,6 +43,7 @@ test('guides and reference documents render for a community-v1 host, with the op
   try{
     const get=async path=>{const r=await fetch(h.origin+path);return {status:r.status,type:r.headers.get('content-type'),text:await r.text()};};
     const index=await get('/identity/docs/');assert.equal(index.status,200);
+    assert.equal((await (await fetch(h.origin+'/identity/presentation')).json()).display_name,'Unanym');
     for(const name of ['organisers','members','websites','operators']){
       assert.match(index.text,new RegExp('href="/identity/docs/'+name+'"'));
       const guide=await get('/identity/docs/'+name);assert.equal(guide.status,200);assert.doesNotMatch(guide.text,/<operator>/);
@@ -66,7 +67,7 @@ test('the hosted example is a real receiving site: consent, verified claims, no 
     const page=await context.newPage();
     await page.goto(h.origin+'/identity/developers');
     await page.getByRole('link',{name:'Open the example website'}).click();
-    await page.getByRole('link',{name:/Continue with/}).click();
+    await page.getByRole('link',{name:'Continue with Unanym →',exact:true}).click();
     await page.getByLabel('Your name on this website').fill('Robin');
     await page.getByRole('checkbox',{name:/Lakeside/}).check();
     await page.getByRole('button',{name:'Allow and continue'}).click();

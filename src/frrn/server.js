@@ -28,7 +28,7 @@ export function createFrrn(config,{path,modeFile,sources}) {
 if(process.argv[1] && resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
   process.umask(0o077);
   if(!process.env.FRRN_MEMBERSHIP_SOURCES) throw new Error('FRRN_MEMBERSHIP_SOURCES is required');
-  const config=configuration({...process.env,IDENTITY_CONTRACT:'community-v1'});
+  const config=configuration({...process.env,IDENTITY_DISPLAY_NAME:process.env.IDENTITY_DISPLAY_NAME??'FRRN',IDENTITY_CONTRACT:'community-v1'});
   const service=createFrrn(config,{path:config.pactDb,modeFile:config.pactMode,sources:JSON.parse(readFileSync(process.env.FRRN_MEMBERSHIP_SOURCES,'utf8'))});
   const server=service.app.listen(config.port,config.host,()=>console.log('Unanym FRRN account host listening on port',config.port));
   for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>server.close(()=>{service.close();process.exit(0);}));
