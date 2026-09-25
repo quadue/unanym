@@ -48,3 +48,12 @@ an automated two-WordPress-site rehearsal. It does not make either source public
 register real organisations/sites or establish unassisted usability. Review the
 new confirmation authority/disclosure paths with the existing auth review before
 public release. Keep the extension disabled for receiving sites until configured.
+
+## 0.4.0-rc.2 member views
+
+The candidate now includes the Your places cards, a member-only view of current
+memberships/confirmations and their destinations, and a sharing-summary download.
+They report current sharing permission, not receiving-site access. The standalone
+account explains its existing recovery boundary; no personal-root recovery or
+Pubky migration has been added. Independent review and real-member acceptance
+remain required. See [the member interface](member-places.md).

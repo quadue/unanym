@@ -40,6 +40,14 @@ withdrawal. The candidate also supports one [optional confirmation](docs/contrac
 a community organiser records that its introduction was completed. This is
 separate from membership and is shared only when selected.
 
+## Manage your sharing
+
+**Your places** gives each connected website a card with its chosen name and
+sharing controls. **Memberships & confirmations** shows current records and
+where they are shared. Members can download a readable summary of their choices;
+this is not a key backup or proof of website access. The views work without
+JavaScript. See [member views and their boundaries](docs/member-places.md).
+
 ## Run your own identity service
 
 The standalone host has persistent email-code accounts, organisation-specific

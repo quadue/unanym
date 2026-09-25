@@ -132,3 +132,28 @@ These are synthetic software results, not independent human acceptance or real
 mail delivery. The runner uses isolated fictional databases. No live source or
 client was registered, no production deployment changed, and no public GitHub
 release was made. The existing independent-review and member-trial gates remain.
+
+## 0.4.0-rc.2 member places — 2026-09-25
+
+Connected websites now have individual cards containing their chosen names and
+sharing controls. A separate member view shows current memberships and community
+confirmations, their organisation and where they are shared. Choosing a destination
+opens that website's card. Unavailable records and disconnected websites are not
+presented as continuing sharing. The signed permission history stays available.
+
+The member can download a readable sharing summary without keys, tokens or client
+secrets. It is not a key backup or an account-recovery kit. The standalone account
+now explains email recovery and operator-held keys. The guides and fictional
+walkthrough screenshots follow the new interface. The quickstart example has a
+direct Change sharing link.
+
+Local verification passed 31 Node tests and 17 browser tests. The new test obtains
+two OIDC grants and checks account isolation, private exports, current evidence,
+client-disabled confirmations and one-site withdrawal. Keyboard and phone checks
+work without scripts. The two actual local WordPress sites passed all 14 checks;
+the runner now waits for the database after restarting an existing lab.
+See `docs/evidence/member-places-wordpress.json`.
+
+These remain fictional software simulations. They do not establish real-member
+usability, email delivery or independent operational acceptance. Production and
+the public repository have not been changed by this candidate.

@@ -177,7 +177,7 @@ try {
  if(twoSites)expect((await secondPage.goto(secondOrigin+'/?page_id='+secondId)).status()).toBe(200);
  pass('The member can withhold membership while keeping their FRRN approval and the other website’s access.');
  await reconnect(person,true);
- const share=await context.newPage();await share.goto(issuer+basePath+'/sites');await share.locator('article.connection').filter({has:share.getByRole('heading',{name:'Example international website',exact:true})}).getByRole('button',{name:'Disconnect',exact:true}).click();await person.goto(area);await expect(person.getByText('Your FRRN connection ended.',{exact:false})).toBeVisible();
+ const share=await context.newPage();await share.goto(issuer+basePath+'/sites?place=wordpress-pilot');await share.locator('article.connection').filter({has:share.getByRole('heading',{name:'Example international website',exact:true})}).getByRole('button',{name:'Disconnect',exact:true}).click();await person.goto(area);await expect(person.getByText('Your FRRN connection ended.',{exact:false})).toBeVisible();
  pass('Disconnecting the site ends that WordPress identity session; native administrator access stays available.');
  if(twoSites){
   expect((await secondPage.goto(secondOrigin+'/?page_id='+secondId)).status()).toBe(200);await expect(secondPage.getByText(secondMarker,{exact:true})).toBeVisible();

@@ -8,7 +8,8 @@ import {fileURLToPath} from 'node:url';
 import {openStore,adapterFor,connection,disconnect} from './store.js';
 import {validateAccountAdapter} from './accounts.js';
 import {persona,signerFrom,consentReceipt,membershipReceipt} from './drop.js';
-import {page,consentView,sitesView,about,escape,rehearsalView} from './views.js';
+import {page,consentView,sitesView,recordsView,about,escape,rehearsalView} from './views.js';
+import {memberSharing,sharingExport} from './member-sharing.js';
 import {issueMembership,membershipKey} from './community-contract.js';
 import {issueConfirmation,confirmationLabel} from './confirmation-contract.js';
 import {standalonePage} from './standalone/views.js';
@@ -195,15 +196,29 @@ export function createService(config,pact,{mountRoutes}={}) {
     await provider.interactionDetails(req,res);
     await provider.interactionFinished(req,res,{error:'access_denied',error_description:'You chose not to connect this website.'},{mergeWithLastSubmission:false});
   });
+  function memberConnections(id) {
+    return db.prepare('SELECT client FROM connections WHERE account=? ORDER BY updated DESC,client').all(id)
+      .map(({client})=>({...connection(db,id,client),site:registry.get(client)})).filter(x=>x.site);
+  }
+  function sharingFor(id) {return memberSharing(memberConnections(id),pact.memberships(id),confirmationsFor(id));}
   app.get(base+'/sites',(req,res)=>{
     const user=account(req,res);if(!user)return;
-    const rows=db.prepare('SELECT client FROM connections WHERE account=? ORDER BY updated DESC').all(user.id)
-      .map(({client})=>({...connection(db,user.id,client),site:registry.get(client)})).filter(x=>x.site);
-    if(standalone){const current=pact.memberships(user.id);for(const row of rows)row.memberships=row.memberships.map(id=>current.find(m=>m.slug===id)?.name??'Membership no longer active');}
+    if(standalone)return res.send(sitesView(config,sharingFor(user.id),id=>csrf(req,base+'/sites/'+id+'/disconnect'),req.query.place));
+    const rows=memberConnections(user.id);
     const currentConfirmations=confirmationsFor(user.id);
     for(const row of rows)row.confirmations=row.confirmations.map(id=>{const c=currentConfirmations.find(c=>c.slug===id);return c?confirmationLabel+' · '+c.organisation.name:'Confirmation no longer active';});
     res.send(sitesView(config,rows,id=>csrf(req,base+'/sites/'+id+'/disconnect')));
   });
+  if(standalone){
+    app.get(base+'/records',(req,res)=>{
+      const user=account(req,res);if(!user)return;
+      res.send(recordsView(config,sharingFor(user.id)));
+    });
+    app.get(base+'/sharing-summary',(req,res)=>{
+      const user=account(req,res);if(!user)return;
+      res.attachment('my-sharing.json').json(sharingExport(config,sharingFor(user.id)));
+    });
+  }
   app.post(base+'/sites/:client/disconnect',body,protect,async(req,res)=>{
     const user=account(req,res);if(!user)return;
     const row=connection(db,user.id,req.params.client);if(!row)return res.sendStatus(404);

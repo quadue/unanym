@@ -13,7 +13,7 @@ process.umask(0o077);
 const dir=resolve(process.env.UNANYM_DEMO_DATA_DIR??resolve('data','demo-v1'));mkdirSync(dir,{recursive:true});
 writeFileSync(resolve(dir,'clients.json'),JSON.stringify([{client_id:'example',name:'Example website',
   description:'A demonstration website. It shows what it receives and keeps nothing after you leave the page.',
-  homepage:identityOrigin+'/identity/example/',redirect_uris:[identityOrigin+'/identity/example/callback']}]));
+  homepage:identityOrigin+'/identity/example/',sharing_uri:identityOrigin+'/identity/example/start?change=1',redirect_uris:[identityOrigin+'/identity/example/callback']}]));
 const f=independentFixture({v1:true});
 const config=configuration({IDENTITY_CONTRACT:'community-v1',IDENTITY_ORIGIN:identityOrigin,IDENTITY_OPERATOR_NAME:'Local demonstration operator',
   IDENTITY_DATA_DIR:resolve(dir,'identity'),IDENTITY_CLIENTS:resolve(dir,'clients.json'),IDENTITY_DEMO:'1',IDENTITY_DISPLAY_NAME:process.env.IDENTITY_DISPLAY_NAME});

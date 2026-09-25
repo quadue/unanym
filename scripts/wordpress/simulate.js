@@ -9,6 +9,16 @@ if(!root||!existsSync(resolve(root,'src/server/db.ts')))throw Error('Set FRRN_AP
 const run=(cmd,args,options={})=>execFileSync(cmd,args,{stdio:'inherit',...options});
 const inspect=name=>{try{return JSON.parse(execFileSync('docker',['inspect',name],{encoding:'utf8',stdio:['pipe','pipe','pipe']}))[0];}catch{return null;}};
 const started=[];
+async function waitForDatabase(name) {
+ const deadline=Date.now()+60_000;
+ do{
+  try{
+   execFileSync('docker',['exec',name+'-wp','php','/usr/local/bin/wp-cli.phar','--allow-root','core','is-installed'],{stdio:'ignore',timeout:5000});
+   return;
+  }catch{await new Promise(r=>setTimeout(r,500));}
+ }while(Date.now()<deadline);
+ throw Error('WordPress could not read its installed database: '+name);
+}
 try{
  run('npm',['run','build'],{cwd:root});run('npm',['run','build']);
  for(const [name,host,port,dbPort]of [['unanym-frrn','localhost',4342,43308],['unanym-second','127.0.0.1',4343,43436]]){
@@ -22,6 +32,7 @@ try{
    if(!wp||!db)throw Error('Incomplete fictional lab; inspect it before retrying');
    for(const c of [db,wp])if(!c.State.Running){run('docker',['start',c.Name.slice(1)]);started.push(c.Name.slice(1));}
   }
+  await waitForDatabase(name);
  }
  const child=spawn(process.execPath,['scripts/wordpress/frrn-rehearse.js'],{stdio:'inherit',env:{...process.env,FRRN_APP_ROOT:resolve(root),FRRN_TWO_SITES:'1',FRRN_CONFIRMATIONS:'1',IDENTITY_BASE_PATH:'/identity/v1'}});
  const [code]=await once(child,'exit');if(code!==0)throw Error('WordPress simulation failed');
