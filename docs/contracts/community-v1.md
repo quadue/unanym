@@ -67,6 +67,11 @@ Two evidence modes are deliberately distinct:
   statement. The operator may relay it but cannot mint this mode using its own
   key. Initial standalone administration emits only `operator_attested`.
 
+A third mode, `wallet_verified`, exists only on the unreleased wallet experiment
+branch: the operator verified an issuer-signed credential presented from the member's
+wallet. It is not part of this profile and the WordPress companion does not accept it.
+See [the wallet experiment](../wallet-experiment.md).
+
 The receiver configures trusted signer/key/organisation/mode combinations out of
 band. A self-asserted organisation ID or an embedded key is not authority.
 `verifyMembership` verifies against the supplied trust tuple; it never fetches

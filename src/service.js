@@ -69,7 +69,8 @@ export function createService(config,pact,{mountRoutes}={}) {
         if(standalone)return {sub:id,name:consent.name,
           identity_v1:{version:1,public_key:person.signer.pub,custody:'operator',operator:{id:config.issuer,name:config.operatorName}},
           memberships_v1:{version:1,statements:await Promise.all(shared.map(m=>issueMembership(config.keys.drop,{
-            issuer:config.issuer,subject:person.subject,audience:clientId,organisation:m.organisation,approvedAt:m.approvedAt,validUntil:m.validUntil
+            issuer:config.issuer,subject:person.subject,audience:clientId,organisation:m.organisation,approvedAt:m.approvedAt,validUntil:m.validUntil,
+            ...(m.authorityMode?{authorityMode:m.authorityMode}:{})
           })))},
           ...(supportsConfirmations&&registry.get(clientId)?.allow_confirmations?{confirmations_v1:{version:1,statements:await Promise.all(confirmationsFor(id).filter(c=>consent.confirmations.includes(c.slug)).map(c=>issueConfirmation(config.keys.drop,{
             issuer:config.issuer,subject:person.subject,audience:clientId,organisation:c.organisation,confirmedAt:c.confirmedAt,validUntil:c.validUntil

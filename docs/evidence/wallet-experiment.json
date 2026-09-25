@@ -1,0 +1,98 @@
+{
+  "classification": "Local wallet experiment with fictional accounts, a fictional organisation and test keys. Real walt.id issuer and wallet software; simulated receiving websites; no WordPress, no human wallet user, no real organisation.",
+  "date": "2026-09-25T11:51:49.409Z",
+  "components": {
+    "issuer": "walt.id Issuer2 (OpenID4VCI 1.0) waltid/issuer-api2@sha256:8166a31cb14ffd6c83cfa9a1bd08fa97bdd1ae0f9addea6a59d24aa0718d644e",
+    "wallet": "walt.id Wallet API v2 (OpenID4VP 1.0, DCQL) waltid/wallet-api2@sha256:6ad25229bff7bfbd956d579768450f2b7761545aeb26bb5db99c2b6b8a7d3192",
+    "walt_id_source": "github.com/walt-id/waltid-identity 6b9c8d7 (configuration trimmed to one credential)",
+    "credential": "dc+sd-jwt (SD-JWT VC), ES256, holder key binding (cnf.jwk), IETF Token Status List reference",
+    "verifier": "Unanym src/wallet (this branch): OpenID4VP direct_post, redirect_uri client identifier, SD-JWT + KB-JWT verification, status list signature/subject/freshness",
+    "status_policy": {
+      "max_status_age_s": 20,
+      "refresh_s": 5
+    }
+  },
+  "checks": [
+    {
+      "name": "independent issuer delivered an SD-JWT VC to the existing wallet",
+      "ok": true
+    },
+    {
+      "name": "the wallet presented to Unanym over OpenID4VP 1.0",
+      "ok": true,
+      "detail": {
+        "transmission_success": true,
+        "verifier_response": {}
+      }
+    },
+    {
+      "name": "only requested claims were disclosed (member name withheld)",
+      "ok": true,
+      "detail": [
+        "membership"
+      ]
+    },
+    {
+      "name": "membership linked to the signed-in account",
+      "ok": true
+    },
+    {
+      "name": "replaying the same response is refused",
+      "ok": true
+    },
+    {
+      "name": "a captured presentation replayed into a new request is refused",
+      "ok": true,
+      "detail": "{\"error\":\"invalid_request\",\"error_description\":\"Holder proof is for another request\"}"
+    },
+    {
+      "name": "both websites receive the wallet-verified membership",
+      "ok": true
+    },
+    {
+      "name": "websites receive different subjects",
+      "ok": true
+    },
+    {
+      "name": "no holder key, credential signature, status reference or credential timestamp reaches either website",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "organisation withdrawal closes future access within the bound (refresh 5 s)",
+      "ok": true,
+      "detail": 2017
+    },
+    {
+      "name": "withdrawing sharing consent stops that website only",
+      "ok": true
+    },
+    {
+      "name": "a replacement wallet and credential keep the same website account",
+      "ok": true,
+      "detail": {
+        "before": "55b1427d-8c1e-422f-8f17-30155ac5c4f2",
+        "after": "55b1427d-8c1e-422f-8f17-30155ac5c4f2"
+      }
+    },
+    {
+      "name": "a status outage fails closed within the freshness bound (20 s + 5 s refresh)",
+      "ok": true,
+      "detail": 19115
+    },
+    {
+      "name": "a member without a wallet completes the hosted journey",
+      "ok": true
+    }
+  ],
+  "measurements": {
+    "common_values_between_websites": [
+      "1790337110",
+      "1790337410",
+      "2026-09-25T00:00:00.000Z",
+      "2026-10-25T00:00:00.000Z"
+    ],
+    "withdrawal_to_denial_ms": 2017,
+    "status_outage_to_denial_ms": 19115
+  }
+}

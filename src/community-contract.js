@@ -17,7 +17,7 @@ export function validateMembership(p) {
   if(!exact(p.membership,['kind','status','approved_at','valid_until'])||p.membership.kind!=='member'||p.membership.status!=='active'||!date(p.membership.approved_at))fail();
   if(Date.parse(p.membership.approved_at)>p.iat*1000+1000)fail();
   if(p.membership.valid_until!==null&&(!date(p.membership.valid_until)||Date.parse(p.membership.valid_until)<p.exp*1000))fail();
-  if(!exact(p.authority,['mode'])||!['operator_attested','organisation_signed'].includes(p.authority.mode))fail();
+  if(!exact(p.authority,['mode'])||!['operator_attested','organisation_signed','wallet_verified'].includes(p.authority.mode))fail();
   if(p.authority.mode==='organisation_signed'&&p.iss!==p.organisation.id)fail();
   return p;
 }
@@ -38,7 +38,7 @@ export async function issueMembership(jwk,{issuer,subject,audience,organisation,
 
 /** Trust is supplied by the receiver, never by a key or organisation in the JWT. */
 export async function verifyMembership(token,{signer,organisationId,subject,audience,mode,publicKey,now=Date.now()}) {
-  if(!['operator_attested','organisation_signed'].includes(mode)||!uri(signer)||!uri(organisationId))fail();
+  if(!['operator_attested','organisation_signed','wallet_verified'].includes(mode)||!uri(signer)||!uri(organisationId))fail();
   if(publicKey.kty!=='OKP'||publicKey.crv!=='Ed25519'||Object.hasOwn(publicKey,'d'))fail();
   const {payload,protectedHeader}=await jwtVerify(token,createPublicKey({key:publicKey,format:'jwk'}),{
     algorithms:['EdDSA'],typ:communityContract.membershipType,issuer:signer,audience,subject,
