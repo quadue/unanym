@@ -78,6 +78,47 @@ membership disappears there immediately. Cached statements last until expiry;
 they are not a revocation oracle. Disclosure withdrawal revokes this connection's
 access tokens. Neither operation erases a recipient's earlier copies.
 
+## Changing the underlying engine
+
+The website protocol runs on an existing OpenID Connect engine (`oidc-provider`
+today). It may be replaced when a replacement brings a demonstrated benefit.
+Receivers key accounts on `(iss, sub)`, so a replacement keeps existing website
+accounts, evidence and member choices only if all of these hold:
+
+1. **Same issuer.** `iss` and the discovery path stay byte-identical. An
+   installation's `profile.json` pins its contract, issuer and, when FRRN-backed,
+   the source database instance. A new engine starts from that profile.
+2. **Stored subjects, not recomputed ones.** Each `sub` is a random value stored
+   once per `(account, website)` in `personas`; no secret derives it. The new
+   engine returns the stored value for every existing pair and mints a new random
+   value only for a new pair. It never re-derives, re-hashes or reuses a subject.
+3. **Stable account identifiers.** The host account IDs that key `personas`,
+   `connections` and `receipts` stay the same, or map one-to-one before cutover.
+   A member's chosen name never links accounts.
+4. **Keys move with the data.** `keys.json` carries the membership-statement key
+   (`drop`), the key that seals each website-specific private key in `personas`
+   (`encryption`) and the cookie secret. Receivers pin the statement signer out of
+   band, so it changes only through the documented key-rotation process. The
+   RS256 token-signing key may rotate because receivers read it from discovery:
+   publish the new key before switching and keep the old one until issued tokens
+   expire.
+5. **Same registrations.** Client IDs, redirect URIs and confidential-client
+   secrets carry over, so no website re-registers.
+6. **Same member state.** Active and withdrawn `connections`, each website's
+   chosen name and selected memberships, and the signed `receipts` history move
+   unchanged. A withdrawn connection stays withdrawn. Engine-internal sessions
+   and grants in `oidc` need not move; members sign in again.
+7. **Same wire contract.** Scopes, claims, statement format and evidence modes
+   in this profile are unchanged. A receiver should not be able to tell that the
+   engine changed.
+8. **Rehearsed, reversible cutover.** Restore a backup copy into the new engine
+   and confirm, for sample connections, identical `sub`, name, membership
+   statements, UserInfo and withdrawal. Keep the previous engine and its data
+   available for rollback until that check passes in production.
+
+A change that cannot meet these conditions is a migration, not an engine swap.
+It needs its own receiver notice, per-website account-linking plan and rollback.
+
 ## Pubky decision
 
 1. **Optional sign-in/link**: support a future Ring handoff beside email-code
