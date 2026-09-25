@@ -5,7 +5,7 @@ export function memberSharing(connections,memberships,confirmations=[]) {
   const availableConfirmations=new Map(confirmations.map(c=>[c.slug,c]));
   const places=connections.filter(c=>c.site).map(c=>{
     const active=Boolean(c.active);
-    const chosenMemberships=c.memberships.filter(id=>availableMemberships.has(id));
+    const chosenMemberships=c.memberships.filter(id=>availableMemberships.has(id)&&(availableMemberships.get(id).authorityMode!=='wallet_verified'||c.site.allow_wallet_memberships));
     const chosenConfirmations=(c.confirmations??[]).filter(id=>c.site.allow_confirmations&&availableConfirmations.has(id));
     return {
       client:c.client,name:c.name,active,updated:c.updated,
@@ -17,7 +17,7 @@ export function memberSharing(connections,memberships,confirmations=[]) {
   });
   const destinations=(kind,id)=>places.filter(p=>p.active&&p[kind].some(c=>c.slug===id)).map(p=>({client:p.client,name:p.site.name}));
   return {places,
-    memberships:memberships.map(m=>({name:m.name,organisation:m.organisation?.name??m.name,recordedAt:m.approvedAt,validUntil:m.validUntil,
+    memberships:memberships.map(m=>({name:m.name,organisation:m.organisation?.name??m.name,recordedAt:m.linkedAt??m.approvedAt,validUntil:m.validUntil,wallet:m.authorityMode==='wallet_verified',
       sharedWith:destinations('memberships',m.slug)})),
     confirmations:confirmations.map(c=>({name:c.name,organisation:c.organisation.name,recordedAt:c.confirmedAt,validUntil:c.validUntil,
       sharedWith:destinations('confirmations',c.slug)}))

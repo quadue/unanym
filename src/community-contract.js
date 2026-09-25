@@ -14,7 +14,7 @@ export function validateMembership(p) {
   if(p.ver!==1||!uri(p.iss)||!text(p.sub)||!text(p.aud)||!text(p.jti))fail();
   if(![p.iat,p.nbf,p.exp].every(Number.isSafeInteger)||p.nbf!==p.iat||p.exp<=p.iat||p.exp-p.iat>300)fail();
   if(!exact(p.organisation,['id','name'])||!uri(p.organisation.id)||!text(p.organisation.name,120))fail();
-  if(!exact(p.membership,['kind','status','approved_at','valid_until'])||p.membership.kind!=='member'||p.membership.status!=='active'||!date(p.membership.approved_at))fail();
+  if(!exact(p.membership,['kind','status','approved_at','valid_until'])||p.membership.kind!=='member'||p.membership.status!=='active'||!(date(p.membership.approved_at)||(p.authority?.mode==='wallet_verified'&&p.membership.approved_at===null)))fail();
   if(Date.parse(p.membership.approved_at)>p.iat*1000+1000)fail();
   if(p.membership.valid_until!==null&&(!date(p.membership.valid_until)||Date.parse(p.membership.valid_until)<p.exp*1000))fail();
   if(!exact(p.authority,['mode'])||!['operator_attested','organisation_signed','wallet_verified'].includes(p.authority.mode))fail();
@@ -28,8 +28,8 @@ export async function membershipKey(jwk) {
   return {...key,kid:await calculateJwkThumbprint(key),alg:'EdDSA',use:'sig'};
 }
 
-export async function issueMembership(jwk,{issuer,subject,audience,organisation,approvedAt,validUntil=null,authorityMode='operator_attested',now=Date.now()}) {
-  const iat=Math.floor(now/1000),exp=Math.min(iat+300,validUntil===null?Infinity:Math.floor(Date.parse(validUntil)/1000));
+export async function issueMembership(jwk,{issuer,subject,audience,organisation,approvedAt,validUntil=null,authorityMode='operator_attested',expiresAt=Infinity,now=Date.now()}) {
+  const iat=Math.floor(now/1000),exp=Math.min(iat+300,Math.floor(expiresAt/1000),validUntil===null?Infinity:Math.floor(Date.parse(validUntil)/1000));
   const payload=validateMembership({ver:1,iss:issuer,sub:subject,aud:audience,iat,nbf:iat,exp,jti:randomUUID(),organisation,
     membership:{kind:'member',status:'active',approved_at:approvedAt,valid_until:validUntil},authority:{mode:authorityMode}});
   const publicKey=await membershipKey(jwk);

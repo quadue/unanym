@@ -49,6 +49,7 @@ export function registeredClients(clients,secrets={}) {
     c.token_endpoint_auth_method ??= 'none';
     if(c.allow_refresh!==undefined && typeof c.allow_refresh!=='boolean')throw new Error('allow_refresh must be boolean');
     if(c.allow_confirmations!==undefined && typeof c.allow_confirmations!=='boolean')throw new Error('allow_confirmations must be boolean');
+    if(c.allow_wallet_memberships!==undefined && typeof c.allow_wallet_memberships!=='boolean')throw new Error('allow_wallet_memberships must be boolean');
     if(!['none','client_secret_basic','client_secret_post'].includes(c.token_endpoint_auth_method))throw new Error('Unsupported client authentication method');
     if(c.token_endpoint_auth_method!=='none') {
       c.client_secret=secrets[c.client_id];

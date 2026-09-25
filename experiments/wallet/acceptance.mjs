@@ -50,6 +50,7 @@ function website(clientId,host,port) {
       const auth=new URL(discovery.authorization_endpoint);
       auth.search=new URLSearchParams({client_id:clientId,redirect_uri:`http://${host}:${port}/cb`,response_type:'code',scope:'openid profile identity.v1 memberships.v1',
         state:'s',nonce:'n',prompt:'consent',code_challenge:createHash('sha256').update(pending).digest('base64url'),code_challenge_method:'S256'});
+      auth.searchParams.set('scope','openid profile identity.v1 memberships.v1 wallet.memberships.v1');
       await page.goto(auth.href);
       await page.getByLabel('Your name on this website').fill(name);
       const box=page.getByRole('checkbox',{name:/Lakeside Association/});
@@ -78,7 +79,10 @@ try{
   const context=await browser.newContext();const robin=await signIn(context,'robin');
   const request=await walletRequest(robin);
   const presented=await json('POST',`${WALLET}/wallet/${first.wallet}/credentials/present`,{requestUrl:request});
-  check('the wallet presented to Unanym over OpenID4VP 1.0',presented.body?.transmission_success===true,presented.body);
+  check('the wallet presented to Unanym over OpenID4VP 1.0',presented.body?.transmission_success===true);
+  const complete=presented.body?.verifier_response?.redirect_uri;
+  check('wallet receives a browser completion URL',typeof complete==='string');
+  await robin.goto(complete);await robin.getByRole('button',{name:'Add membership',exact:true}).click();
   const captured=await (await fetch(UNANYM+'/experiment/last-presentation')).json();
   const disclosed=captured.disclosed??[];
   check('only requested claims were disclosed (member name withheld)',disclosed.includes('membership')&&!disclosed.includes('member_name'),disclosed);
@@ -113,7 +117,7 @@ try{
   let closedAfter=null;
   for(let i=0;i<60;i++){if(!statements(await siteA.userinfo()).length){closedAfter=Date.now()-t0;break;}await sleep(1000);}
   evidence.measurements.withdrawal_to_denial_ms=closedAfter;
-  check('organisation withdrawal closes future access within the bound (refresh 5 s)',closedAfter!==null&&closedAfter<=7000,closedAfter);
+  check('organisation withdrawal removes UserInfo membership (5 s refresh, 1 s polling tolerance)',closedAfter!==null&&closedAfter<=6000,closedAfter);
   await fetch(STATUS+'/admin/reinstate/5',{method:'POST'});
 
   // 6. Member withdraws sharing consent for one website only.
@@ -124,6 +128,7 @@ try{
   await sleep(6000);
   const second=await newWalletWithCredential(6);
   const renewed=await json('POST',`${WALLET}/wallet/${second.wallet}/credentials/present`,{requestUrl:await walletRequest(robin)});
+  await robin.goto(renewed.body.verifier_response.redirect_uri);await robin.getByRole('button',{name:'Add membership',exact:true}).click();
   await siteA.connect(robin,{name:'Robin'});
   const after=await siteA.userinfo();
   check('a replacement wallet and credential keep the same website account',renewed.body?.transmission_success===true&&after.sub===a.sub&&statements(after).length===1,{before:a.sub,after:after.sub});
@@ -135,7 +140,7 @@ try{
   for(let i=0;i<60;i++){if(!statements(await siteA.userinfo()).length){outageClosed=Date.now()-o0;break;}await sleep(1000);}
   await fetch(STATUS+'/admin/outage/off',{method:'POST'});
   evidence.measurements.status_outage_to_denial_ms=outageClosed;
-  check('a status outage fails closed within the freshness bound (20 s + 5 s refresh)',outageClosed!==null&&outageClosed<=26000,outageClosed);
+  check('a status outage removes UserInfo membership within 20 s (1 s polling tolerance)',outageClosed!==null&&outageClosed<=21000,outageClosed);
 
   // 9. A member without a wallet completes the ordinary hosted journey.
   const samContext=await browser.newContext();const sam=await signIn(samContext,'sam');

@@ -1,0 +1,84 @@
+{
+  "date": "2026-09-25T12:49:31.066Z",
+  "checks": [
+    {
+      "name": "independent issuer delivered an SD-JWT VC to the existing wallet",
+      "ok": true
+    },
+    {
+      "name": "the wallet presented to Unanym over OpenID4VP 1.0",
+      "ok": true
+    },
+    {
+      "name": "wallet receives a browser completion URL",
+      "ok": true
+    },
+    {
+      "name": "only requested claims were disclosed (member name withheld)",
+      "ok": true,
+      "detail": [
+        "membership"
+      ]
+    },
+    {
+      "name": "membership linked to the signed-in account",
+      "ok": true
+    },
+    {
+      "name": "replaying the same response is refused",
+      "ok": true
+    },
+    {
+      "name": "a captured presentation replayed into a new request is refused",
+      "ok": true,
+      "detail": "{\"error\":\"invalid_request\",\"error_description\":\"Holder proof is for another request\"}"
+    },
+    {
+      "name": "both websites receive the wallet-verified membership",
+      "ok": true
+    },
+    {
+      "name": "websites receive different subjects",
+      "ok": true
+    },
+    {
+      "name": "no holder key, credential signature, status reference or credential timestamp reaches either website",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "organisation withdrawal removes UserInfo membership (5 s refresh, 1 s polling tolerance)",
+      "ok": true,
+      "detail": 2017
+    },
+    {
+      "name": "withdrawing sharing consent stops that website only",
+      "ok": true
+    },
+    {
+      "name": "a replacement wallet and credential keep the same website account",
+      "ok": true,
+      "detail": {
+        "same_subject": true
+      }
+    },
+    {
+      "name": "a status outage removes UserInfo membership within 20 s (1 s polling tolerance)",
+      "ok": true,
+      "detail": 18104
+    },
+    {
+      "name": "a member without a wallet completes the hosted journey",
+      "ok": true
+    }
+  ],
+  "measurements": {
+    "common_values_between_websites": [
+      "1790340703",
+      "1790340721"
+    ],
+    "withdrawal_to_denial_ms": 2017,
+    "status_outage_to_denial_ms": 18104
+  },
+  "classification": "Fictional loopback wallet API experiment with two mock websites; access measurements check UserInfo omission, not protected-page denial"
+}

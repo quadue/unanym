@@ -27,12 +27,17 @@ function unanym_memberships($claim,$subject,$config,$now=null) {
         if (!unanym_exact($h,['typ','alg','kid']) || $h['typ']!=='community-membership+jwt' || $h['alg']!=='EdDSA' || $h['kid']!==$key['kid'] || $signature===false || strlen($signature)!==64 || !sodium_crypto_sign_verify_detached($signature,$parts[0].'.'.$parts[1],unanym_decode($key['x']))) throw new RuntimeException('Invalid membership signature');
         if (!unanym_exact($p,['ver','iss','sub','aud','iat','nbf','exp','jti','organisation','membership','authority']) || $p['ver']!==1 || $p['iss']!==$config['issuer'] || $p['sub']!==$subject || $p['aud']!==$config['client_id'] || !is_int($p['iat']) || !is_int($p['nbf']) || !is_int($p['exp']) || $p['iat']!==$p['nbf'] || $p['iat']>$now || $p['exp']<=$now || $p['exp']<=$p['iat'] || $p['exp']>$p['iat']+300 || !is_string($p['jti']) || $p['jti']==='') throw new RuntimeException('Invalid membership binding');
         $o=$p['organisation'];$m=$p['membership'];
-        if (!unanym_exact($o,['id','name']) || !is_string($o['id']) || !preg_match('/^(urn:|https?:\/\/)/D',$o['id']) || !is_string($o['name']) || $o['name']==='' || strlen($o['name'])>480 || !unanym_exact($m,['kind','status','approved_at','valid_until']) || $m['kind']!=='member' || $m['status']!=='active' || !unanym_exact($p['authority'],['mode']) || $p['authority']['mode']!=='operator_attested') throw new RuntimeException('Invalid membership authority');
+        $wallet=($p['authority']['mode']??null)==='wallet_verified';
+        if (!unanym_exact($o,['id','name']) || !is_string($o['id']) || !preg_match('/^(urn:|https?:\/\/)/D',$o['id']) || !is_string($o['name']) || $o['name']==='' || strlen($o['name'])>480 || !unanym_exact($m,['kind','status','approved_at','valid_until']) || $m['kind']!=='member' || $m['status']!=='active' || !unanym_exact($p['authority'],['mode']) || !in_array($p['authority']['mode'],['operator_attested','wallet_verified'],true)) throw new RuntimeException('Invalid membership authority');
         foreach (['approved_at','valid_until'] as $field) {
             if ($field==='valid_until' && $m[$field]===null) continue;
+            if ($field==='approved_at' && $wallet && $m[$field]===null) continue;
             if (!is_string($m[$field]) || !preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/D',$m[$field]) || strtotime($m[$field])===false) throw new RuntimeException('Invalid membership date');
         }
-        if (strtotime($m['approved_at'])>$p['iat']+1 || ($m['valid_until']!==null && strtotime($m['valid_until'])<$p['exp'])) throw new RuntimeException('Invalid membership lifetime');
+        if (($m['approved_at']!==null && strtotime($m['approved_at'])>$p['iat']+1) || ($m['valid_until']!==null && strtotime($m['valid_until'])<$p['exp'])) throw new RuntimeException('Invalid membership lifetime');
+        // Valid but unaccepted evidence grants nothing; it cannot remove an
+        // unrelated hosted membership. Unknown or invalid statements still fail.
+        if ($wallet && empty($config['wallet_memberships'])) continue;
         // A valid signature is not permission. Only explicitly recognised organisations count.
         if (in_array($o['id'],$config['organisations']??[],true)) $result[]=$p;
     }

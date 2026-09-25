@@ -13,7 +13,7 @@ const port=Number(process.env.UNANYM_PORT??7010),origin=`http://localhost:${port
 const dir=resolve(process.env.UNANYM_EXP_DIR??'data/wallet-experiment');mkdirSync(dir,{recursive:true});
 writeFileSync(resolve(dir,'clients.json'),JSON.stringify([
   {client_id:'site-a',name:'Site A',description:'Fictional receiving website A',homepage:'http://localhost:7021/',redirect_uris:['http://localhost:7021/cb']},
-  {client_id:'site-b',name:'Site B',description:'Fictional receiving website B',homepage:'http://127.0.0.1:7022/',redirect_uris:['http://127.0.0.1:7022/cb']}]));
+    {client_id:'site-b',name:'Site B',description:'Fictional receiving website B',homepage:'http://127.0.0.1:7022/',redirect_uris:['http://127.0.0.1:7022/cb'] }].map(c=>({...c,allow_wallet_memberships:true}))));
 const config=configuration({IDENTITY_CONTRACT:'community-v1',IDENTITY_ORIGIN:origin,IDENTITY_OPERATOR_NAME:'Experiment operator',
   IDENTITY_DATA_DIR:resolve(dir,'identity'),IDENTITY_CLIENTS:resolve(dir,'clients.json'),IDENTITY_DEMO:'1'});
 const issuer=process.env.WALLET_ISSUER??'http://localhost:7005/openid4vci';
@@ -28,7 +28,7 @@ const capture=(app)=>app.post('/identity/wallet/response',express.urlencoded({ex
     last={form:{...req.body},disclosed};}catch{last={form:{...req.body}};}
   next();
 });
-const service=createService(config,bridge.adapter(f.adapter),{mountRoutes:app=>{capture(app);bridge.mount(app,{session:req=>f.adapter.session(req)});}});
+const service=createService(config,bridge.adapter(f.adapter),{mountRoutes:app=>{capture(app);bridge.mount(app,{session:req=>f.adapter.session(req),csrfBinding:req=>f.adapter.csrfBinding(req)});}});
 service.app.get('/experiment/last-presentation',(_req,res)=>res.json(last));
 service.app.post('/demo/login',express.urlencoded({extended:false}),(req,res)=>{
   res.cookie('pl_session',f.login(req.body.account),{httpOnly:true,sameSite:'lax',path:'/'});res.redirect(303,String(req.body.next??'/identity/'));

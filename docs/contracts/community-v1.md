@@ -68,8 +68,22 @@ Two evidence modes are deliberately distinct:
   key. Initial standalone administration emits only `operator_attested`.
 
 A third mode, `wallet_verified`, exists only on the unreleased wallet experiment
-branch: the operator verified an issuer-signed credential presented from the member's
-wallet. It is not part of this profile and the WordPress companion does not accept it.
+branch. It is an opt-in extension, not a change to the default profile. The
+operator verifies an issuer-signed membership and current status, then signs the
+website-specific statement. It is not an organisation signature on that statement.
+The operator registry must set `allow_wallet_memberships: true`; the website must
+request `wallet.memberships.v1` alongside `memberships.v1`; and the member must
+select the membership. Otherwise it is neither offered nor sent to that website.
+
+For this mode only, `membership.approved_at` may be null: presentation/linking does
+not establish the organisation's approval date. This implementation sends null
+for both membership dates and caps the statement's `exp` by the internal exact
+credential/status deadlines. Technical token times can still correlate; this is
+not an unlinkability guarantee. The member's private view separately shows when
+the credential was linked and when it expires. The experimental WordPress
+companion accepts wallet evidence only when its administrator enables it. Valid
+unaccepted wallet statements grant nothing and do not discard unrelated hosted
+memberships; invalid signatures or unknown modes still fail closed.
 See [the wallet experiment](../wallet-experiment.md).
 
 The receiver configures trusted signer/key/organisation/mode combinations out of

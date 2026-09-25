@@ -1,0 +1,76 @@
+{
+  "date": "2026-09-25T12:48:18.159Z",
+  "classification": "Fictional loopback experiment with real walt.id v2 and two real WordPress pages; no human wallet use or HTTPS deployment",
+  "wordpress": "7.1.2",
+  "checks": [
+    {
+      "name": "Real walt.id credential links only after same-browser confirmation.",
+      "ok": true
+    },
+    {
+      "name": "Opted-in WordPress admits wallet membership; ordinary WordPress receives hosted membership only and still opens its page.",
+      "ok": true
+    },
+    {
+      "name": "Operator enablement and website request are both required; either alone leaves hosted access intact.",
+      "ok": true
+    },
+    {
+      "name": "Two real WordPress member pages accept separately consented identities with different subjects.",
+      "ok": true
+    },
+    {
+      "name": "Disabling operator capability removes wallet access on an existing session.",
+      "ok": true
+    },
+    {
+      "name": "Withdrawing wallet sharing closes only the selected website; ordinary sign-in remains.",
+      "ok": true
+    },
+    {
+      "name": "Organisation revocation closes actual protected pages within 5 s refresh plus 1 s test tolerance.",
+      "ok": true,
+      "detail": 725
+    },
+    {
+      "name": "Replacing the credential and wallet key preserves both WordPress accounts.",
+      "ok": true
+    },
+    {
+      "name": "Status outage closes actual member pages within 20 s plus 1 s test tolerance; native administrator access remains.",
+      "ok": true,
+      "detail": 17406
+    },
+    {
+      "name": "PHP ignores a valid unaccepted wallet statement while retaining unrelated hosted membership.",
+      "ok": true
+    },
+    {
+      "name": "A member without a wallet signs in normally without gaining unapproved member access.",
+      "ok": true
+    }
+  ],
+  "measurements": {
+    "withdrawal_to_page_denial_ms": 725,
+    "outage_to_page_denial_ms": 17406
+  },
+  "components": {
+    "issuer": "walt.id Issuer2 (OpenID4VCI 1.0) waltid/issuer-api2@sha256:8166a31cb14ffd6c83cfa9a1bd08fa97bdd1ae0f9addea6a59d24aa0718d644e",
+    "wallet": "walt.id Wallet API v2 (OpenID4VP 1.0, DCQL) waltid/wallet-api2@sha256:6ad25229bff7bfbd956d579768450f2b7761545aeb26bb5db99c2b6b8a7d3192",
+    "walt_id_source": "github.com/walt-id/waltid-identity 6b9c8d7 (configuration trimmed to one credential)",
+    "credential": "dc+sd-jwt (SD-JWT VC), ES256, holder key binding (cnf.jwk), IETF Token Status List reference",
+    "verifier": "Unanym src/wallet (this branch): OpenID4VP direct_post, redirect_uri client identifier, SD-JWT + KB-JWT verification, status list signature/subject/freshness",
+    "status_policy": {
+      "max_status_age_s": 20,
+      "refresh_s": 5
+    },
+    "wordpress_generic": "3.11.3"
+  },
+  "limitations": [
+    "Fictional organisations and accounts; no real-member acceptance",
+    "Wallet API v2, not a person using a phone wallet",
+    "Loopback HTTP only; no HTTPS deployment",
+    "Same-browser completion only; other wallets and cross-device completion untested",
+    "Operator can correlate accounts and presentations"
+  ]
+}

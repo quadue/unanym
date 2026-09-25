@@ -57,3 +57,12 @@ They report current sharing permission, not receiving-site access. The standalon
 account explains its existing recovery boundary; no personal-root recovery or
 Pubky migration has been added. Independent review and real-member acceptance
 remain required. See [the member interface](member-places.md).
+
+## Wallet experiment boundary
+
+`exp/wallet-bridge` remains unreleased and is not mounted by the ordinary hosts.
+Its receiver extension requires operator enablement, a website request and member
+consent. The browser-bound completion and bounded status checks need independent
+review; actual wallet UX, other implementations and HTTPS remain untested. Do not
+enable cross-device completion by removing the binding checks. The latest evidence
+and protocol limitations are in [the experiment](wallet-experiment.md).

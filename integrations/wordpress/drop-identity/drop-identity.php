@@ -47,6 +47,7 @@ function drop_identity_settings() {
     }
     echo '<tr><th><label for="unanym-organisations">Recognised organisation IDs</label></th><td><textarea id="unanym-organisations" name="organisations" rows="4" class="large-text">'.esc_textarea(implode("\n",$c['organisations']??[])).'</textarea><p class="description">One stable ID per line, supplied by the organisation and operator. Empty means sign-in only. The site recognises operator-attested approvals for these organisations.</p></td></tr>';
     echo '<tr><th>Optional confirmations</th><td><label><input type="checkbox" name="confirmations" value="1" '.checked(!empty($c['confirmations']),true,false).'>Receive community introduction confirmations</label><p class="description">Members choose whether to share them. This does not change access rules. The operator must enable this extension for your website.</p></td></tr>';
+    echo '<tr><th>Experimental wallet memberships</th><td><label><input type="checkbox" name="wallet_memberships" value="1" '.checked(!empty($c['wallet_memberships']),true,false).'>Accept memberships checked from a wallet</label><p class="description">Staging only. Trust this operator to verify the organisation’s credential and current status. The operator must enable this extension for your website; members still choose what to share.</p></td></tr>';
     echo '</table>';submit_button('Check and save connection');echo '</form>';
     if ($c) echo '<p><strong>Settings saved.</strong> Open your sign-in page in a private browser window and choose Continue with '.esc_html(drop_identity_name()).'.</p>';
     if (!empty($c['membership_key']['kid'])) echo '<p>Operator membership key fingerprint: <code>'.esc_html($c['membership_key']['kid']).'</code>. Confirm it with the operator.</p>';
@@ -75,6 +76,8 @@ add_action('admin_post_drop_identity_setup', function() {
     foreach (['authorization_endpoint','token_endpoint','userinfo_endpoint','jwks_uri'] as $key) if (!is_string($d[$key]??null) || !str_starts_with($d[$key],$issuer.'/')) drop_identity_error('Unexpected endpoint in discovery. Ask the operator to check the configuration.');
     $v1=in_array('identity.v1',$d['scopes_supported']??[],true) && in_array('memberships.v1',$d['scopes_supported']??[],true);
     $confirmations=!empty($_POST['confirmations']);
+    $wallet_memberships=!empty($_POST['wallet_memberships']);
+    if ($wallet_memberships && (!$v1 || !in_array('wallet.memberships.v1',$d['scopes_supported']??[],true))) drop_identity_error('This identity service does not offer wallet memberships.');
     if ($confirmations && (!$v1 || !in_array('confirmations.v1',$d['scopes_supported']??[],true))) drop_identity_error('This identity service does not offer community confirmations.');
     $contract=$v1?'community-v1':'legacy-firn';$membership_key=null;
     if ($old && ($old['contract']??'legacy-firn')!==$contract && get_users(['meta_key'=>'drop_identity_issuer','number'=>1,'fields'=>'ID'])) drop_identity_error('Existing accounts use a different contract. Plan an explicit migration before changing it.');
@@ -98,13 +101,13 @@ add_action('admin_post_drop_identity_setup', function() {
     }
     if ($display_name==='') $display_name='FRRN';
     $settings=['login_type'=>'button','login_button_text'=>'Continue with '.$display_name,'client_id'=>$id,'client_secret'=>$secret,
-        'scope'=>$v1?'openid profile identity.v1 memberships.v1 offline_access'.($confirmations?' confirmations.v1':''):'openid profile drop_identity drop_memberships offline_access','endpoint_login'=>$d['authorization_endpoint'],'endpoint_token'=>$d['token_endpoint'],'endpoint_userinfo'=>$d['userinfo_endpoint'],'endpoint_jwks'=>$d['jwks_uri'],'issuer'=>$issuer,
+        'scope'=>$v1?'openid profile identity.v1 memberships.v1 offline_access'.($confirmations?' confirmations.v1':'').($wallet_memberships?' wallet.memberships.v1':''):'openid profile drop_identity drop_memberships offline_access','endpoint_login'=>$d['authorization_endpoint'],'endpoint_token'=>$d['token_endpoint'],'endpoint_userinfo'=>$d['userinfo_endpoint'],'endpoint_jwks'=>$d['jwks_uri'],'issuer'=>$issuer,
         'endpoint_end_session'=>'','identity_key'=>'sub','nickname_key'=>'name','displayname_format'=>'{name}',
         // Satisfy the generic formatter, then discard this non-deliverable value before user creation.
         'email_format'=>'{sub}@identity.invalid','link_existing_users'=>0,'identify_with_username'=>0,'create_if_does_not_exist'=>1,
         'token_refresh_enable'=>0,'enable_logging'=>0,'no_sslverify'=>0,'allow_internal_idp'=>drop_identity_local()?1:0,'state_time_limit'=>600,'alternate_redirect_uri'=>0,'redirect_user_back'=>0];
     update_option('openid_connect_generic_settings',$settings,false);
-    update_option('drop_identity_config',['issuer'=>$issuer,'client_id'=>$id,'secret'=>$secret,'contract'=>$contract,'confirmations'=>$confirmations,'display_name'=>$display_name,'membership_key'=>$membership_key,'organisations'=>$organisations,'token_endpoint'=>$d['token_endpoint'],'userinfo_endpoint'=>$d['userinfo_endpoint']],false);
+    update_option('drop_identity_config',['issuer'=>$issuer,'client_id'=>$id,'secret'=>$secret,'contract'=>$contract,'confirmations'=>$confirmations,'wallet_memberships'=>$wallet_memberships,'display_name'=>$display_name,'membership_key'=>$membership_key,'organisations'=>$organisations,'token_endpoint'=>$d['token_endpoint'],'userinfo_endpoint'=>$d['userinfo_endpoint']],false);
     wp_safe_redirect(admin_url('options-general.php?page=drop-identity'));exit;
 });
 

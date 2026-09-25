@@ -25,11 +25,14 @@ export function createService(config,pact,{mountRoutes}={}) {
   const standalone=config.contract==='community-v1';
   const membershipScope=standalone?'memberships.v1':'drop_memberships';
   const supportsConfirmations=standalone&&typeof pact.confirmations==='function';
+  const supportsWallet=standalone&&pact.walletMemberships===true;
   const confirmationsFor=id=>supportsConfirmations?pact.confirmations(id):[];
   const db=openStore(resolve(config.dir,'identity.db'));
   const encryption=Buffer.from(config.keys.encryption,'base64url');
   const issuerSigner=signerFrom(config.keys.drop);
   const registry=new Map(config.clients.map(c=>[c.client_id,c]));
+  const membershipsFor=(id,clientId,scope='')=>pact.memberships(id).filter(m=>m.authorityMode!=='wallet_verified'||
+    (supportsWallet&&registry.get(clientId)?.allow_wallet_memberships&&String(scope).split(' ').includes('wallet.memberships.v1')&&Math.floor(m.statementExpiresAt/1000)>Math.ceil(Date.now()/1000)));
   const policy=interactionPolicy.base();
   // An OIDC cookie alone cannot outlive or switch away from the Firn account.
   policy.get('login').checks.add(new interactionPolicy.Check('pact_session','Sign in through Firn','login_required',ctx=>{
@@ -45,7 +48,7 @@ export function createService(config,pact,{mountRoutes}={}) {
     clients:config.clients.map(c=>({client_id:c.client_id,client_name:c.name,redirect_uris:c.redirect_uris,
       response_types:['code'],grant_types:c.allow_refresh?['authorization_code','refresh_token']:['authorization_code'],
       token_endpoint_auth_method:c.token_endpoint_auth_method??'none',client_secret:c.client_secret,subject_type:'pairwise'})),
-    scopes:['openid','profile',...(standalone?['identity.v1','memberships.v1']:['drop_identity','drop_memberships']),...(supportsConfirmations?['confirmations.v1']:[]),...(config.clients.some(c=>c.allow_refresh)?['offline_access']:[])],
+    scopes:['openid','profile',...(standalone?['identity.v1','memberships.v1']:['drop_identity','drop_memberships']),...(supportsConfirmations?['confirmations.v1']:[]),...(supportsWallet?['wallet.memberships.v1']:[]),...(config.clients.some(c=>c.allow_refresh)?['offline_access']:[])],
     clientAuthMethods:[...new Set(config.clients.map(c=>c.token_endpoint_auth_method??'none'))],
     jwks:{keys:[config.keys.oidc]},
     cookies:{keys:[config.keys.cookie],names:standalone?{session:'community_session',interaction:'community_interaction',resume:'community_resume'}:{session:'drop_session',interaction:'drop_interaction',resume:'drop_resume'},long:{httpOnly:true,sameSite:'lax'},short:{httpOnly:true,sameSite:'lax'}},
@@ -61,16 +64,17 @@ export function createService(config,pact,{mountRoutes}={}) {
     clientBasedCORS:(_ctx,origin,client)=>registry.get(client.clientId)?.redirect_uris.some(u=>new URL(u).origin===origin) ?? false,
     async findAccount(ctx,id) {
       if(!pact.account(id)) return undefined;
-      return {accountId:id,async claims(){
+      return {accountId:id,async claims(_use,scope){
         const clientId=ctx.oidc.client.clientId,consent=connection(db,id,clientId);
         if(!consent?.active) throw new Error('Website disconnected');
         const person=await persona(db,id,clientId,encryption);
-        const shared=pact.memberships(id).filter(m=>consent.memberships.includes(m.slug));
+        const shared=membershipsFor(id,clientId,scope).filter(m=>consent.memberships.includes(m.slug));
         if(standalone)return {sub:id,name:consent.name,
           identity_v1:{version:1,public_key:person.signer.pub,custody:'operator',operator:{id:config.issuer,name:config.operatorName}},
           memberships_v1:{version:1,statements:await Promise.all(shared.map(m=>issueMembership(config.keys.drop,{
             issuer:config.issuer,subject:person.subject,audience:clientId,organisation:m.organisation,approvedAt:m.approvedAt,validUntil:m.validUntil,
-            ...(m.authorityMode?{authorityMode:m.authorityMode}:{})
+            ...(m.authorityMode?{authorityMode:m.authorityMode}:{}),
+            ...(m.authorityMode==='wallet_verified'?{approvedAt:null,validUntil:null,expiresAt:m.statementExpiresAt}:{})
           })))},
           ...(supportsConfirmations&&registry.get(clientId)?.allow_confirmations?{confirmations_v1:{version:1,statements:await Promise.all(confirmationsFor(id).filter(c=>consent.confirmations.includes(c.slug)).map(c=>issueConfirmation(config.keys.drop,{
             issuer:config.issuer,subject:person.subject,audience:clientId,organisation:c.organisation,confirmedAt:c.confirmedAt,validUntil:c.validUntil
@@ -157,7 +161,7 @@ export function createService(config,pact,{mountRoutes}={}) {
     if(details.session?.accountId!==user.id) return res.status(409).send('Your account changed. Start again from the website.');
     const client=registry.get(details.params.client_id);
     if(!client) return res.sendStatus(400);
-    res.send(consentView({config,client,uid:details.uid,csrf:csrf(req,req.path+'/confirm'),memberships:pact.memberships(user.id),
+    res.send(consentView({config,client,uid:details.uid,csrf:csrf(req,req.path+'/confirm'),memberships:membershipsFor(user.id,client.client_id,details.params.scope),
       confirmations:client.allow_confirmations?confirmationsFor(user.id):[],allowConfirmations:supportsConfirmations&&client.allow_confirmations,
       previous:connection(db,user.id,client.client_id),scopes:String(details.params.scope).split(' ')}));
   });
@@ -168,7 +172,7 @@ export function createService(config,pact,{mountRoutes}={}) {
     const name=typeof req.body.name==='string'?req.body.name.trim():'';
     if(!name || name.length>80 || /[\x00-\x1f\x7f]/.test(name)) return res.status(400).send('Enter a name of up to 80 characters.');
     const chosen=req.body.memberships===undefined?[]:Array.isArray(req.body.memberships)?req.body.memberships:[req.body.memberships];
-    const available=pact.memberships(user.id);
+    const available=membershipsFor(user.id,clientId,details.params.scope);
     if(chosen.length>50 || chosen.some(x=>typeof x!=='string' || !available.some(m=>m.slug===x)) || (chosen.length && !String(details.params.scope).split(' ').includes(membershipScope))) return res.status(400).send('Choose only your current community memberships.');
     const memberships=[...new Set(chosen)];
     const selected=req.body.confirmations===undefined?[]:Array.isArray(req.body.confirmations)?req.body.confirmations:[req.body.confirmations];
