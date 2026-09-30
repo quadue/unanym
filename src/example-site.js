@@ -1,7 +1,7 @@
 import {createHash,createHmac,randomBytes,timingSafeEqual} from 'node:crypto';
 import {jwtVerify,createRemoteJWKSet,decodeJwt} from 'jose';
 import {verifyMembership} from './community-contract.js';
-import {displayName} from './presentation.js';
+import {displayName,versionAssets} from './presentation.js';
 
 // A hosted receiving website for community-v1. It behaves like any other
 // registered website: authorization code + S256 PKCE, ID-token and statement
@@ -100,9 +100,9 @@ export function mountExample(app,config) {
 
 function shell(config,title,body) {
   const base=config.basePath??'/identity';
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="robots" content="noindex,nofollow"><title>${escape(title)} · Example website</title><link rel="stylesheet" href="${base}/assets/style.css"></head><body class="example-site">
+  return versionAssets(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="robots" content="noindex,nofollow"><title>${escape(title)} · Example website</title><link rel="stylesheet" href="${base}/assets/style.css"></head><body class="example-site">
   <a class="skip" href="#main">Skip to content</a><header><a class="brand" href="${base}/example/">Example website <span class="brand-sub">a demonstration receiving site</span></a></header>
-  <main id="main">${body}</main><footer><span>Run by ${escape(config.operatorName)}. This example keeps no member profile. The identity service records your connection and sharing choices.</span></footer></body></html>`;
+  <main id="main">${body}</main><footer><span>Run by ${escape(config.operatorName)}. This example keeps no member profile. The identity service records your connection and sharing choices.</span></footer></body></html>`);
 }
 
 function welcome(config,client) {

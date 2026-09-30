@@ -1,11 +1,18 @@
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
+import {createHash} from 'node:crypto';
 import {exampleClient,exampleURL} from './example-site.js';
 
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const displayName=config=>config.displayName??'Unanym';
 export const developerURL=config=>config.developerURL??(config.basePath??'/identity')+'/developers';
 const template=name=>readFileSync(new URL('../web/'+name,import.meta.url),'utf8');
-const render=(source,values)=>source.replace(/\{\{([a-z_]+)\}\}/g,(_match,key)=>escape(values[key]??''));
+// Asset URLs carry a hash of the shipped styles and scripts, so a deploy is
+// never paired with a stylesheet or script cached from the previous release.
+let version;
+const assetVersion=()=>version??=readdirSync(new URL('../web/',import.meta.url)).filter(f=>/\.(css|js)$/.test(f)).sort()
+  .reduce((hash,f)=>hash.update(f).update(template(f)),createHash('sha256')).digest('hex').slice(0,10);
+export const versionAssets=html=>html.replace(/(\/assets\/[\w.-]+\.(?:css|js))(?=")/g,'$1?v='+assetVersion());
+const render=(source,values)=>versionAssets(source.replace(/\{\{([a-z_]+)\}\}/g,(_match,key)=>escape(values[key]??'')));
 export function frontPage(config,{assets=(config.basePath??'/identity')+'/assets/',home='/',signIn=(config.basePath??'/identity')+'/account'}={}) {
   return render(template('front.html'),{brand:displayName(config),brand_mark:displayName(config)==='FRRN'?'frrn':displayName(config),assets,home,sign_in:signIn,developers:developerURL(config),privacy:(config.basePath??'/identity')+'/about'});
 }
