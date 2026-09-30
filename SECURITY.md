@@ -11,11 +11,13 @@ this draft. During the private review, use the existing private channel agreed
 with the repository owner. Do not put credentials, member records, signing keys,
 session tokens or a live exploit in an ordinary issue or pull request.
 
-Before making the repository public, enable and test GitHub private vulnerability
-reporting under the repository's Security settings, and replace this preparation
-section with the accepted maintainer and contact details. GitHub documents that
-feature for public repositories:
-https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/configure-vulnerability-reporting/configure-for-a-repository
+The canonical source is in a private Gitea repository. Ordinary repository issues
+are not a confidential reporting channel. Before any public source release,
+agree a named security maintainer, private reporting address or channel and
+response expectations, then test that channel and replace this preparation text
+with the accepted details. Do not assume GitHub-specific reporting facilities
+exist on another forge. No new contact address or response commitment is claimed
+by this repository migration.
 
 ## Review scope
 

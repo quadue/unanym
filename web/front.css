@@ -56,7 +56,8 @@
 @media(max-width:1000px){.home-hero{grid-template-columns:1fr;gap:36px}.home-steps,.principles{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){.receipt-compare,.home-steps,.principles{grid-template-columns:1fr}.home-section{margin-bottom:44px}.status-list{grid-template-columns:1fr;gap:4px}.status-list dd{margin-bottom:12px}.fit-table td:first-child{width:auto}}
 /* Landing: quiet geometry, then short chapters (unanym.org) */
-:root:has(body.landing){--ground:#17181e;--panel:#1f2128;--line:#30333c;--muted:#8d95a1;--ink:#f3f4f6;background:var(--ground)}
+/* Every public reading page (landing, overview, guides, developers) shares this ground. */
+:root:has(body.developer){--ground:#17181e;--panel:#1f2128;--line:#30333c;--muted:#8d95a1;--ink:#f3f4f6;--accent:#e8eaee;background:var(--ground)}
 .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .landing .site-header{position:relative;z-index:2}.landing main{position:relative;max-width:none;padding-inline:0;overflow-x:clip;isolation:isolate}.landing-hero,.chapter{padding-inline:max(44px,calc((100% - 1232px)/2))}
 .landing-hero{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;align-items:center;min-height:min(660px,calc(100vh - 100px));padding-block:0 36px}
@@ -75,7 +76,7 @@
    faces you show coral, amber and blue, what you keep light, structure grey. */
 .geo{overflow:visible}.geo .stop-disc-in{stop-color:#282a33}.geo .stop-disc-out{stop-color:#1d1f25}.geo .disc{stroke:#2a2d36;stroke-width:1}
 .geo .org-a{--c:#2bc6b1}.geo .org-b{--c:#b39bff}.geo .token{fill:var(--c)}.geo .token.hollow{fill:none;stroke:var(--c);stroke-width:2;stroke-dasharray:3 3}
-.geo .stop-a{stop-color:#2bc6b1}.geo .stop-b{stop-color:#b39bff}.geo .stop-line{stop-color:#9aa1ae}.geo .stop-face-coral{stop-color:#ff8469}.geo .stop-face-amber{stop-color:#ffd166}
+.geo .stop-a{stop-color:#2bc6b1}.geo .stop-b{stop-color:#b39bff}.geo .stop-line{stop-color:#9aa1ae}.geo .stop-face-coral{stop-color:#ff8469}.geo .stop-face-amber{stop-color:#ffd166}.geo .stop-face-blue{stop-color:#84bcce}
 .geo .f-keep{fill:#e8eaee}.geo .f-coral{fill:#ff8469}.geo .f-amber{fill:#ffd166}.geo .f-blue{fill:#84bcce}.geo .f-mute{fill:#80879a}.geo .f-mute2{fill:#5d6474}.geo .cube.dim{opacity:.4}
 .geo .node{fill:#1a1c22;stroke:#4a4e5a;stroke-width:1.6}.geo .org .node{fill:color-mix(in srgb,var(--c) 12%,#1a1c22);stroke:var(--c)}.geo .node.mini{fill:#23252d;stroke:#4a4e5a;stroke-width:1.3}
 .geo .link{fill:none;stroke-width:2;stroke-linecap:round}.geo .link.plain{stroke:#7b8190}.geo .link.off{stroke:#5d6270;stroke-dasharray:3 7}
@@ -100,5 +101,19 @@
 .landing-footer{max-width:1320px;margin:0 auto;padding:64px 44px 56px;display:grid;grid-template-columns:2fr 1fr 1fr;gap:40px;color:var(--muted);font-size:14px}
 .landing-footer .wordmark{font-size:22px;color:var(--ink)}.landing-footer p{margin-top:12px;max-width:340px}.landing-footer .quiet{font-size:12px;opacity:.8}
 .landing-footer nav{display:flex;flex-direction:column;gap:10px}.landing-footer h2{font-size:12px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6673;margin-bottom:4px}.landing-footer a{text-decoration:none}.landing-footer nav a:hover{color:var(--ink)}
+.landing-example{max-width:1232px;margin:0 auto;padding:40px 0 48px;border-block:1px solid var(--line)}.example-intro{max-width:640px}.example-intro h2{font-size:30px;line-height:1.2;letter-spacing:-.02em;margin:8px 0 14px}.example-intro p,.example-steps p,.example-followup p{color:var(--muted);font-size:15px;line-height:1.6}.example-intro .example-kicker{font-size:12px;color:var(--ink);letter-spacing:1px;text-transform:uppercase}.example-steps{list-style:none;padding:0;margin:30px 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}.example-steps li{min-width:0}.step-number{display:grid;place-items:center;width:28px;height:28px;border:1px solid #555b68;border-radius:50%;font-size:12px;color:var(--ink);margin-bottom:12px}.example-steps h3{font-size:16px;line-height:1.35;margin-bottom:8px}.example-followup{display:flex;gap:24px;align-items:center;justify-content:space-between}.example-followup .pill{flex-shrink:0}
+@media(max-width:1320px){.landing-example{margin-inline:44px}}
+@media(max-width:1000px){.example-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:860px){.landing-example{margin-inline:22px;padding-block:30px}.example-intro h2{font-size:26px}.example-followup{display:block}.example-followup .pill{margin-top:18px}}
+@media(max-width:480px){.example-steps{grid-template-columns:1fr;gap:22px}.example-steps li{position:relative;padding-left:42px}.example-steps .step-number{position:absolute;left:0;top:0;margin:0}}
 @media(max-width:860px){.landing-hero,.chapter{padding-inline:22px}.landing-hero{grid-template-columns:1fr;min-height:0;gap:26px;padding-block:20px 40px}.landing-disc .geo{margin:0 auto;max-width:420px}.landing-hero:before{width:620px;height:620px;right:-300px;top:-120px;border-width:80px}
 .chapter{grid-template-columns:1fr;gap:22px;padding-block:36px}.landing-disc .geo-hero-wide{display:none}.landing-disc .geo-hero-tall{display:block;max-width:400px}.chapter.flip .chapter-art{order:0}.chapter-art .geo{max-width:340px}.landing-footer{grid-template-columns:1fr 1fr;padding:44px 22px}.landing-footer>div{grid-column:1/-1}}
+/* Reading pages speak the landing's language: same type, doors and colour meanings. */
+.developer .hero h1,.doc h1{font-weight:800;letter-spacing:-.035em}.home-hero h1 span{color:var(--muted)}
+.dev-button{border-radius:9px;min-height:44px;padding:9px 22px;font-size:15px;font-weight:600}.dev-button:hover{background:#fff}
+.dev-button.secondary{background:var(--panel);border-color:#3a3d48}.dev-button.secondary:hover{background:var(--panel);border-color:var(--accent)}
+.dev-panel{border-radius:16px}.guide-card h2.chapter-kicker{font-size:19px!important;margin:0 0 10px}
+.overview-art{margin:0;display:grid;place-items:center}.overview-art .geo{width:100%;max-width:440px}
+.overview-shot{max-width:880px;margin:32px 0 0}.overview-shot figcaption{padding:14px 18px;color:var(--muted);font-size:14px}
+.developer .hero:has(.dev-art){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;align-items:center}.dev-art .geo{max-width:500px}
+@media(max-width:1000px){.developer .hero:has(.dev-art){grid-template-columns:1fr}.dev-art .geo{max-width:340px}}

@@ -1,6 +1,6 @@
 # Release readiness
 
-This repository is a private candidate for review. Preparing source for GitHub
+This repository is a private candidate for review. Preparing source in Gitea
 does not declare a production release or complete an international member pilot.
 
 ## Included
@@ -10,15 +10,18 @@ does not declare a production release or complete an international member pilot.
 - Neutral, versioned website contract and WordPress companion, including a selectable private member page.
 - Optional FRRN account source: one organiser approval, member consent and real local WordPress access tested end to end.
 - Fictional local quickstart, automated checks, installation and restore guide.
-- GitHub verification workflow with read-only permissions and pinned actions.
+- Gitea verification workflow with read-only code permissions and pinned actions;
+  the GitHub copy is secondary.
 - Draft security policy, compatibility boundary and contributor guidance.
+- Concrete fictional choir example and an independent WordPress setup trial
+  packet. The packet is prepared, not evidence that a person completed it.
 
 ## Before public release
 
 1. Confirm the named maintainer, private reporting channel and support scope.
 2. Review this snapshot and dependency/licence inventory; preserve attribution.
 3. Obtain independent review of authentication, disclosure, linking and recovery.
-4. Confirm the public repository/name and enable private vulnerability reporting.
+4. Confirm the public repository/name and test the agreed private reporting route.
 5. Verify CI on the exact candidate and document the release's supported boundary.
 
 ## Before inviting real members
@@ -28,7 +31,8 @@ does not declare a production release or complete an international member pilot.
 3. Test the actual WordPress site's admission rules, plugins, cache and account links.
 4. Agree account removal, lost-mailbox recovery, admin transfer and retention.
 5. Have another responsible operator restore the service; preserve issuer/keys.
-6. Run supervised member journeys and record where assistance was needed.
+6. Run the [WordPress setup trial](wordpress-trial.md) with another person and
+   supervised member journeys; record where assistance was needed.
 
 The first community's practice is an acceptance case, not an identity-core rule.
 Broader adoption remains unproven until other communities use the service.

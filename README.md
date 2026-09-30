@@ -116,6 +116,12 @@ issuer endpoints. The public site can move domains without migrating accounts.
 
 ## Development
 
+The private Gitea repository is canonical. `origin` points there; `main` is the
+reviewed candidate branch. The optional `github` remote is a secondary copy.
+Gitea Actions runs the pinned verification workflow in
+`.gitea/workflows/verify.yml`. Passing CI does not deploy the public site or an
+identity service. See [repository and release workflow](docs/repository.md).
+
 ```sh
 npm ci
 npx playwright install chromium
@@ -142,3 +148,7 @@ The [dependency inventory](docs/dependencies.json) records locked versions and
 their package-declared licences for review.
 
 See [contributing](CONTRIBUTING.md) and [release readiness](docs/release-readiness.md).
+
+For independent setup acceptance, use the [WordPress staging trial](docs/wordpress-trial.md)
+and [blank report](docs/templates/wordpress-trial-report.md). The trial is prepared;
+it has not been completed by an independent tester.

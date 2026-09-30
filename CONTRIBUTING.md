@@ -4,6 +4,12 @@ Start with a reproducible issue using fictional accounts. Keep changes small and
 describe the behaviour being changed, the receiving-site impact and validation.
 Use the private route in `SECURITY.md` for suspected vulnerabilities.
 
+Open ordinary changes against `main` in the canonical private Gitea repository.
+Require a successful Verify job on the exact candidate revision before merging.
+The workflow is in `.gitea/workflows/verify.yml`; the GitHub copy is secondary.
+See [repository workflow](docs/repository.md). Do not include private operator
+settings, participant information or completed trial reports in a contribution.
+
 Install Node 24, npm and Chromium as described in the README. Run `npm run verify`
 before proposing authentication, membership or consent changes. A WordPress change
 also needs the isolated WordPress rehearsal. No test may use real member data.

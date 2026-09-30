@@ -125,6 +125,7 @@ export function createService(config,pact,{mountRoutes}={}) {
   app.get(base+'/wordpress',(_req,res)=>res.send(developerPage(config)));
   app.get(base+'/presentation',(_req,res)=>res.json({display_name:displayName(config),developer_url:developerURL(config)}));
   for(const [name,path] of [['standalone.md','docs/standalone.md'],['community-v1.md','docs/contracts/community-v1.md']])app.get(base+'/docs/'+name,(_req,res)=>res.type('text/plain').sendFile(resolve(ROOT,path)));
+  app.get(base+'/docs/wordpress-trial-report.md',(_req,res)=>res.download(resolve(ROOT,'docs/templates/wordpress-trial-report.md'),'unanym-wordpress-trial-report.md'));
   app.get(base+'/docs',(_req,res)=>res.redirect(base+'/docs/'));
   app.get(base+'/docs/',(_req,res)=>res.send(docsIndex(config)));
   for(const name of guideNames)app.get(base+'/docs/'+name,(_req,res)=>res.send(guidePage(config,name)));

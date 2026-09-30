@@ -8,7 +8,7 @@ test('public Unanym pages have independent branding and no account or issuer end
   const server=createPublicSite().listen(0,'127.0.0.1');await once(server,'listening');
   const origin='http://127.0.0.1:'+server.address().port;
   try{
-    for(const path of ['/','/overview','/developers','/learn','/docs/','/docs/websites','/docs/members','/docs/organisers','/docs/operators','/docs/webmaster-questions','/docs/hosting']){
+    for(const path of ['/','/overview','/developers','/learn','/docs/','/docs/websites','/docs/members','/docs/organisers','/docs/operators','/docs/webmaster-questions','/docs/hosting','/docs/wordpress-trial']){
       const r=await fetch(origin+path),html=await r.text();assert.equal(r.status,200,path);
       assert.match(html,/Unanym/);assert.doesNotMatch(html,/FRRN|Firn|frrn\.life|\{\{/i,path);
       assert.equal(r.headers.get('set-cookie'),null);
@@ -19,6 +19,9 @@ test('public Unanym pages have independent branding and no account or issuer end
     for(const path of ['/login','/account','/sites','/oidc/.well-known/openid-configuration','/identity/oidc/.well-known/openid-configuration','/keys.json','/clients.json'])
       assert.equal((await fetch(origin+path)).status,404,path);
     assert.equal((await fetch(origin+'/learn',{method:'POST',body:'no-account-writes'})).status,404);
+    const report=await fetch(origin+'/docs/wordpress-trial-report.md');
+    assert.equal(report.status,200);assert.match(report.headers.get('content-disposition'),/attachment/);
+    assert.match(await report.text(),/Status: NOT CONDUCTED/);
     const old=await fetch(origin+'/identity/v1/docs/websites',{redirect:'manual'});
     assert.equal(old.status,308);assert.equal(old.headers.get('location'),'/docs/websites');
     const overview=await fetch(origin+'/identity/v1/developers',{redirect:'manual'});

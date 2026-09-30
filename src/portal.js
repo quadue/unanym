@@ -12,6 +12,7 @@ const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&
 
 export const referenceDocs={
   'webmaster-questions':{file:'docs/webmaster-questions.md',title:'Webmaster questions',summary:'Installation, existing accounts, approvals, privacy, access and support.'},
+  'wordpress-trial':{file:'docs/wordpress-trial.md',title:'WordPress setup trial',summary:'Try a staging setup with another person and record where help was needed.'},
   places:{file:'docs/member-places.md',title:'Member sharing views',summary:'Per-site names and sharing, record destinations, privacy and a readable export.'},
   confirmations:{file:'docs/contracts/confirmations-v1.md',title:'Optional confirmations',summary:'One separately shared community introduction confirmation; no qualification or safety score.'},
   simulation:{file:'docs/two-site-simulation.md',title:'Two-site simulation',summary:'Reproduce the fictional community and two WordPress sites; prepare a human trial.'},
@@ -21,8 +22,10 @@ export const referenceDocs={
   'release-notes':{file:'docs/release.md',title:'Release notes',summary:'What changed in each release and what was tested.'}
 };
 // Relative Markdown links between the documents, mapped to their served pages.
-const links={'standalone.md':'hosting','frrn-host.md':'frrn-host','webmaster-questions.md':'webmaster-questions','community-v1.md':'contract','contracts/community-v1.md':'contract','release.md':'release-notes'};
+const links={'standalone.md':'hosting','frrn-host.md':'frrn-host','webmaster-questions.md':'webmaster-questions','community-v1.md':'contract','contracts/community-v1.md':'contract','release.md':'release-notes','websites':'websites','organisers':'organisers','members':'members','operators':'operators','wordpress-trial.md':'wordpress-trial','templates/wordpress-trial-report.md':'wordpress-trial-report.md'};
 const guides=['organisers','members','websites','operators'];
+// Each audience keeps the colour it has on the landing.
+const guideKickers={organisers:'kicker-a',members:'kicker-member',websites:'kicker-site',operators:'kicker-b'};
 const guideTitles={organisers:'For organisers',members:'For members',websites:'For website owners',operators:'For operators'};
 
 function shell(config,{title,body,current}) {
@@ -42,7 +45,7 @@ export function docsIndex(config) {
   const reference=Object.entries(referenceDocs).filter(([key])=>key!==(config.accountSource==='frrn'?'hosting':'frrn-host')&&!(config.publicDocs&&['simulation','places'].includes(key)));
   const example=exampleClient(config)?`<p class="dev-note">Want to see it first? <a href="${escape(exampleURL(config))}">Try the example website</a>.</p>`:'';
   return shell(config,{title:'Guides',current:'guides',body:`<section class="hero"><div><p class="eyebrow">Guides</p><h1>What would you<br>like to do?</h1><p>Connect a website, manage memberships, choose what to share or run the service.</p></div></section>
-<div class="guide-grid">${guides.map(name=>`<a class="dev-panel guide-card" href="${docs}${name}"><h2>${guideTitles[name]}</h2><p>${summaries[name]}</p></a>`).join('')}</div>
+<div class="guide-grid">${guides.map(name=>`<a class="dev-panel guide-card" href="${docs}${name}"><h2 class="chapter-kicker ${guideKickers[name]}">${guideTitles[name]}</h2><p>${summaries[name]}</p></a>`).join('')}</div>
 <section class="doc-reference"><h2>Reference</h2><ul>${reference.map(([key,doc])=>`<li><a href="${docs}${key}">${doc.title}</a><span>${doc.summary}</span></li>`).join('')}</ul></section>${example}`});
 }
 
@@ -94,6 +97,7 @@ ${frrn?`<h2>Before you start</h2><p>Ask ${operator} to register your community a
 <h2>Open a members-only page</h2><ol><li>Create a page and set its visibility to <strong>Private</strong>.</li><li>In <strong>Settings → Unanym</strong>, choose that page and the organisation it requires, and save the member area.</li><li>Members who share that membership see <strong>Open member area</strong> after signing in.</li></ol>
 <p>Access is checked on every visit and is never a permanent role. The page stays private if the companion is disabled, and cannot be published by accident while it is the member area. Your editors and administrators keep their usual access.</p>
 <h2>Test before real members use it</h2><ol><li>Sign in as a test member, share the membership and open the page.</li><li>Withdraw the approval, reload the page: access closes.</li><li>Disconnect the site in Your places: the sign-in session ends.</li></ol>
+<p>Have someone else follow this guide on staging. The <a href="${docs}wordpress-trial">WordPress setup trial</a> gives the tasks and a report for recording where help was needed.</p>
 <h2>Accounts on your site</h2><p>New members become Subscribers. Existing users connect from their WordPress profile after signing in the usual way; accounts are never matched by name or email, and no email address is supplied. If the identity service cannot be reached, member access fails closed.</p>
 <h2>What this does not protect</h2><p>Uploaded files and media links, your other public pages, other membership plugins, custom APIs, and caches that bypass WordPress. Set your cache to skip signed-in and private pages, and keep member files out of public uploads.</p>
 <h2>Other platforms</h2><p>Any OpenID Connect client can sign members in with the authorization code flow and S256 PKCE. Checking membership statements needs the verification described in the <a href="${docs}contract">contract</a>. Only WordPress is tested.</p>`,

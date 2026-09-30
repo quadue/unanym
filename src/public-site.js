@@ -28,6 +28,7 @@ export function createPublicSite({origin='https://unanym.org'}={}) {
   for(const [name,file] of Object.entries({'community-v1.md':'docs/contracts/community-v1.md','standalone.md':'docs/standalone.md'}))
     app.get('/docs/'+name,(_req,res)=>res.type('text/plain').sendFile(resolve(root,file)));
   app.get('/wordpress.zip',(_req,res)=>res.download(resolve(root,'dist/wordpress.zip'),'unanym-wordpress.zip'));
+  app.get('/docs/wordpress-trial-report.md',(_req,res)=>res.download(resolve(root,'docs/templates/wordpress-trial-report.md'),'unanym-wordpress-trial-report.md'));
   app.use('/assets',express.static(resolve(root,'dist/assets'),{index:false,dotfiles:'deny'}));
   app.get('/health',(_req,res)=>res.json({service:'unanym-public-site',version:JSON.parse(readFileSync(resolve(root,'package.json'))).version}));
   // Keep incoming documentation links from the old public host useful.

@@ -8,7 +8,9 @@ let files;
 try{files=execFileSync('git',['ls-files','-z'],{encoding:'utf8',stdio:['pipe','pipe','pipe']}).split('\0').filter(Boolean);}
 catch{files=[];const walk=dir=>{for(const name of readdirSync(dir)){if(['.git','node_modules','data','dist','test-results','playwright-report'].includes(name))continue;const p=resolve(dir,name);if(lstatSync(p).isDirectory())walk(p);else files.push(relative(root,p));}};walk(root);}
 for(const path of files){
- if(/(^|\/)(?:\.env(?:\..*)?|data|node_modules|\.gitea)(\/|$)|\.(?:db|sqlite|pem|key)$/i.test(path))throw Error('Private/runtime path tracked: '+path);
+ // These reviewed Gitea files contain no deployment settings or credentials.
+ const giteaFile=['.gitea/workflows/verify.yml','.gitea/pull_request_template.md'].includes(path);
+ if(/(^|\/)(?:\.env(?:\..*)?|data|node_modules)(\/|$)|\.(?:db|sqlite|pem|key)$/i.test(path)||(/(^|\/)\.gitea(\/|$)/i.test(path)&&!giteaFile))throw Error('Private/runtime path tracked: '+path);
  if(lstatSync(path).isSymbolicLink())throw Error('Review symlink before release: '+path);
  const text=readFileSync(path,'utf8');
  if(/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}/.test(text))throw Error('Possible credential in '+path);

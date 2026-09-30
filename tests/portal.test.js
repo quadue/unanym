@@ -52,6 +52,8 @@ test('guides and reference documents render for a community-v1 host, with the op
     assert.match((await get('/identity/docs/organisers')).text,/Revoke membership/,'a standalone host describes its own administrator screens');
     const contract=await get('/identity/docs/contract');assert.match(contract.text,/<h2 id="changing-the-underlying-engine" tabindex="-1">/);
     for(const name of ['hosting','frrn-host','release-notes'])assert.equal((await get('/identity/docs/'+name)).status,200);
+    assert.equal((await get('/identity/docs/wordpress-trial')).status,200);
+    assert.match((await get('/identity/docs/wordpress-trial-report.md')).text,/Status: NOT CONDUCTED/);
     assert.match((await get('/identity/docs/community-v1.md')).type,/text\/plain/,'the raw contract stays available');
     assert.equal((await (await fetch(h.origin+'/identity/health')).json()).version,version);
     assert.equal((await get('/identity/example/')).status,404,'no example without an explicit registration');
