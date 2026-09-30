@@ -53,18 +53,20 @@ test('public landing shows the shape in few words and leads to details on reques
   const server=createPublicSite().listen(0,'127.0.0.1');await once(server,'listening');
   const origin='http://127.0.0.1:'+server.address().port,browser=await chromium.launch();
   try{
-    for(const [width,shape] of [[1440,'.geo-wide'],[375,'.geo-tall']]){
+    for(const width of [1440,375]){
       const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce'});
       await page.goto(origin+'/');
       await expect(page.getByRole('heading',{level:1})).toHaveText('One you. Many places.');
-      await expect(page.locator(shape)).toBeVisible();
-      const words=await page.evaluate(()=>[...document.querySelectorAll('main :is(h1,nav,svg text)')].filter(e=>e.checkVisibility()).map(e=>e.textContent).join(' ').split(/\s+/).filter(Boolean).length);
-      assert.ok(words<=45,`landing shows ${words} words`);
+      await expect(page.locator('.geo-hero')).toBeVisible();
+      const count=text=>text.split(/\s+/).filter(Boolean).length;
+      const hero=await page.locator('.landing-intro').innerText();
+      assert.ok(count(hero)<=25,`hero shows ${count(hero)} words`);
+      for(const chapter of await page.locator('.chapter-text').allInnerTexts())assert.ok(count(chapter)<=35,chapter);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
       await page.close();
     }
     const page=await browser.newPage();await page.goto(origin+'/');
-    await page.getByRole('link',{name:/See how it works/}).click();
+    await page.locator('.landing-intro').getByRole('link',{name:'How it works'}).click();
     await expect(page.getByRole('heading',{name:'Does not receive'})).toBeVisible();
   }finally{await browser.close();await new Promise(r=>server.close(r));}
 });
