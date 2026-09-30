@@ -28,10 +28,10 @@ const guideTitles={organisers:'For organisers',members:'For members',websites:'F
 function shell(config,{title,body,current}) {
   const base=config.basePath??'/identity',docs=base+'/docs/',brand=escape(displayName(config));
   const home=config.publicDocs?'/':config.accountSource==='frrn'?config.origin+'/':base+'/';
-  const nav=[['Overview',developerURL(config),'overview'],['Guides',docs,'guides'],['Contract',docs+'contract','contract']]
+  const nav=[[config.publicDocs?'For websites':'Overview',developerURL(config),'overview'],['Guides',docs,'guides'],['Contract',docs+'contract','contract']]
     .map(([label,href,key])=>`<a href="${escape(href)}"${current===key?' aria-current="page"':''}>${label}</a>`).join('');
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="color-scheme" content="dark"><title>${escape(title)} · Unanym</title><link rel="stylesheet" href="${base}/assets/front.css"><link rel="icon" href="${base}/assets/front-mark.svg" type="image/svg+xml"></head>
-<body class="developer"><a class="skip" href="#main">Skip to content</a><header class="site-header"><a class="wordmark" href="${escape(developerURL(config))}">unanym</a><nav class="doc-nav" aria-label="Documentation">${nav}<a href="${escape(home)}">${brand} ↗</a></nav></header><main id="main">
+<body class="developer"><a class="skip" href="#main">Skip to content</a><header class="site-header"><a class="wordmark" href="${escape(config.publicDocs?'/':developerURL(config))}">unanym</a><nav class="doc-nav" aria-label="Documentation">${nav}<a href="${escape(home)}">${brand} ↗</a></nav></header><main id="main">
 ${body}
 </main><footer class="site-footer"><span>Unanym · identity integration</span><a href="${escape(home)}">Back to ${brand}</a></footer><script type="module" src="${base}/assets/developer.js"></script></body></html>`;
 }

@@ -8,7 +8,7 @@ test('public Unanym pages have independent branding and no account or issuer end
   const server=createPublicSite().listen(0,'127.0.0.1');await once(server,'listening');
   const origin='http://127.0.0.1:'+server.address().port;
   try{
-    for(const path of ['/','/learn','/docs/','/docs/websites','/docs/members','/docs/organisers','/docs/operators','/docs/webmaster-questions','/docs/hosting']){
+    for(const path of ['/','/developers','/learn','/docs/','/docs/websites','/docs/members','/docs/organisers','/docs/operators','/docs/webmaster-questions','/docs/hosting']){
       const r=await fetch(origin+path),html=await r.text();assert.equal(r.status,200,path);
       assert.match(html,/Unanym/);assert.doesNotMatch(html,/FRRN|Firn|frrn\.life|\{\{/i,path);
       assert.equal(r.headers.get('set-cookie'),null);
@@ -21,6 +21,8 @@ test('public Unanym pages have independent branding and no account or issuer end
     assert.equal((await fetch(origin+'/learn',{method:'POST',body:'no-account-writes'})).status,404);
     const old=await fetch(origin+'/identity/v1/docs/websites',{redirect:'manual'});
     assert.equal(old.status,308);assert.equal(old.headers.get('location'),'/docs/websites');
+    const overview=await fetch(origin+'/identity/v1/developers',{redirect:'manual'});
+    assert.equal(overview.headers.get('location'),'/developers');
   }finally{await new Promise(r=>server.close(r));}
 });
 
@@ -44,5 +46,24 @@ test('public member practice completes on a phone without signing in or sending 
     assert.deepEqual(writes,[]);
     await page.getByRole('link',{name:'Member guide',exact:true}).click();
     await expect(page.getByRole('heading',{name:'For members',exact:true})).toBeVisible();
+  }finally{await browser.close();await new Promise(r=>server.close(r));}
+});
+
+test('public home addresses members first and states what websites do not receive',async()=>{
+  const server=createPublicSite().listen(0,'127.0.0.1');await once(server,'listening');
+  const origin='http://127.0.0.1:'+server.address().port,browser=await chromium.launch();
+  try{
+    const page=await browser.newPage({viewport:{width:375,height:812}});
+    await page.goto(origin+'/');
+    await expect(page.getByRole('heading',{level:1})).toContainText('Show you belong.');
+    await expect(page.getByRole('link',{name:'Try the member walkthrough'})).toHaveAttribute('href','/learn');
+    await expect(page.getByRole('link',{name:'Set up a website'})).toHaveAttribute('href','/developers');
+    await expect(page.getByRole('heading',{name:'Does not receive'})).toBeVisible();
+    await expect(page.getByText('can see which websites you connect')).toBeVisible();
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await page.getByRole('link',{name:'Set up a website'}).click();
+    await expect(page.getByRole('heading',{name:'Connect WordPress'})).toBeVisible();
+    await page.getByRole('link',{name:'unanym',exact:true}).click();
+    await expect(page).toHaveURL(origin+'/');
   }finally{await browser.close();await new Promise(r=>server.close(r));}
 });
