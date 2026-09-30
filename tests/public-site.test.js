@@ -39,7 +39,11 @@ test('public member practice completes on a phone without signing in or sending 
     await page.getByRole('button',{name:'Continue with Unanym',exact:true}).click();
     await expect(page.locator('#practice-progress')).toHaveText('Step 1 of 3 · Choosing with Unanym');
     await page.getByLabel('Your name on this website').selectOption('River');
+    // The receipt glyph shows the membership square only once it is ticked.
+    const glyphToken=page.locator('[data-step="choose"] .receipt-token');
+    await expect(glyphToken).toBeHidden();
     await page.getByRole('checkbox').check();
+    await expect(glyphToken).toBeVisible();
     await page.getByRole('button',{name:'Allow and continue',exact:true}).click();
     await expect(page.getByRole('heading',{name:'Welcome, River.'})).toBeVisible();
     await page.getByRole('button',{name:'Manage what I share',exact:true}).click();
@@ -97,6 +101,14 @@ test('public overview addresses members first and states what websites do not re
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     await page.getByRole('link',{name:'Set up a website'}).click();
     await expect(page.getByRole('heading',{name:'Connect WordPress'})).toBeVisible();
+    // Every reading page shares the landing's ground, and the member practice stays light.
+    for(const path of ['/overview','/developers','/docs/','/']){
+      await page.goto(origin+path);
+      assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),'rgb(23, 24, 30)',path);
+    }
+    await page.goto(origin+'/learn');
+    assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),'rgb(244, 244, 241)');
+    await page.goto(origin+'/developers');
     await page.getByRole('link',{name:'unanym',exact:true}).click();
     await expect(page).toHaveURL(origin+'/');
     await expect(page.getByRole('heading',{level:1})).toHaveText('One you. Many places.');

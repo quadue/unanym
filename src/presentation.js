@@ -19,7 +19,7 @@ export function frontPage(config,{assets=(config.basePath??'/identity')+'/assets
 export function overviewPage(config,{assets='/assets/'}={}) {
   const built=release();
   return render(template('overview.html'),{assets,guides:'/docs/',developers:developerURL(config),version:built.version??'',
-    tested_wordpress:built.tested?.wordpress??'',tested_generic:built.tested?.openid_connect_generic??''});
+    tested_wordpress:built.tested?.wordpress??'',tested_generic:built.tested?.openid_connect_generic??''}).replace(/<!--chapter:([a-z]+)-->/g,(_m,name)=>chapters[name]());
 }
 // Geometry vocabulary shared by the hero, the chapters and the mark.
 // You are an isometric cube: each website is shown one face, and the top face
@@ -114,11 +114,34 @@ const chapters={
       ...to.map(s=>site(s.at,s)),...moving].join(''),defs.join(''));},
   websites(){const boxes=[[[62,130],'left','coral','Robin','4f2c…'],[[180,130],'right','amber','R.','a91e…'],[[298,130],'top','blue','Rob','7d03…']];
     return svg('geo geo-chapter',360,260,boxes.map(([at,side,colour,name,id])=>site(at,{side,colour,name,id,w:100,h:100})).join(''));},
+  // The overview's hero: one cube, three websites, each linked to the face it is shown.
+  faces(){const you=[180,62],boxes=[[[62,196],'left','coral','Robin','4f2c…'],[[180,196],'right','amber','R.','a91e…'],[[298,196],'top','blue','Rob','7d03…']],defs=[],lines=[];
+    boxes.forEach(([at,,colour],i)=>{const seg=trim(you,at,38,54);defs.push(gradient('ov'+i,seg,'line','face-'+colour));lines.push(link(seg,'draw d1','ov'+i));});
+    return svg('geo geo-chapter',360,260,[...lines,cube(you[0],you[1],32,{top:'keep',left:'coral',right:'amber'}),...boxes.map(([at,side,colour,name,id])=>site(at,{side,colour,name,id,w:100,h:100}))].join(''),defs.join(''));},
   operators(){const community=[92,118],own=[268,118];
     return svg('geo geo-chapter',360,260,[`<circle class="service host" cx="${community[0]}" cy="${community[1]}" r="58"/>`,`<circle class="service host" cx="${own[0]}" cy="${own[1]}" r="58"/>`,
       cube(community[0],community[1]-12,17),cube(community[0]-24,community[1]+22,11,{top:'keep',left:'mute',right:'mute2'}),cube(community[0]+24,community[1]+22,11,{top:'keep',left:'mute',right:'mute2'}),
       cube(own[0],own[1],20),`<text class="or" x="180" y="${own[1]+5}" text-anchor="middle">or</text>`,
       label([community[0],204],'Community host'),label([own[0],204],'Your own host')].join(''));}};
+
+// The member introduction (/learn): the same vocabulary, drawn still and in light colours.
+export function learnArt() {
+  const w=280,h=170,small=([x,y],side,colour)=>`<g class="site"><rect class="node" x="${x-30}" y="${y-19}" width="60" height="38" rx="10"/>${face(side,colour,x,y,11)}</g>`;
+  const signIn=(()=>{const c=[62,85],ring=40,to=[[[222,30],'left','coral'],[[222,85],'right','amber'],[[222,140],'top','blue']],defs=[],lines=[];
+    to.forEach(([at,,colour],i)=>{const seg=trim(c,at,ring,34);defs.push(gradient('ls'+i,seg,'line','face-'+colour));lines.push(link(seg,'',`ls${i}`));});
+    return svg('geo',w,h,[`<circle class="service" cx="${c[0]}" cy="${c[1]}" r="${ring}"/>`,...lines,cube(c[0],c[1],22),...to.map(([at,side,colour])=>small(at,side,colour))].join(''),defs.join(''));})();
+  const choose=(()=>{const you=[52,66],at=[52,134];
+    return svg('geo',w,h,[`<path class="tether" d="M52 90V${at[1]-16}"/>`,cube(you[0],you[1],22),
+      `<circle class="email" cx="${at[0]}" cy="${at[1]}" r="14"/><text class="at" x="${at[0]}" y="${at[1]+5}" text-anchor="middle">@</text>`,lock([at[0]+21,at[1]-11]),
+      tick([112,48],true),face('left','coral',138,48,11),tick([112,84],true),token([138,84],'a',12),
+      link([[160,66],[176,66]],''),site([224,66],{side:'left',colour:'coral',name:'Robin',shares:['a'],w:84,h:84})].join(''));})();
+  const review=(()=>{const c=[60,85],ring=38,parts={defs:[],lines:[],marks:[],moving:[]},sites=[{at:[220,42],side:'left',colour:'coral',name:'Robin',shares:['a']},{at:[220,130],off:true,note:'Disconnected'}];
+    outgoing('lr',c,ring,sites,parts,0,48);
+    return svg('geo',w,h,[`<circle class="service" cx="${c[0]}" cy="${c[1]}" r="${ring}"/>`,...parts.lines,cube(c[0],c[1],21),...parts.marks,...sites.map(s=>site(s.at,{...s,w:88,h:76}))].join(''),parts.defs.join(''));})();
+  return [signIn,choose,review];
+}
+// What one website receives, as a glyph: its face of you, and a membership when one is ticked.
+export const receiptArt=()=>svg('geo receipt-art',64,32,face('left','coral',16,16,13)+`<g class="receipt-token">${token([48,16],'a',15)}</g>`);
 
 export function homePage(config,{assets='/assets/'}={}) {
   const page=render(template('home.html'),{assets,guides:'/docs/',developers:developerURL(config)});
@@ -137,5 +160,5 @@ export function developerPage(config,{assets=(config.basePath??'/identity')+'/as
     example_url:exampleClient(config)?exampleURL(config):'',example_hidden:exampleClient(config)?'':'hidden',
     organiser_screen:frrn?'organiser-frrn.png':'organiser-standalone.png',
     organiser_alt:frrn?'A FRRN community’s management page. Under Membership approvals, each member is listed with an Approve membership or Withdraw approval button.'
-      :'An organisation’s administration page. The administrator enters a member’s email address, optionally sets an end date, and approves or revokes memberships.'});
+      :'An organisation’s administration page. The administrator enters a member’s email address, optionally sets an end date, and approves or revokes memberships.'}).replace(/<!--chapter:([a-z]+)-->/g,(_m,name)=>chapters[name]());
 }
