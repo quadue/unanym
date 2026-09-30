@@ -13,6 +13,7 @@ const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&
 export const referenceDocs={
   'webmaster-questions':{file:'docs/webmaster-questions.md',title:'Webmaster questions',summary:'Installation, existing accounts, approvals, privacy, access and support.'},
   'wordpress-trial':{file:'docs/wordpress-trial.md',title:'WordPress setup trial',summary:'Try a staging setup with another person and record where help was needed.'},
+  'wordpress-local-trial':{file:'docs/wordpress-local-trial.md',title:'Local WordPress trial site',summary:'Create a separate fictional site and run the automated integration checks.'},
   places:{file:'docs/member-places.md',title:'Member sharing views',summary:'Per-site names and sharing, record destinations, privacy and a readable export.'},
   confirmations:{file:'docs/contracts/confirmations-v1.md',title:'Optional confirmations',summary:'One separately shared community introduction confirmation; no qualification or safety score.'},
   simulation:{file:'docs/two-site-simulation.md',title:'Two-site simulation',summary:'Reproduce the fictional community and two WordPress sites; prepare a human trial.'},
@@ -22,7 +23,7 @@ export const referenceDocs={
   'release-notes':{file:'docs/release.md',title:'Release notes',summary:'What changed in each release and what was tested.'}
 };
 // Relative Markdown links between the documents, mapped to their served pages.
-const links={'standalone.md':'hosting','frrn-host.md':'frrn-host','webmaster-questions.md':'webmaster-questions','community-v1.md':'contract','contracts/community-v1.md':'contract','release.md':'release-notes','websites':'websites','organisers':'organisers','members':'members','operators':'operators','wordpress-trial.md':'wordpress-trial','templates/wordpress-trial-report.md':'wordpress-trial-report.md'};
+const links={'standalone.md':'hosting','frrn-host.md':'frrn-host','webmaster-questions.md':'webmaster-questions','community-v1.md':'contract','contracts/community-v1.md':'contract','release.md':'release-notes','websites':'websites','organisers':'organisers','members':'members','operators':'operators','wordpress-trial.md':'wordpress-trial','wordpress-local-trial.md':'wordpress-local-trial','templates/wordpress-trial-report.md':'wordpress-trial-report.md'};
 const guides=['organisers','members','websites','operators'];
 // Each audience keeps the colour it has on the landing.
 const guideKickers={organisers:'kicker-a',members:'kicker-member',websites:'kicker-site',operators:'kicker-b'};
