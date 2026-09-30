@@ -65,6 +65,12 @@ test('public landing shows the shape in few words and leads to details on reques
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
       await page.close();
     }
+    const still=await browser.newPage({reducedMotion:'reduce'});await still.goto(origin+'/');
+    // Gradient strokes must not be overridden by the stylesheet, and nothing moves when motion is reduced.
+    assert.match(await still.locator('.geo-hero .link[stroke]').first().evaluate(e=>getComputedStyle(e).stroke),/^url\(/);
+    assert.equal(await still.locator('.mover').evaluateAll(els=>els.filter(e=>e.checkVisibility()).length),0);
+    await expect(still.locator('.geo-hero .cube')).toHaveCount(1);
+    await still.close();
     const page=await browser.newPage();await page.goto(origin+'/');
     await page.locator('.landing-intro').getByRole('link',{name:'How it works'}).click();
     await expect(page.getByRole('heading',{name:'Does not receive'})).toBeVisible();

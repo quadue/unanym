@@ -21,59 +21,85 @@ export function overviewPage(config,{assets='/assets/'}={}) {
   return render(template('overview.html'),{assets,guides:'/docs/',developers:developerURL(config),version:built.version??'',
     tested_wordpress:built.tested?.wordpress??'',tested_generic:built.tested?.openid_connect_generic??''});
 }
-// Line-art vocabulary shared by the hero and its chapters: organisations are
-// squares holding a membership token, a person is a circle, the identity
-// service is a dashed ring, websites are boxes showing their own "you".
+// Geometry vocabulary shared by the hero, the chapters and the mark.
+// You are an isometric cube: each website is shown one face, and the top face
+// is what you keep. Communities are squares whose token is a membership; the
+// identity service is the dashed ring around you; websites sit on one orbit.
 const n=v=>Math.round(v*10)/10;
+const pt=([x,y])=>`${n(x)} ${n(y)}`;
+const poly=pts=>'M'+pts.map(pt).join('L')+'Z';
+const hex=(cx,cy,s)=>[[cx,cy-s],[cx+.866*s,cy-s/2],[cx+.866*s,cy+s/2],[cx,cy+s],[cx-.866*s,cy+s/2],[cx-.866*s,cy-s/2]];
+const faces=(cx,cy,s)=>{const h=hex(cx,cy,s),c=[cx,cy];return {top:[h[0],h[1],c,h[5]],left:[h[5],c,h[3],h[4]],right:[c,h[1],h[2],h[3]]};};
+// colours: keep (neutral), coral, amber, blue; a website receives exactly one face.
+const cube=(cx,cy,s,{top='keep',left='coral',right='amber',cls=''}={})=>{const f=faces(cx,cy,s);
+  return `<g class="cube${cls}"><path class="f-${top}" d="${poly(f.top)}"/><path class="f-${left}" d="${poly(f.left)}"/><path class="f-${right}" d="${poly(f.right)}"/></g>`;};
+// One face drawn on its own, centred on (cx,cy).
+const face=(side,colour,cx,cy,s)=>{const f=faces(0,0,s)[side],mx=f.reduce((a,p)=>a+p[0],0)/4,my=f.reduce((a,p)=>a+p[1],0)/4;
+  return `<path class="f-${colour}" d="${poly(f.map(([x,y])=>[x-mx+cx,y-my+cy]))}"/>`;};
 const trim=([x1,y1],[x2,y2],from,to)=>{const d=Math.hypot(x2-x1,y2-y1),ux=(x2-x1)/d,uy=(y2-y1)/d;
-  return [[n(x1+ux*from),n(y1+uy*from)],[n(x2-ux*to),n(y2-uy*to)]];};
-const along=([[x1,y1],[x2,y2]],t)=>[n(x1+(x2-x1)*t),n(y1+(y2-y1)*t)];
-const line=(seg,cls,grad)=>`<path class="${cls}" pathLength="1"${grad?` stroke="url(#${grad})"`:''} d="M${seg[0][0]} ${seg[0][1]}L${seg[1][0]} ${seg[1][1]}"/>`;
-// Gradients run along each line in user space, so every stroke fades from its source.
-const gradient=(id,seg,from,to)=>`<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${seg[0][0]}" y1="${seg[0][1]}" x2="${seg[1][0]}" y2="${seg[1][1]}"><stop offset="0" class="stop-${from}"/><stop offset="1" class="stop-${to}"/></linearGradient>`;
-const token=([x,y],key,size=10,cls='')=>`<rect class="token org-${key}${cls}" x="${n(x-size/2)}" y="${n(y-size/2)}" width="${size}" height="${size}" rx="2.5"/>`;
-const org=([x,y],key,size=44)=>`<g class="org org-${key}"><rect class="node" x="${n(x-size/2)}" y="${n(y-size/2)}" width="${size}" height="${size}" rx="11"/>${token([x,y],key,size*.3)}</g>`;
-const person=([x,y],r=30,cls='')=>`<g class="person${cls}"><circle class="node" cx="${x}" cy="${y}" r="${r}"/><circle class="glyph" cx="${x}" cy="${n(y-r*.2)}" r="${n(r*.2)}"/><path class="glyph" d="M${n(x-r*.38)} ${n(y+r*.42)}a${n(r*.38)} ${n(r*.3)} 0 0 1 ${n(r*.76)} 0"/></g>`;
-const shape=(kind,[x,y],r=9)=>kind==='triangle'?`<path class="face face-${kind}" d="M${x} ${n(y-r)}L${n(x+r*1.05)} ${n(y+r*.75)}H${n(x-r*1.05)}Z"/>`
-  :kind==='diamond'?`<path class="face face-${kind}" d="M${x} ${n(y-r)}L${n(x+r)} ${y}L${x} ${n(y+r)}L${n(x-r)} ${y}Z"/>`
-  :kind==='circle'?`<circle class="face face-${kind}" cx="${x}" cy="${y}" r="${n(r*.85)}"/>`:'';
-const site=([x,y],{face,name,w=78,h=62,off=false}={})=>`<g class="site${off?' off':''}"><rect class="node" x="${n(x-w/2)}" y="${n(y-h/2)}" width="${w}" height="${h}" rx="12"/>${off?'':`<g class="appear d4">${shape(face,[x,y-9])}<text class="name" x="${x}" y="${n(y+19)}" text-anchor="middle">${name}</text></g>`}</g>`;
+  return [[x1+ux*from,y1+uy*from],[x2-ux*to,y2-uy*to]];};
+const along=([[x1,y1],[x2,y2]],t)=>[x1+(x2-x1)*t,y1+(y2-y1)*t];
+const d=seg=>`M${pt(seg[0])}L${pt(seg[1])}`;
+// Gradient strokes are set as attributes; the stylesheet never overrides them.
+const gradient=(id,seg,from,to)=>`<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${n(seg[0][0])}" y1="${n(seg[0][1])}" x2="${n(seg[1][0])}" y2="${n(seg[1][1])}"><stop offset="0" class="stop-${from}"/><stop offset="1" class="stop-${to}"/></linearGradient>`;
+const link=(seg,cls,grad)=>`<path class="link ${grad?'':'plain '}${cls}" pathLength="1"${grad?` stroke="url(#${grad})"`:''} d="${d(seg)}"/>`;
+const token=([x,y],key,size=10,cls='')=>`<rect class="token org-${key}${cls}" x="${n(x-size/2)}" y="${n(y-size/2)}" width="${size}" height="${size}" rx="${n(size/4)}"/>`;
+const check=([x,y],size)=>`<path class="check" d="M${n(x-size*.28)} ${n(y)}l${n(size*.2)} ${n(size*.2)} ${n(size*.36)}-${n(size*.4)}"/>`;
+const org=([x,y],key,size=48)=>`<g class="org org-${key}"><rect class="node" x="${n(x-size/2)}" y="${n(y-size/2)}" width="${size}" height="${size}" rx="${n(size/4)}"/>${token([x,y],key,size*.34)}</g>`;
+const lock=([x,y])=>`<g class="lock"><rect x="${n(x-6)}" y="${n(y-1)}" width="12" height="9" rx="2"/><path d="M${n(x-3.5)} ${n(y-1)}v-3a3.5 3.5 0 0 1 7 0v3"/></g>`;
+// A token that travels a segment once per cycle; hidden when motion is reduced.
+const mover=(seg,key,begin,size=9)=>`<rect class="mover token org-${key}" x="${-size/2}" y="${-size/2}" width="${size}" height="${size}" rx="${size/4}" opacity="0"><animateMotion dur="8s" begin="${begin}s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;.3;1" calcMode="linear" path="${d(seg)}"/><animate attributeName="opacity" dur="8s" begin="${begin}s" repeatCount="indefinite" values="0;1;1;0;0" keyTimes="0;.03;.29;.33;1"/></rect>`;
+const site=([x,y],{side,colour,name,id,shares=[],w=84,h=80,off=false})=>{
+  const box=`<rect class="node" x="${n(x-w/2)}" y="${n(y-h/2)}" width="${w}" height="${h}" rx="13"/>`;
+  if(off)return `<g class="site off">${box}${lock([x,y-2])}</g>`;
+  const rows=id?[y-20,y+8,y+24]:[y-16,y+11,y+27];
+  return `<g class="site">${box}<g class="appear d4">${face(side,colour,x,rows[0],15)}<text class="name" x="${x}" y="${n(rows[1]+4)}" text-anchor="middle">${name}</text>`+
+    (id?`<text class="ident" x="${x}" y="${n(rows[2]+4)}" text-anchor="middle">${id}</text>`:shares.map((k,j)=>token([x-(shares.length-1)*7+j*14,rows[2]],k,9)).join(''))+`</g></g>`;};
 const svg=(cls,w,h,body,defs='')=>`<svg class="${cls}" viewBox="0 0 ${w} ${h}" aria-hidden="true" focusable="false">${defs?`<defs>${defs}</defs>`:''}${body}</svg>`;
+const polar=([cx,cy],r,deg)=>[cx+r*Math.cos(deg*Math.PI/180),cy+r*Math.sin(deg*Math.PI/180)];
 
-// Hero: the whole system inside one disc.
+// Hero: communities and websites on one orbit around you.
 function heroGeometry() {
-  const you=[262,262],ring=72,orgs=[[[104,176],'a'],[[104,348],'b']];
-  const sites=[{at:[414,150],face:'triangle',name:'Robin',shares:['a']},{at:[430,262],face:'diamond',name:'R.',shares:['a','b']},{at:[414,374],off:true,shares:[]}];
-  const defs=[],body=[`<circle class="disc" cx="262" cy="262" r="256"/>`];
-  orgs.forEach(([at,key],i)=>{const seg=trim(at,you,26,ring);defs.push(gradient('hi'+i,seg,key,'ring'));
-    body.push(line(seg,'link draw d1','hi'+i),token(seg[1],key,10,' appear d2'));});
-  sites.forEach((s,i)=>{const seg=trim(you,s.at,ring,40);
-    if(s.off){body.push(line(seg,'link off appear d3'));return;}
-    defs.push(gradient('ho'+i,seg,'ring','face-'+s.face));body.push(line(seg,'link draw d3','ho'+i));
-    s.shares.forEach((k,j)=>body.push(token(along(seg,.5+(j-(s.shares.length-1)/2)*.16),k,9,' appear d4')));});
-  body.push(`<circle class="service" cx="${you[0]}" cy="${you[1]}" r="${ring}"/>`,person(you,32));
-  orgs.forEach(([at,key])=>body.push(org(at,key)));
-  sites.forEach(s=>body.push(site(s.at,s)));
+  const c=[262,262],orbit=178,ring=66,defs=[`<radialGradient id="disc-glow" cx="50%" cy="50%" r="50%"><stop offset="0" class="stop-disc-in"/><stop offset="1" class="stop-disc-out"/></radialGradient>`];
+  const orgs=[[polar(c,orbit,215),'a'],[polar(c,orbit,145),'b']];
+  const sites=[{at:polar(c,orbit,-40),side:'left',colour:'coral',name:'Robin',shares:['a']},{at:polar(c,orbit,0),side:'right',colour:'amber',name:'R.',shares:['a','b']},{at:polar(c,orbit,40),off:true,shares:[]}];
+  const under=[`<circle class="disc" cx="${c[0]}" cy="${c[1]}" r="256" fill="url(#disc-glow)"/>`,`<circle class="orbit" cx="${c[0]}" cy="${c[1]}" r="${orbit}"/>`,`<circle class="service" cx="${c[0]}" cy="${c[1]}" r="${ring}"/>`];
+  const lines=[],over=[],moving=[];
+  orgs.forEach(([at,key],i)=>{const seg=trim(at,c,30,ring);defs.push(gradient('hi'+i,seg,key,'line'));
+    lines.push(link(seg,'draw d1','hi'+i));over.push(token(seg[1],key,11,' appear d2'));moving.push(mover(seg,key,3.2+i*.25));});
+  sites.forEach((s,i)=>{const seg=trim(c,s.at,ring,46);
+    if(s.off){const gate=along(seg,.55),[[x1,y1],[x2,y2]]=seg,len=Math.hypot(x2-x1,y2-y1),px=-(y2-y1)/len*9,py=(x2-x1)/len*9;
+      lines.push(link([seg[0],gate],'draw d3'),`<path class="gate appear d4" d="M${pt([gate[0]+px,gate[1]+py])}L${pt([gate[0]-px,gate[1]-py])}"/>`);return;}
+    defs.push(gradient('ho'+i,seg,'line','face-'+s.colour));lines.push(link(seg,'draw d3','ho'+i));
+    s.shares.forEach((k,j)=>moving.push(mover(seg,k,5.8+i*.3+j*.35)));});
+  const body=[...under,...lines,cube(c[0],c[1],34,{left:'coral',right:'amber'}),...over,
+    ...orgs.map(([at,key])=>org(at,key)),...sites.map(s=>site(s.at,s)),...moving];
   return svg('geo geo-hero',524,524,body.join(''),defs.join(''));
 }
 // Chapters zoom into one part of the hero.
 const chapters={
-  organisers(){const o=[84,130],members=[[268,52],[284,130],[268,208]],b=[org(o,'a',52)],d=[];
-    members.forEach((m,i)=>{const seg=trim(o,m,30,22),off=i===2;if(!off)d.push(gradient('c1'+i,seg,'a','ring'));
-      b.unshift(line(seg,off?'link off':'link draw d1',off?null:'c1'+i));b.push(person(m,18,off?' dim':''),token([m[0]+26,m[1]-14],'a',9,off?' hollow':' appear d2'));});
-    return svg('geo geo-chapter',360,260,b.join(''),d.join(''));},
-  members(){const you=[80,130],to=[[{at:[284,52],face:'triangle',name:'Robin'},['a']],[{at:[296,130],face:'diamond',name:'R.'},['a','b']],[{at:[284,208],off:true},[]]],b=[],d=[];
-    to.forEach(([s,shares],i)=>{const seg=trim(you,s.at,34,40);if(s.off){b.push(line(seg,'link off'));}else{d.push(gradient('c2'+i,seg,'ring','face-'+s.face));b.push(line(seg,'link draw d1','c2'+i));}
-      shares.forEach((k,j)=>b.push(token(along(seg,.5+(j-(shares.length-1)/2)*.2),k,9,' appear d2')));b.push(site(s.at,{...s,w:70,h:56}));});
-    b.push(person(you,30));return svg('geo geo-chapter',360,260,b.join(''),d.join(''));},
-  websites(){const sites=[[[62,130],'triangle','Robin'],[[180,130],'diamond','R.'],[[298,130],'circle','Rob']],b=[];
-    for(let i=0;i<2;i++){const x=(sites[i][0][0]+sites[i+1][0][0])/2;b.push(`<path class="link off" d="M${sites[i][0][0]+38} 130H${sites[i+1][0][0]-38}"/><path class="cross" d="M${x-6} 124l12 12m0-12l-12 12"/>`);}
-    sites.forEach(([at,face,name])=>b.push(site(at,{face,name,w:74,h:64})));
-    b.push(`<text class="small" x="180" y="206" text-anchor="middle">a different identifier at each</text>`);
+  organisers(){const o=[78,130],members=[[262,52],[284,130],[262,208]],lines=[],marks=[],defs=[];
+    members.forEach((m,i)=>{const seg=trim(o,m,32,24),off=i===2;if(!off)defs.push(gradient('c1'+i,seg,'a','line'));
+      lines.push(link(seg,off?'off':'draw d1',off?null:'c1'+i));
+      marks.push(cube(m[0],m[1],17,{top:'keep',left:'mute',right:'mute2',cls:off?' dim':''}),
+        off?token([m[0]+24,m[1]+14],'a',17,' hollow'):`<g class="appear d2">${token([m[0]+24,m[1]+14],'a',17)}${check([m[0]+24,m[1]+14],17)}</g>`);});
+    return svg('geo geo-chapter',360,260,[...lines,org(o,'a',58),...marks].join(''),defs.join(''));},
+  members(){const you=[92,110],to=[{at:[282,58],side:'left',colour:'coral',name:'Robin',shares:['a']},{at:[282,172],side:'right',colour:'amber',name:'R.',shares:['a','b']}],lines=[],moving=[],defs=[];
+    to.forEach((s,i)=>{const seg=trim(you,s.at,36,46);defs.push(gradient('c2'+i,seg,'line','face-'+s.colour));lines.push(link(seg,'draw d1','c2'+i));
+      s.shares.forEach((k,j)=>moving.push(mover(seg,k,1.6+i*.4+j*.35)));});
+    const at=[92,206];
+    return svg('geo geo-chapter',360,260,[...lines,`<path class="tether" d="M92 148V${at[1]-16}"/>`,cube(you[0],you[1],30),
+      `<circle class="email" cx="${at[0]}" cy="${at[1]}" r="15"/><text class="at" x="${at[0]}" y="${at[1]+5}" text-anchor="middle">@</text>`,lock([at[0]+22,at[1]-12]),
+      ...to.map(s=>site(s.at,s)),...moving].join(''),defs.join(''));},
+  websites(){const boxes=[[[64,130],'left','coral','Robin','4f2c…'],[[180,130],'right','amber','R.','a91e…'],[[296,130],'top','blue','Rob','7d03…']],b=[];
+    for(let i=0;i<2;i++){const x=(boxes[i][0][0]+boxes[i+1][0][0])/2;b.push(`<path class="cross" d="M${x-5} 125l10 10m0-10l-10 10"/>`);}
+    boxes.forEach(([at,side,colour,name,id])=>b.push(site(at,{side,colour,name,id,w:96,h:96})));
     return svg('geo geo-chapter',360,260,b.join(''));},
-  operators(){const rings=[[[88,136],62,false],[[214,92],46,true],[[290,178],50,false]],b=[];
-    rings.forEach(([[x,y],r,mine])=>{b.push(`<circle class="service${mine?' mine':''}" cx="${x}" cy="${y}" r="${r}"/>`);
-      [[-.42,-.2],[.35,-.35],[.1,.42]].forEach(([dx,dy])=>b.push(`<circle class="dot${mine?' mine':''}" cx="${n(x+dx*r)}" cy="${n(y+dy*r)}" r="${mine?5:4}"/>`));});
+  operators(){const groups=[[[76,150],false],[[186,92],true],[[290,168],false]],b=[];
+    groups.forEach(([c,mine])=>{b.push(`<g class="constellation${mine?' mine':''}"><circle class="service" cx="${c[0]}" cy="${c[1]}" r="30"/>`);
+      [-40,20,80].forEach(deg=>{const tip=polar(c,56,deg),seg=trim(c,tip,30,7);b.push(link(seg,'plain'),`<rect class="node mini" x="${n(tip[0]-7)}" y="${n(tip[1]-7)}" width="14" height="14" rx="4"/>`);});
+      b.push(cube(c[0],c[1],13,mine?{}:{top:'keep',left:'mute',right:'mute2'}),'</g>');});
+    b.push(`<text class="small" x="186" y="42" text-anchor="middle">yours</text>`);
     return svg('geo geo-chapter',360,260,b.join(''));}};
 
 export function homePage(config,{assets='/assets/'}={}) {
