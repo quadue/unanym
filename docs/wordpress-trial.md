@@ -5,8 +5,10 @@ connect a staging WordPress site using the published guide. Automated checks
 already cover the software; this trial records what a person finds difficult.
 
 Use fictional memberships and ordinary test accounts. Keep the site and identity
-service separate from production. The tester and staging site still need to be
-chosen. Preparing this guide has not registered a site or invited anyone.
+service separate from production. A [separate local WordPress lab](wordpress-local-trial.md)
+is available for automated checks. The independent tester and persistent identity
+service with real mail delivery still need to be arranged. Preparing this guide
+has not invited anyone or established a successful human trial.
 
 ## Prepare the handoff
 

@@ -14,6 +14,8 @@ fi
 tools_dir=$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/unanym-php.XXXXXX")
 mkdir -p "$tools_dir/lists/partial" "$tools_dir/cache/archives/partial" "$tools_dir/packages" "$tools_dir/root" "$tools_dir/bin"
 apt_options=(-o "Dir::State::lists=$tools_dir/lists" -o "Dir::Cache=$tools_dir/cache" -o "Debug::NoLocking=1")
+printf '%s\n' '#clear APT::Update::Post-Invoke;' '#clear APT::Update::Post-Invoke-Success;' > "$tools_dir/apt.conf"
+apt_options+=(-c "$tools_dir/apt.conf")
 apt-get "${apt_options[@]}" update
 cd "$tools_dir/packages"
 apt-get "${apt_options[@]}" download php8.2-cli php8.2-common libsodium23
@@ -23,7 +25,9 @@ cat > "$tools_dir/bin/php" <<'PHP'
 set -euo pipefail
 php_root="$(cd "$(dirname "$0")/../root" && pwd)"
 export LD_LIBRARY_PATH="$php_root/usr/lib/x86_64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-exec "$php_root/usr/bin/php8.2" -n -d "extension=$php_root/usr/lib/php/20220829/sodium.so" "$@"
+# Debian's CLI has Sodium built in; loading sodium.so would corrupt JSON output
+# with a startup warning even though the built-in verifier is available.
+exec "$php_root/usr/bin/php8.2" -n "$@"
 PHP
 chmod 700 "$tools_dir/bin/php"
 "$tools_dir/bin/php" -r 'exit(extension_loaded("sodium") ? 0 : 1);'
