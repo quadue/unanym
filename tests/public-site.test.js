@@ -57,7 +57,8 @@ test('public landing shows the shape in few words and leads to details on reques
       const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce'});
       await page.goto(origin+'/');
       await expect(page.getByRole('heading',{level:1})).toHaveText('One you. Many places.');
-      await expect(page.locator('.geo-hero')).toBeVisible();
+      await expect(page.locator(width>860?'.geo-hero-wide':'.geo-hero-tall')).toBeVisible();
+      await expect(page.locator(width>860?'.geo-hero-tall':'.geo-hero-wide')).toBeHidden();
       const count=text=>text.split(/\s+/).filter(Boolean).length;
       const hero=await page.locator('.landing-intro').innerText();
       assert.ok(count(hero)<=25,`hero shows ${count(hero)} words`);
@@ -69,7 +70,9 @@ test('public landing shows the shape in few words and leads to details on reques
     // Gradient strokes must not be overridden by the stylesheet, and nothing moves when motion is reduced.
     assert.match(await still.locator('.geo-hero .link[stroke]').first().evaluate(e=>getComputedStyle(e).stroke),/^url\(/);
     assert.equal(await still.locator('.mover').evaluateAll(els=>els.filter(e=>e.checkVisibility()).length),0);
-    await expect(still.locator('.geo-hero .cube')).toHaveCount(1);
+    await expect(still.locator('.geo-hero-wide .cube')).toHaveCount(1);
+    await expect(still.locator('.geo-hero-wide .label')).toHaveText(['You','Identity service','Your communities','Websites']);
+    await expect(still.locator('.geo-chapter .cross')).toHaveCount(0);
     await still.close();
     const page=await browser.newPage();await page.goto(origin+'/');
     await page.locator('.landing-intro').getByRole('link',{name:'How it works'}).click();

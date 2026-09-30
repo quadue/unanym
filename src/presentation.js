@@ -49,32 +49,53 @@ const org=([x,y],key,size=48)=>`<g class="org org-${key}"><rect class="node" x="
 const lock=([x,y])=>`<g class="lock"><rect x="${n(x-6)}" y="${n(y-1)}" width="12" height="9" rx="2"/><path d="M${n(x-3.5)} ${n(y-1)}v-3a3.5 3.5 0 0 1 7 0v3"/></g>`;
 // A token that travels a segment once per cycle; hidden when motion is reduced.
 const mover=(seg,key,begin,size=9)=>`<rect class="mover token org-${key}" x="${-size/2}" y="${-size/2}" width="${size}" height="${size}" rx="${size/4}" opacity="0"><animateMotion dur="8s" begin="${begin}s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;.3;1" calcMode="linear" path="${d(seg)}"/><animate attributeName="opacity" dur="8s" begin="${begin}s" repeatCount="indefinite" values="0;1;1;0;0" keyTimes="0;.03;.29;.33;1"/></rect>`;
-const site=([x,y],{side,colour,name,id,shares=[],w=84,h=80,off=false})=>{
+const site=([x,y],{side,colour,name,id,shares=[],w=84,h=80,off=false,note=''})=>{
   const box=`<rect class="node" x="${n(x-w/2)}" y="${n(y-h/2)}" width="${w}" height="${h}" rx="13"/>`;
-  if(off)return `<g class="site off">${box}${lock([x,y-2])}</g>`;
+  if(off)return `<g class="site off">${box}${lock([x,note?y-10:y-2])}${note?`<text class="note" x="${x}" y="${n(y+18)}" text-anchor="middle">${note}</text>`:''}</g>`;
   const rows=id?[y-20,y+8,y+24]:[y-16,y+11,y+27];
   return `<g class="site">${box}<g class="appear d4">${face(side,colour,x,rows[0],15)}<text class="name" x="${x}" y="${n(rows[1]+4)}" text-anchor="middle">${name}</text>`+
     (id?`<text class="ident" x="${x}" y="${n(rows[2]+4)}" text-anchor="middle">${id}</text>`:shares.map((k,j)=>token([x-(shares.length-1)*7+j*14,rows[2]],k,9)).join(''))+`</g></g>`;};
+const tick=([x,y],on,size=15)=>`<g class="tick${on?' on':''}"><rect x="${n(x-size/2)}" y="${n(y-size/2)}" width="${size}" height="${size}" rx="4"/>${on?check([x,y],size):''}</g>`;
+const label=([x,y],text,cls='')=>`<text class="label${cls}" x="${n(x)}" y="${n(y)}" text-anchor="middle">${text}</text>`;
 const svg=(cls,w,h,body,defs='')=>`<svg class="${cls}" viewBox="0 0 ${w} ${h}" aria-hidden="true" focusable="false">${defs?`<defs>${defs}</defs>`:''}${body}</svg>`;
 const polar=([cx,cy],r,deg)=>[cx+r*Math.cos(deg*Math.PI/180),cy+r*Math.sin(deg*Math.PI/180)];
 
-// Hero: communities and websites on one orbit around you.
-function heroGeometry() {
-  const c=[262,262],orbit=178,ring=66,defs=[`<radialGradient id="disc-glow" cx="50%" cy="50%" r="50%"><stop offset="0" class="stop-disc-in"/><stop offset="1" class="stop-disc-out"/></radialGradient>`];
-  const orgs=[[polar(c,orbit,215),'a'],[polar(c,orbit,145),'b']];
-  const sites=[{at:polar(c,orbit,-40),side:'left',colour:'coral',name:'Robin',shares:['a']},{at:polar(c,orbit,0),side:'right',colour:'amber',name:'R.',shares:['a','b']},{at:polar(c,orbit,40),off:true,shares:[]}];
-  const under=[`<circle class="disc" cx="${c[0]}" cy="${c[1]}" r="256" fill="url(#disc-glow)"/>`,`<circle class="orbit" cx="${c[0]}" cy="${c[1]}" r="${orbit}"/>`,`<circle class="service" cx="${c[0]}" cy="${c[1]}" r="${ring}"/>`];
-  const lines=[],over=[],moving=[];
-  orgs.forEach(([at,key],i)=>{const seg=trim(at,c,30,ring);defs.push(gradient('hi'+i,seg,key,'line'));
-    lines.push(link(seg,'draw d1','hi'+i));over.push(token(seg[1],key,11,' appear d2'));moving.push(mover(seg,key,3.2+i*.25));});
-  sites.forEach((s,i)=>{const seg=trim(c,s.at,ring,46);
-    if(s.off){const gate=along(seg,.55),[[x1,y1],[x2,y2]]=seg,len=Math.hypot(x2-x1,y2-y1),px=-(y2-y1)/len*9,py=(x2-x1)/len*9;
+// Hero, wide: communities and websites on one orbit around you, labelled.
+const disc=(id,[cx,cy],r)=>[`<radialGradient id="${id}" cx="50%" cy="50%" r="50%"><stop offset="0" class="stop-disc-in"/><stop offset="1" class="stop-disc-out"/></radialGradient>`,`<circle class="disc" cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id})"/>`];
+function outgoing(prefix,c,ring,sites,{defs,lines,marks,moving},beginAt,siteGap=46){
+  sites.forEach((s,i)=>{const seg=trim(c,s.at,ring,siteGap),box=along(seg,20/Math.hypot(seg[1][0]-seg[0][0],seg[1][1]-seg[0][1]));
+    marks.push(tick(box,!s.off));
+    if(s.off){const gate=along(seg,.72),[[x1,y1],[x2,y2]]=seg,len=Math.hypot(x2-x1,y2-y1),px=-(y2-y1)/len*9,py=(x2-x1)/len*9;
       lines.push(link([seg[0],gate],'draw d3'),`<path class="gate appear d4" d="M${pt([gate[0]+px,gate[1]+py])}L${pt([gate[0]-px,gate[1]-py])}"/>`);return;}
-    defs.push(gradient('ho'+i,seg,'line','face-'+s.colour));lines.push(link(seg,'draw d3','ho'+i));
-    s.shares.forEach((k,j)=>moving.push(mover(seg,k,5.8+i*.3+j*.35)));});
-  const body=[...under,...lines,cube(c[0],c[1],34,{left:'coral',right:'amber'}),...over,
-    ...orgs.map(([at,key])=>org(at,key)),...sites.map(s=>site(s.at,s)),...moving];
-  return svg('geo geo-hero',524,524,body.join(''),defs.join(''));
+    defs.push(gradient(prefix+i,seg,'line','face-'+s.colour));lines.push(link(seg,'draw d3',prefix+i));
+    s.shares.forEach((k,j)=>moving.push(mover(seg,k,beginAt+i*.3+j*.35)));});
+}
+function heroWide() {
+  const c=[262,262],orbit=178,ring=66,[glow,discEl]=disc('glow-w',c,256),parts={defs:[glow],lines:[],marks:[],moving:[]};
+  const orgs=[[polar(c,orbit,215),'a'],[polar(c,orbit,145),'b']];
+  const sites=[{at:polar(c,orbit,-40),side:'left',colour:'coral',name:'Robin',shares:['a']},{at:polar(c,orbit,0),side:'right',colour:'amber',name:'R.',shares:['a','b']},{at:polar(c,orbit,40),off:true,note:'Not shared'}];
+  const held=[];
+  orgs.forEach(([at,key],i)=>{const seg=trim(at,c,30,ring);parts.defs.push(gradient('wi'+i,seg,key,'line'));
+    parts.lines.push(link(seg,'draw d1','wi'+i));held.push(token(seg[1],key,11,' appear d2'));parts.moving.push(mover(seg,key,3.2+i*.25));});
+  outgoing('wo',c,ring,sites,parts,5.8);
+  const body=[discEl,`<circle class="orbit" cx="${c[0]}" cy="${c[1]}" r="${orbit}"/>`,`<circle class="service" cx="${c[0]}" cy="${c[1]}" r="${ring}"/>`,...parts.lines,
+    cube(c[0],c[1],34),...held,...parts.marks,...orgs.map(([at,key])=>org(at,key)),...sites.map(s=>site(s.at,{...s,h:s.off?80:80})),
+    label([c[0],c[1]+50],'You',' strong'),label([c[0],c[1]+ring+17],'Identity service'),label([orgs[0][0][0],orgs[0][0][1]-38],'Your communities'),label([sites[0].at[0],sites[0].at[1]-52],'Websites'),...parts.moving];
+  return svg('geo geo-hero geo-hero-wide',524,524,body.join(''),parts.defs.join(''));
+}
+// Hero, phone: fewer, larger objects stacked top to bottom.
+function heroTall() {
+  const c=[180,228],ring=60,[glow,discEl]=disc('glow-t',[180,240],236),parts={defs:[glow],lines:[],marks:[],moving:[]};
+  const orgs=[[[122,82],'a'],[[238,82],'b']];
+  const sites=[{at:[112,396],side:'left',colour:'coral',name:'Robin',shares:['a','b']},{at:[248,396],off:true,note:'Not shared'}];
+  const held=[];
+  orgs.forEach(([at,key],i)=>{const seg=trim(at,c,28,ring);parts.defs.push(gradient('ti'+i,seg,key,'line'));
+    parts.lines.push(link(seg,'draw d1','ti'+i));held.push(token(seg[1],key,12,' appear d2'));parts.moving.push(mover(seg,key,3.2+i*.25,11));});
+  outgoing('to',c,ring,sites,parts,5.8,54);
+  const body=[discEl,`<circle class="service" cx="${c[0]}" cy="${c[1]}" r="${ring}"/>`,...parts.lines,cube(c[0],c[1]-6,32),...held,...parts.marks,
+    ...orgs.map(([at,key])=>org(at,key,52)),...sites.map(s=>site(s.at,{...s,w:112,h:96})),
+    label([c[0],c[1]+40],'You',' strong'),`<text class="label" x="${c[0]-ring-10}" y="${c[1]-4}" text-anchor="end">Identity<tspan x="${c[0]-ring-10}" dy="15">service</tspan></text>`,label([180,40],'Your communities'),label([180,466],'Websites'),...parts.moving];
+  return svg('geo geo-hero geo-hero-tall',360,480,body.join(''),parts.defs.join(''));
 }
 // Chapters zoom into one part of the hero.
 const chapters={
@@ -91,20 +112,17 @@ const chapters={
     return svg('geo geo-chapter',360,260,[...lines,`<path class="tether" d="M92 148V${at[1]-16}"/>`,cube(you[0],you[1],30),
       `<circle class="email" cx="${at[0]}" cy="${at[1]}" r="15"/><text class="at" x="${at[0]}" y="${at[1]+5}" text-anchor="middle">@</text>`,lock([at[0]+22,at[1]-12]),
       ...to.map(s=>site(s.at,s)),...moving].join(''),defs.join(''));},
-  websites(){const boxes=[[[64,130],'left','coral','Robin','4f2c…'],[[180,130],'right','amber','R.','a91e…'],[[296,130],'top','blue','Rob','7d03…']],b=[];
-    for(let i=0;i<2;i++){const x=(boxes[i][0][0]+boxes[i+1][0][0])/2;b.push(`<path class="cross" d="M${x-5} 125l10 10m0-10l-10 10"/>`);}
-    boxes.forEach(([at,side,colour,name,id])=>b.push(site(at,{side,colour,name,id,w:96,h:96})));
-    return svg('geo geo-chapter',360,260,b.join(''));},
-  operators(){const groups=[[[76,150],false],[[186,92],true],[[290,168],false]],b=[];
-    groups.forEach(([c,mine])=>{b.push(`<g class="constellation${mine?' mine':''}"><circle class="service" cx="${c[0]}" cy="${c[1]}" r="30"/>`);
-      [-40,20,80].forEach(deg=>{const tip=polar(c,56,deg),seg=trim(c,tip,30,7);b.push(link(seg,'plain'),`<rect class="node mini" x="${n(tip[0]-7)}" y="${n(tip[1]-7)}" width="14" height="14" rx="4"/>`);});
-      b.push(cube(c[0],c[1],13,mine?{}:{top:'keep',left:'mute',right:'mute2'}),'</g>');});
-    b.push(`<text class="small" x="186" y="42" text-anchor="middle">yours</text>`);
-    return svg('geo geo-chapter',360,260,b.join(''));}};
+  websites(){const boxes=[[[62,130],'left','coral','Robin','4f2c…'],[[180,130],'right','amber','R.','a91e…'],[[298,130],'top','blue','Rob','7d03…']];
+    return svg('geo geo-chapter',360,260,boxes.map(([at,side,colour,name,id])=>site(at,{side,colour,name,id,w:100,h:100})).join(''));},
+  operators(){const community=[92,118],own=[268,118];
+    return svg('geo geo-chapter',360,260,[`<circle class="service host" cx="${community[0]}" cy="${community[1]}" r="58"/>`,`<circle class="service host" cx="${own[0]}" cy="${own[1]}" r="58"/>`,
+      cube(community[0],community[1]-12,17),cube(community[0]-24,community[1]+22,11,{top:'keep',left:'mute',right:'mute2'}),cube(community[0]+24,community[1]+22,11,{top:'keep',left:'mute',right:'mute2'}),
+      cube(own[0],own[1],20),`<text class="or" x="180" y="${own[1]+5}" text-anchor="middle">or</text>`,
+      label([community[0],204],'Community host'),label([own[0],204],'Your own host')].join(''));}};
 
 export function homePage(config,{assets='/assets/'}={}) {
   const page=render(template('home.html'),{assets,guides:'/docs/',developers:developerURL(config)});
-  return page.replace('<!--hero-->',heroGeometry()).replace(/<!--chapter:([a-z]+)-->/g,(_m,name)=>chapters[name]());
+  return page.replace('<!--hero-->',heroWide()+heroTall()).replace(/<!--chapter:([a-z]+)-->/g,(_m,name)=>chapters[name]());
 }
 // Written by the build next to the WordPress package; absent in an unbuilt checkout.
 const release=()=>{try{return JSON.parse(readFileSync(new URL('../dist/release.json',import.meta.url),'utf8'));}catch{return {};}};
