@@ -55,3 +55,21 @@
 .status-list{display:grid;grid-template-columns:max-content 1fr;gap:12px 28px;margin:0}.status-list dt{color:var(--muted);font-size:14px}.status-list dt,.status-list dd{margin:0}.status-list dd{font-size:15px}.status-list a{color:var(--accent)}
 @media(max-width:1000px){.home-hero{grid-template-columns:1fr;gap:36px}.home-steps,.principles{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){.receipt-compare,.home-steps,.principles{grid-template-columns:1fr}.home-section{margin-bottom:44px}.status-list{grid-template-columns:1fr;gap:4px}.status-list dd{margin-bottom:12px}.fit-table td:first-child{width:auto}}
+/* Landing: the shape of the system, few words */
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.landing-main{min-height:calc(100vh - 190px);display:flex;flex-direction:column;justify-content:center;padding-bottom:20px}
+.landing h1{text-align:center;font-size:clamp(34px,4.6vw,60px);font-weight:760;letter-spacing:-.05em;line-height:1.05;margin:0 0 18px}.landing h1 span{color:var(--muted)}
+.geometry{margin:0 auto;width:100%;max-width:1120px}.geo{display:block;width:100%;height:auto;overflow:visible}.geo-tall{display:none}
+.geo .org-a{--c:#2bc6b1}.geo .org-b{--c:#b39bff}
+.geo .org rect:first-child{fill:var(--c);fill-opacity:.12;stroke:var(--c);stroke-width:2}.geo .token{fill:var(--c)}
+.geo .link{fill:none;stroke:#52627c;stroke-width:2;stroke-linecap:round}.geo .link.in{stroke:var(--c);stroke-opacity:.75}.geo .link.off{stroke-dasharray:2 9;stroke-opacity:.8}
+.geo .service{fill:none;stroke:#3a4a64;stroke-width:1.5;stroke-dasharray:3 7}.geo .you{fill:var(--panel);stroke:var(--ink);stroke-width:2.5}
+.geo .site rect:first-child{fill:var(--panel);stroke:#3a4a64;stroke-width:2}.geo .site.off rect:first-child{fill:none;stroke-dasharray:4 7}
+.geo .face-1{fill:#ff8469}.geo .face-2{fill:#ffd166}
+.geo text{font-family:inherit;fill:var(--muted)}.geo .caption{fill:var(--ink);font-size:20px;font-weight:620;letter-spacing:-.2px}.geo .small{font-size:11px;letter-spacing:1.6px;text-transform:uppercase}
+.geo-tall .caption{font-size:19px}
+@media(prefers-reduced-motion:no-preference){.geo .draw{stroke-dasharray:1;stroke-dashoffset:1;animation:geo-draw .9s cubic-bezier(.3,.6,.3,1) forwards}.geo .appear{opacity:0;animation:geo-appear .6s ease-out forwards}.geo .d1{animation-delay:.25s}.geo .d2{animation-delay:1.05s}.geo .d3{animation-delay:1.5s}.geo .d4{animation-delay:2.35s}}
+@keyframes geo-draw{to{stroke-dashoffset:0}}@keyframes geo-appear{to{opacity:1}}
+.doors{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:100%;max-width:960px;margin:30px auto 0}.doors a{display:block;border:1px solid var(--line);border-radius:16px;padding:17px 20px;text-decoration:none;background:color-mix(in srgb,var(--panel) 60%,transparent)}.doors a:hover{border-color:var(--accent)}.doors span{display:block;font-weight:650;font-size:17px}.doors span:after{content:' →';color:var(--accent)}.doors small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.landing .site-footer{justify-content:center}
+@media(max-width:820px){.geo-wide{display:none}.geo-tall{display:block;max-width:400px;margin:0 auto}.doors{grid-template-columns:1fr;max-width:420px}.landing-main{min-height:0}}

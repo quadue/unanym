@@ -1,0 +1,39 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="color-scheme" content="dark"><meta name="description" content="Open-source identity for community websites. Members sign in with a name they choose and share only the memberships they select."><title>How it works · Unanym</title><link rel="stylesheet" href="{{assets}}front.css"><link rel="icon" href="{{assets}}front-mark.svg" type="image/svg+xml"></head>
+<body class="developer home"><a class="skip" href="#main">Skip to content</a><header class="site-header"><a class="wordmark" href="/" aria-label="Unanym home"><img src="{{assets}}front-mark.svg" alt="" width="25" height="32">unanym</a><nav class="doc-nav" aria-label="Main"><a href="#how-it-works">How it works</a><a href="{{guides}}members">For members</a><a href="{{developers}}">For websites</a><a href="{{guides}}">Guides</a></nav></header><main id="main">
+<section class="hero home-hero"><div class="home-intro"><p class="eyebrow">Open-source identity · pilot</p><h1>Show you belong.<br><span>Not who you are elsewhere.</span></h1><p>Members of a community sign in to its websites with a name they choose for each one. A website learns only the memberships you decide to show it, not your email address or the other websites you use.</p><div class="dev-actions"><a class="dev-button" href="/learn">Try the member walkthrough</a><a class="dev-button secondary" href="{{developers}}">Set up a website</a></div><p class="hero-context">The walkthrough uses fictional communities. Nothing is sent and no account is needed.</p></div>
+<figure class="home-shot"><div class="window-bar" aria-hidden="true"><span></span><span></span><span></span></div><img src="{{assets}}screens/consent.png" width="1200" height="750" alt="Choosing what to share with a website. The member types the name this website will see, ticks one of two memberships, and a preview shows exactly what the website will receive."><figcaption>Before a website receives anything, you see exactly what it will get.</figcaption></figure></section>
+
+<section class="home-section" aria-labelledby="receives-title"><h2 class="section-title" id="receives-title">What a website receives</h2><div class="receipt-compare">
+<div class="dev-panel gets"><h3>Receives</h3><ul><li><strong>A name you chose for it.</strong> A first name or pseudonym is enough.</li><li><strong>An identifier used by this website only.</strong> Another website gets a different one.</li><li><strong>The memberships you tick,</strong> each signed and naming who approved it.</li></ul></div>
+<div class="dev-panel withheld-list"><h3>Does not receive</h3><ul><li><strong>Your email address.</strong></li><li><strong>Memberships you left unticked.</strong></li><li><strong>An identifier it could match with another website.</strong> Using the same name everywhere is your choice.</li></ul></div>
+</div><p class="dev-note">Your identity service operator holds your records and can see which websites you connect. Choose an operator your community trusts, or run your own. <a href="{{guides}}members#who-can-connect-the-dots">How your information is handled →</a></p></section>
+
+<section class="home-section" id="how-it-works" aria-labelledby="flow-title"><h2 class="section-title" id="flow-title">How it works</h2><ol class="home-steps">
+<li><strong>An organisation approves</strong><span>An authorised organiser records who belongs, and can withdraw it at any time.</span></li>
+<li><strong>You choose</strong><span>A name for each website, and which memberships it may see.</span></li>
+<li><strong>The website decides</strong><span>It receives what you chose and applies its own rules for who gets in.</span></li>
+<li><strong>You can disconnect</strong><span>Stop new sharing whenever you like. Copies a website already received may remain.</span></li>
+</ol><p class="dev-note"><a href="{{developers}}#how-it-works">See the screens for each step →</a></p></section>
+
+<section class="home-section" aria-labelledby="who-title"><h2 class="section-title" id="who-title">Where to start</h2><div class="guide-grid">
+<a class="dev-panel guide-card" href="{{guides}}members"><p class="path-label">Members</p><h3>Choose what each website sees</h3><p>Pick a name, share memberships, disconnect.</p></a>
+<a class="dev-panel guide-card" href="{{guides}}organisers"><p class="path-label">Organisers</p><h3>Approve who belongs</h3><p>Record memberships and end them when they stop.</p></a>
+<a class="dev-panel guide-card" href="{{developers}}"><p class="path-label">Website owners</p><h3>Open a page to members</h3><p>Connect WordPress and choose which organisations count.</p></a>
+<a class="dev-panel guide-card" href="{{guides}}operators"><p class="path-label">Operators</p><h3>Run a service</h3><p>Host accounts on your own domain, register websites, back up.</p></a>
+</div></section>
+
+<section class="home-section" aria-labelledby="principles-title"><h2 class="section-title" id="principles-title">How Unanym is built</h2><div class="principles">
+<div><h3>Each community keeps its own rules</h3><p>Organisations decide who belongs. Websites decide what a membership opens. Unanym records and passes on those decisions. It never decides who belongs.</p></div>
+<div><h3>Run by your community</h3><p>Any community can run its own service with its own domain and operator, instead of relying on someone else’s.</p></div>
+<div><h3>Open standards</h3><p>Websites connect with OpenID Connect, the protocol behind most “Sign in with…” buttons. The <a href="{{guides}}contract">interface</a> is small and published.</p></div>
+<div><h3>Open source</h3><p>Apache License 2.0. The source repository is not public yet.</p></div>
+</div></section>
+
+<section class="home-section" aria-labelledby="fit-title"><h2 class="section-title" id="fit-title">Is Unanym the right tool?</h2><div class="doc-table fit-table"><table><thead><tr><th>You need</th><th>Better fit</th></tr></thead><tbody>
+<tr><td>Staff sign-in, multi-factor policies, LDAP or company single sign-on</td><td>An identity provider such as Keycloak, ZITADEL, authentik or Kanidm</td></tr>
+<tr><td>Proof of legal identity, age or nationality</td><td>A government-recognised identity wallet, such as Yivi or an EU Digital Identity Wallet</td></tr>
+<tr><td>Community members signing in to community websites with chosen names, showing only selected memberships</td><td><strong>Unanym</strong></td></tr>
+</tbody></table></div></section>
+
+<section class="home-section status" aria-labelledby="status-title"><h2 class="section-title" id="status-title">Where it stands</h2><div class="dev-panel"><dl class="status-list"><dt>Stage</dt><dd>Pilot</dd><dt>WordPress plugin</dt><dd>{{version}} · tested with WordPress {{tested_wordpress}} and OpenID Connect Generic Client {{tested_generic}} · <a href="{{guides}}release-notes">Release notes</a></dd><dt>Still to come</dt><dd>Public source release, acceptance with real members and an independent security review</dd></dl></div></section>
+</main><footer class="site-footer"><span>Unanym · open-source identity for community websites</span><div><a href="{{guides}}">Guides</a><a href="{{guides}}contract">Contract</a><a href="/learn">Member walkthrough</a></div></footer></body></html>
