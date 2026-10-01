@@ -1,11 +1,12 @@
 import {build} from 'esbuild';
-import {mkdirSync,copyFileSync,readFileSync,writeFileSync,readdirSync} from 'node:fs';
+import {mkdirSync,copyFileSync,readFileSync,writeFileSync,readdirSync,rmSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {zipSync} from 'fflate';
 
 for(const path of ['dist/assets/screens','dist/example','dist/starter'])mkdirSync(path,{recursive:true});
 await build({entryPoints:['web/client.js'],bundle:true,minify:true,format:'esm',target:'es2022',legalComments:'inline',outfile:'dist/assets/client.js'});
-for(const file of ['style.css','learn.js','consent.js','front.css','front.js','developer.js','front-mark.svg','front-mark-light.svg','favicon.svg'])copyFileSync('web/'+file,'dist/assets/'+file);
+rmSync('dist/assets/learn.js',{force:true});
+for(const file of ['style.css','consent.js','front.css','front.js','developer.js','front-mark.svg','front-mark-light.svg','favicon.svg'])copyFileSync('web/'+file,'dist/assets/'+file);
 copyFileSync('examples/community/index.html','dist/example/index.html');
 for(const file of readdirSync('web/screens'))if(file.endsWith('.png'))copyFileSync('web/screens/'+file,'dist/assets/screens/'+file);
 

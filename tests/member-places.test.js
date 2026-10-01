@@ -68,9 +68,9 @@ test('long member lists stay bounded on the home and remain reachable in matchin
     await page.setViewportSize({width,height:920});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'home width '+width);
     if(width===1220||width===375)await capture('long-home-'+width);
   }
-  await page.getByRole('link',{name:'View all connections',exact:false}).click();
+  await page.getByRole('link',{name:'All websites',exact:false}).click();
   assert.equal(await page.locator('.place-card').count(),14);assert.equal(await page.locator('.place-disconnected').count(),1);
-  assert.equal(await page.locator('header [aria-current=page]').innerText(),'Connections');
+  assert.equal(await page.locator('header [aria-current=page]').innerText(),'Websites');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),ground);
   await page.goto(origin+base+'/sites?place=site-12');const last=page.locator('[data-place="site-12"]');
   assert.equal(await last.locator('.place-sharing').evaluate(d=>d.open),true);
@@ -81,9 +81,9 @@ test('long member lists stay bounded on the home and remain reachable in matchin
   await last.getByRole('button',{name:'Disconnect',exact:true}).click();await page.waitForURL('**/identity/sites');
   assert.equal(service.db.prepare('SELECT active FROM connections WHERE account=? AND client=?').get('robin','site-12').active,0);
   assert.equal(service.db.prepare('SELECT active FROM connections WHERE account=? AND client=?').get('robin','site-11').active,1);
-  await page.goto(origin+base+'/account');await page.getByRole('link',{name:'View all records',exact:false}).click();
+  await page.goto(origin+base+'/account');await page.getByRole('link',{name:'Memberships & confirmations',exact:false}).click();
   assert.equal(await page.locator('.member-record').count(),14);
-  assert.equal(await page.locator('header [aria-current=page]').innerText(),'Records');
+  assert.equal(await page.locator('header [aria-current=page]').innerText(),'Memberships & confirmations');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),ground);
   for(const width of [1220,375,320]){
     await page.setViewportSize({width,height:920});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'records width '+width);
@@ -197,7 +197,7 @@ test('member places: two consented identities, scoped records, current evidence,
     assert.match(await firstCard.innerText(),/Previously known as/);assert.match(await firstCard.innerText(),/Sharing stopped/);
     const disconnected=(await (await page.request.get(origin+base+'/sharing-summary')).json()).places.find(p=>p.website_name==='Learning exchange');
     assert.deepEqual(disconnected.memberships,[]);assert.deepEqual(disconnected.confirmations,[]);
-    await page.goto(origin+base+'/account');assert.match(await page.locator('.member-activity li').first().innerText(),/Disconnected.*Learning exchange/s);
+    await page.goto(origin+base+'/account');await page.locator('.member-recent>summary').click();assert.match(await page.locator('.member-activity li').first().innerText(),/Disconnected.*Learning exchange/s);
     assert.match(await firstCard.innerText(),/Stopped/);assert.match(await secondCard.innerText(),/Sees\s+R\./);
     assert.equal(await page.locator('.member-site.off').count(),1);
     await page.setViewportSize({width:320,height:740});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);

@@ -17,11 +17,6 @@ const render=(source,values)=>versionAssets(source.replace(/\{\{([a-z_]+)\}\}/g,
 export function frontPage(config,{assets=(config.basePath??'/identity')+'/assets/',home='/',signIn=(config.basePath??'/identity')+'/account'}={}) {
   return render(template('front.html'),{brand:displayName(config),brand_mark:displayName(config)==='FRRN'?'frrn':displayName(config),assets,home,sign_in:signIn,developers:developerURL(config),privacy:(config.basePath??'/identity')+'/about'});
 }
-export function overviewPage(config,{assets='/assets/'}={}) {
-  const built=release();
-  return render(template('overview.html'),{assets,guides:'/docs/',account_url:memberAccountURL(config),developers:developerURL(config),version:built.version??'',
-    tested_wordpress:built.tested?.wordpress??'',tested_generic:built.tested?.openid_connect_generic??''}).replace(/<!--chapter:([a-z]+)-->/g,(_m,name)=>chapters[name]());
-}
 // Geometry vocabulary shared by the hero, the chapters and the mark.
 // You are an isometric cube: each website is shown one face, and the top face
 // is what you keep. Communities are squares whose token is a membership; the
@@ -152,7 +147,7 @@ export function homePage(config,{assets='/assets/'}={}) {
 const release=()=>{try{return JSON.parse(readFileSync(new URL('../dist/release.json',import.meta.url),'utf8'));}catch{return {};}};
 export function developerPage(config,{assets=(config.basePath??'/identity')+'/assets/',home=config.publicDocs?'/learn':config.accountSource==='frrn'?config.origin+'/':(config.basePath??'/identity')+'/'}={}) {
   const base=config.basePath??'/identity',built=release(),frrn=config.accountSource==='frrn';
-  return render(template('developers.html'),{assets,home,home_label:config.publicDocs?'Getting started':displayName(config)+' ↗',home_footer:config.publicDocs?'Getting started':'Back to '+displayName(config),developer_home:config.publicDocs?'/':developerURL(config),brand:displayName(config),issuer:config.issuer??'Supplied by your operator',
+  return render(template('developers.html'),{assets,home,home_label:config.publicDocs?'How it works':displayName(config)+' ↗',home_footer:config.publicDocs?'How it works':'Back to '+displayName(config),developer_home:config.publicDocs?'/':developerURL(config),brand:displayName(config),issuer:config.issuer??'Supplied by your operator',
     scopes:config.contract==='legacy-firn'?'openid profile drop_identity drop_memberships':'openid profile identity.v1 memberships.v1',
     contract:config.contract??'community-v1',wordpress_download:base+'/wordpress.zip',download_hidden:config.demo||config.wordpressDownload?'':'hidden',
     documentation:base+'/docs/'+(frrn?'frrn-host':'hosting'),contract_doc:base+'/docs/contract',guides:base+'/docs/',websites_guide:base+'/docs/websites',operators_guide:base+'/docs/operators',
@@ -179,11 +174,11 @@ export function memberPage(config,title,body,{csrf,canSignOut,current='account',
   const mark=['Unanym','FRRN'].includes(displayName(config))?brand.toLowerCase():brand,frrn=config.accountSource==='frrn';
   const exit=canSignOut?`<form method="post" action="${base}/logout"><input type="hidden" name="csrf" value="${escape(csrf(base+'/logout'))}"><button class="pill">Sign out</button></form>`
     :frrn?'<a class="pill" href="/account">FRRN account <span aria-hidden="true">↗</span></a>':'';
-  const privacy=config.publicDocs?base+'/docs/members#who-can-connect-the-dots':base+'/about';
-  const navigation=access?`<a href="${base}/learn">Learn about ${brand}</a><a href="${escape(memberAccountURL(config))}">Sign in</a>`:`<a href="${base}/account" ${current==='account'?'aria-current="page"':''}>Your ${brand}</a><a href="${base}/sites" ${current==='sites'?'aria-current="page"':''}>Connections</a><a href="${base}/records" ${current==='records'?'aria-current="page"':''}>Records</a>${exit}`;
+  const privacy=config.publicDocs?base+'/learn#privacy':base+'/about';
+  const navigation=access?`<a href="${base}/learn" ${current==='learn'?'aria-current="page"':''}>How it works</a><a href="${escape(memberAccountURL(config))}">Sign in</a>`:`<a href="${base}/account" ${current==='account'?'aria-current="page"':''}>Your ${brand}</a>${directory?`<span aria-current="page">${current==='sites'?'Websites':'Memberships &amp; confirmations'}</span>`:''}${exit}`;
   return versionAssets(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="robots" content="noindex,nofollow"><title>${escape(title)} · ${brand}</title><link rel="stylesheet" href="${base}/assets/front.css"><link rel="icon" href="${base}/assets/favicon.svg" type="image/svg+xml"></head><body class="developer member${directory?' member-directory':''}">
   <a class="skip" href="#main">Skip to content</a><header class="site-header"><a class="wordmark" href="${base}/" aria-label="${brand} home"><img src="${base}/assets/front-mark.svg" alt="" width="25" height="32">${mark}</a><nav class="doc-nav member-nav" aria-label="${access?'Main':'Account'}">${navigation}</nav></header>
   ${config.demo?'<aside class="member-demo">Local demonstration · fictional accounts</aside>':''}
   <main id="main">${body}</main>
-  <footer class="site-footer"><span>One you. Many places.</span><div><a href="${privacy}">Privacy</a><a href="${escape(developerURL(config))}">Identity by Unanym <span aria-hidden="true">↗</span></a></div></footer></body></html>`);
+  <footer class="site-footer"><span>One you. Many places.</span><div><a href="${privacy}">Privacy</a><a href="${base}/learn">Help</a></div></footer></body></html>`);
 }

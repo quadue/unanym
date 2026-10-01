@@ -125,7 +125,7 @@ test('standalone browser: email code, admin approval, consent, signed UserInfo, 
     const rejected=await admin.request.post(origin+'/identity/organisations/'+encodeURIComponent(organisation)+'/revoke',{form:{membership:'anything'},headers:{Origin:'https://unrelated.example'}});assert.equal(rejected.status(),403);
     await admin.getByRole('button',{name:'Revoke membership'}).click();assert.deepEqual((await (await info()).json()).memberships_v1.statements,[]);
     await member.goto(origin+'/identity/account');assert.equal(await member.locator('.member-community').count(),0);
-    assert.match(await member.locator('.member-activity li').first().innerText(),/Withdrawn.*Test circle/s);
+    await member.locator('.member-recent>summary').click();assert.match(await member.locator('.member-activity li').first().innerText(),/Withdrawn.*Test circle/s);
     await member.locator('#account-recovery>summary').click();
     const forgedLogout=await member.request.post(origin+'/identity/logout',{headers:{Origin:origin},form:{csrf:'forged'}});assert.equal(forgedLogout.status(),403);
     assert.equal((await member.request.get(origin+'/identity/account')).status(),200);

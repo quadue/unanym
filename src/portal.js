@@ -32,7 +32,7 @@ const guideTitles={organisers:'For organisers',members:'For members',websites:'F
 function shell(config,{title,body,current}) {
   const base=config.basePath??'/identity',docs=base+'/docs/',brand=escape(displayName(config));
   const home=config.publicDocs?'/':config.accountSource==='frrn'?config.origin+'/':base+'/';
-  const nav=[[config.publicDocs?'For websites':'Overview',developerURL(config),'overview'],['Guides',docs,'guides'],['Contract',docs+'contract','contract']]
+  const nav=[['Connect a website',developerURL(config),'overview'],['Documentation',docs,'guides']]
     .map(([label,href,key])=>`<a href="${escape(href)}"${current===key?' aria-current="page"':''}>${label}</a>`).join('');
   return versionAssets(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="color-scheme" content="dark"><title>${escape(title)} · Unanym</title><link rel="stylesheet" href="${base}/assets/front.css"><link rel="icon" href="${base}/assets/favicon.svg" type="image/svg+xml"></head>
 <body class="developer"><a class="skip" href="#main">Skip to content</a><header class="site-header"><a class="wordmark" href="${escape(config.publicDocs?'/':developerURL(config))}"><img src="${base}/assets/front-mark.svg" alt="" width="25" height="32">unanym</a><nav class="doc-nav" aria-label="Documentation">${nav}<a href="${escape(home)}">${brand} ↗</a></nav></header><main id="main">
@@ -44,10 +44,10 @@ export function docsIndex(config) {
   const base=config.basePath??'/identity',docs=base+'/docs/';
   const summaries={organisers:'Approve who belongs, and end an approval.',members:'Choose your name and what each website sees. Disconnect when you want.',websites:'Connect a WordPress site and open a members-only page.',operators:'Run the service, register websites, back up and recover.'};
   const reference=Object.entries(referenceDocs).filter(([key])=>key!==(config.accountSource==='frrn'?'hosting':'frrn-host')&&!(config.publicDocs&&['simulation','places'].includes(key)));
-  const example=exampleClient(config)?`<p class="dev-note">Want to see it first? <a href="${escape(exampleURL(config))}">Try the example website</a>.</p>`:'';
-  return shell(config,{title:'Guides',current:'guides',body:`<section class="hero"><div><p class="eyebrow">Guides</p><h1>What would you<br>like to do?</h1><p>Connect a website, manage memberships, choose what to share or run the service.</p></div></section>
-<div class="guide-grid">${guides.map(name=>`<a class="dev-panel guide-card" href="${docs}${name}"><h2 class="chapter-kicker ${guideKickers[name]}">${guideTitles[name]}</h2><p>${summaries[name]}</p></a>`).join('')}</div>
-<section class="doc-reference"><h2>Reference</h2><ul>${reference.map(([key,doc])=>`<li><a href="${docs}${key}">${doc.title}</a><span>${doc.summary}</span></li>`).join('')}</ul></section>${example}`});
+  const example=exampleClient(config)?`<p class="dev-note"><a href="${escape(exampleURL(config))}">Open the example website</a></p>`:'';
+  return shell(config,{title:'Documentation',current:'guides',body:`<section class="hero"><div><h1>Documentation</h1><p>For organisers, website owners and service operators.</p></div></section>
+<div class="guide-grid">${guides.filter(name=>!config.publicDocs||name!=='members').map(name=>`<a class="dev-panel guide-card" href="${docs}${name}"><h2 class="chapter-kicker ${guideKickers[name]}">${guideTitles[name]}</h2><p>${summaries[name]}</p></a>`).join('')}</div>
+<details class="doc-reference"><summary>Technical reference</summary><ul>${reference.map(([key,doc])=>`<li><a href="${docs}${key}">${doc.title}</a><span>${doc.summary}</span></li>`).join('')}</ul></details>${example}`});
 }
 
 export function referencePage(config,key) {

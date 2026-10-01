@@ -47,10 +47,12 @@ together your identity, current community records, website connections and
 recent sharing changes. The standalone host also shows your private sign-in
 email, recovery information and organisation updates. A FRRN-backed installation
 uses its own member-facing name and keeps account management with FRRN.
-The home previews up to six communities and six websites; larger lists link to
-the complete Connections and Records pages, which share its dark visual style.
+The home previews up to six communities and six websites. Its contextual links
+open All websites or Memberships & confirmations, which share its dark style.
+Recent changes are expandable. Complete lists remain available without separate
+primary navigation entries.
 
-**Connections / Your places** gives each connected website a card with its chosen name and
+**Websites** gives each connected website a card with its chosen name and
 sharing controls. **Memberships & confirmations** shows current records and
 where they are shared. Members can download a readable summary of their choices;
 this is not a key backup or proof of website access. The views work without
@@ -130,6 +132,11 @@ verified. The same flow signs returning members into their existing account;
 members already signed in go straight to their private home. Creating an
 account grants no memberships and connects no websites. `/learn` explains this
 flow without creating a practice identity or simulating sharing controls.
+The public landing has two navigation choices: How it works and Sign in.
+`/learn` is the shared explanation, with three illustrated steps and expandable
+questions. `/overview` and `/docs/members` redirect there, retaining incoming
+links. Website connection and technical documentation are separate contextual
+destinations rather than extra member onboarding pages.
 The standalone host's `/` and `/identity/` entry points open the private home,
 requesting an email code when the member is signed out.
 

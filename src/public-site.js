@@ -3,7 +3,7 @@ import express from 'express';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {readFileSync} from 'node:fs';
-import {developerPage,homePage,overviewPage} from './presentation.js';
+import {developerPage,homePage} from './presentation.js';
 import {docsIndex,guidePage,guideNames,referencePage,referenceDocs} from './portal.js';
 import {learnView} from './learn-view.js';
 
@@ -21,10 +21,11 @@ export function createPublicSite({origin='https://unanym.org',accountURL='https:
     next();
   });
   app.get('/',(_req,res)=>res.send(homePage(config)));
-  app.get('/overview',(_req,res)=>res.send(overviewPage(config)));
+  app.get('/overview',(_req,res)=>res.redirect(308,'/learn'));
   app.get('/developers',(_req,res)=>res.send(developerPage(config)));
   app.get('/learn',(_req,res)=>res.send(learnView(config)));
   app.get('/docs/',(_req,res)=>res.send(docsIndex(config)));
+  app.get('/docs/members',(_req,res)=>res.redirect(308,'/learn'));
   for(const name of guideNames)app.get('/docs/'+name,(_req,res)=>res.send(guidePage(config,name)));
   for(const name of Object.keys(referenceDocs))app.get('/docs/'+name,(_req,res)=>res.send(referencePage(config,name)));
   for(const [name,file] of Object.entries({'community-v1.md':'docs/contracts/community-v1.md','standalone.md':'docs/standalone.md'}))

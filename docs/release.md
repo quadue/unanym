@@ -2,6 +2,14 @@
 
 ## Member entry update — 2026-10-01
 
+The presentation now has a short public landing, one How it works page and the
+private Your Unanym home. Old `/overview` and public `/docs/members` links redirect
+to `/learn`. Privacy and membership questions expand on request without scripts.
+The private home links to complete website and record lists from their respective
+sections; Recent changes is expandable. Website setup keeps screenshots and
+protocol reference behind descriptive controls. Technical documentation and
+the original authenticated URLs remain available.
+
 The public landing and overview lead directly to Create your Unanym or Sign in.
 `/learn` now explains account creation and selective sharing without a fictional
 practice account. The public service links to the separately hosted account

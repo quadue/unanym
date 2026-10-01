@@ -1,8 +1,9 @@
 # Your Unanym and your places
 
 The community-v1 member interface starts at the private `/account` home, labelled
-Your Unanym (or the installation's configured member-facing name). Navigation
-links to Connections and Records. It works with the standalone host and the optional FRRN source.
+Your Unanym (or the installation's configured member-facing name). It is the main
+private destination. Contextual links under Communities and Websites open the
+complete lists. It works with the standalone host and the optional FRRN source.
 FRRN continues to own its accounts and approvals; this adds no second approval
 store and changes no website identity, consent scope or admission rule.
 
@@ -26,9 +27,13 @@ existing identifier and public key; private keys are never shown.
 The home draws the member's communities, identity and website connections using
 the public site's dark palette and geometric symbols. It previews at most six
 communities and six websites, while the heading counts all active connections.
-Larger lists show their total and links to View all records or View all connections.
+Larger lists show their total. The links Memberships & confirmations and All
+websites remain available under nonempty previews, including shorter lists.
 Those complete pages use the same member shell and retain every current record
 and registered connection, including stopped connections and sharing controls.
+Recent changes open on request; Account keeps custody, recovery and export
+information together. Website and record lists are supporting views of this
+home, with a link back and a current-page label instead of competing menu entries.
 
 The standalone host shows the member's own sign-in email, email-code recovery
 limits and a protected sign-out form. Its organisation activity comes from existing
@@ -47,7 +52,7 @@ records while an earlier sharing change remains in history.
 This is the hosted community-v1 interface. It does not add the separate wallet
 experiment, credential import, personal key custody or automatic recovery.
 
-On Connections, each connected website has its own card and chosen name. Its native expandable
+On Websites, each connected website has its own card and chosen name. Its native expandable
 section contains the records currently available under the member's choices,
 Change sharing when the site has registered a sharing address, and Disconnect.
 Selecting a destination from Memberships opens that particular website card.

@@ -73,13 +73,13 @@ export function memberHomeView(config,sharing,{details={},activity=[],csrf}) {
   return memberPage(config,'Your '+brand,`<section class="member-top"><h1>One you.<br>${numbers[connected]??connected} ${connected===1?'place':'places'}${connected?'':' yet'}.</h1>
     <p>What each website gets from you.</p></section>
   <div class="member-map${organisations.length?'':' no-in'}${sharing.places.length?'':' no-out'}">
-    <section class="member-col member-in" aria-labelledby="communities-heading"><h2 class="member-label" id="communities-heading">Communities</h2><ul class="member-nodes">${communities}</ul>${organisations.length>previewLimit?`<p class="member-list-more">Showing ${previewLimit} of ${organisations.length} communities.<br><a href="${base}/records">View all records →</a></p>`:''}</section>
+    <section class="member-col member-in" aria-labelledby="communities-heading"><h2 class="member-label" id="communities-heading">Communities</h2><ul class="member-nodes">${communities}</ul>${organisations.length?`<p class="member-list-more">${organisations.length>previewLimit?`Showing ${previewLimit} of ${organisations.length} communities.<br>`:''}<a href="${base}/records">Memberships &amp; confirmations →</a></p>`:''}</section>
     ${centre}
-    <section class="member-col member-out" aria-labelledby="websites-heading"><h2 class="member-label" id="websites-heading">Websites</h2><ul class="member-nodes">${websites}</ul>${sharing.places.length>previewLimit?`<p class="member-list-more">Showing ${previewLimit} of ${sharing.places.length} websites.<br><a href="${base}/sites">View all connections →</a></p>`:''}</section>
+    <section class="member-col member-out" aria-labelledby="websites-heading"><h2 class="member-label" id="websites-heading">Websites</h2><ul class="member-nodes">${websites}</ul>${sharing.places.length?`<p class="member-list-more">${sharing.places.length>previewLimit?`Showing ${previewLimit} of ${sharing.places.length} websites.<br>`:''}<a href="${base}/sites">All websites →</a></p>`:''}</section>
   </div>
   <ul class="member-legend" aria-label="Key"><li>${glyphs.token(10)}Membership</li><li>${glyphs.token(10,true)}Confirmation</li><li><i class="wire"></i>Shared</li><li><i class="wire off"></i>Disconnected</li></ul>
   <div class="member-lower">
-    <section aria-labelledby="changes-heading"><h2 class="member-label" id="changes-heading">Recent</h2>${recent}<p class="member-quiet">Changes saved here, not visits to websites. Times UTC.</p></section>
+    <section aria-labelledby="changes-heading"><details class="member-recent"><summary id="changes-heading">Recent changes</summary>${recent}<p class="member-quiet">Changes saved here, not website visits. Times UTC.</p></details></section>
     <section aria-labelledby="account-heading" class="member-account"><h2 class="member-label" id="account-heading">Account</h2><dl>${holders}</dl>
       <p class="member-quiet">The operator can link your websites to this account.</p>
       <details id="account-recovery"><summary>Recovery</summary><p>${details.email?`Sign in with a code sent to your email. Lost the mailbox? Ask ${escape(config.operatorName)}.`:frrn?'FRRN handles sign-in and recovery. <a href="/account">Manage your FRRN account</a>':'Your account provider handles sign-in and recovery.'}</p></details>

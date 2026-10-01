@@ -104,8 +104,9 @@ test('public learning explains real accounts on a phone without simulated sharin
       await expect(page.locator('main')).not.toContainText(/practice|pretend|hypothetical|alpha/i);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
       assert.deepEqual(writes,[]);assert.deepEqual(await context.cookies(),[]);
-      await page.getByRole('link',{name:'Read how your information is handled'}).click();
-      await expect(page.getByRole('heading',{name:'For members',exact:true})).toBeVisible();
+      await page.getByRole('link',{name:'Privacy',exact:true}).click();
+      await expect(page.locator('#privacy-details')).toHaveAttribute('open','');
+      await expect(page.locator('#privacy-details')).toContainText('holds the records and signing keys');
       await context.close();
     }
   }finally{await browser.close();await new Promise(r=>server.close(r));}
@@ -138,32 +139,45 @@ test('public landing shows the shape in few words and leads to details on reques
     await still.close();
     const page=await browser.newPage();await page.goto(origin+'/');
     await page.locator('.landing-intro').getByRole('link',{name:'How it works'}).click();
-    await expect(page.getByRole('heading',{name:'Does not receive'})).toBeVisible();
+    await expect(page.getByRole('heading',{name:'How Unanym works',exact:true})).toBeVisible();
   }finally{await browser.close();await new Promise(r=>server.close(r));}
 });
 
-test('public overview addresses members first and states what websites do not receive',async()=>{
+test('public explanation consolidates old entry pages and keeps setup and technical detail contextual',async()=>{
   const server=createPublicSite().listen(0,'127.0.0.1');await once(server,'listening');
   const origin='http://127.0.0.1:'+server.address().port,browser=await chromium.launch();
   try{
-    const page=await browser.newPage({viewport:{width:375,height:812}});
-    await page.goto(origin+'/overview');
-    await expect(page.getByRole('heading',{level:1})).toContainText('Show you belong.');
+    for(const path of ['/overview','/docs/members']){
+      const redirect=await fetch(origin+path,{redirect:'manual'});assert.equal(redirect.status,308);assert.equal(redirect.headers.get('location'),'/learn');
+    }
+    const page=await browser.newPage({viewport:{width:375,height:812},javaScriptEnabled:false});
+    await page.goto(origin+'/docs/members#who-can-connect-the-dots');
+    await expect(page).toHaveURL(origin+'/learn#who-can-connect-the-dots');
+    await expect(page.locator('#privacy-details')).toHaveAttribute('open','');
+    await expect(page.locator('#privacy-details')).toContainText('can link your websites');
+    await page.goto(origin+'/overview');await expect(page).toHaveURL(origin+'/learn');
+    await expect(page.getByRole('heading',{level:1})).toHaveText('How Unanym works');
     await expect(page.getByRole('link',{name:'Create your Unanym'})).toHaveAttribute('href','https://unanym.org/identity/account');
-    await expect(page.getByRole('link',{name:'Set up a website'})).toHaveAttribute('href','/developers');
-    await expect(page.getByRole('heading',{name:'Does not receive'})).toBeVisible();
-    await expect(page.getByText('can see which websites you connect')).toBeVisible();
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-    await page.getByRole('link',{name:'Set up a website'}).click();
-    await expect(page.getByRole('heading',{name:'Connect WordPress'})).toBeVisible();
-    // Reading and account pages share the landing's ground.
+    await expect(page.locator('.learn-questions details[open]')).toHaveCount(0);
+    await page.getByText('Do you run a website or community?',{exact:true}).click();
+    await page.getByRole('link',{name:'Connect a website',exact:true}).click();
+    await expect(page.getByRole('heading',{level:1})).toHaveText('Connect a website');
+    await expect(page.locator('.dev-flow')).not.toHaveAttribute('open','');
+    await page.getByText('See the connection steps',{exact:true}).click();
+    await expect(page.locator('.flow-shot')).toHaveCount(4);
+    await expect(page.locator('.flow-shot').first()).toBeVisible();
     for(const path of ['/overview','/developers','/docs/','/','/learn']){
       await page.goto(origin+path);
       assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),'rgb(23, 24, 30)',path);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,path);
     }
-    await page.goto(origin+'/developers');
-    await page.getByRole('link',{name:'unanym',exact:true}).click();
-    await expect(page).toHaveURL(origin+'/');
-    await expect(page.getByRole('heading',{level:1})).toHaveText('One you. Many places.');
+    await page.goto(origin+'/');
+    await expect(page.getByRole('navigation',{name:'Main'}).locator('a')).toHaveText(['How it works','Sign in']);
+    await expect(page.locator('.chapter,.landing-example')).toHaveCount(0);
+    await page.getByRole('link',{name:'Documentation',exact:true}).click();
+    await expect(page.getByRole('heading',{level:1})).toHaveText('Documentation');
+    await expect(page.locator('.doc-reference')).not.toHaveAttribute('open','');
+    await page.getByText('Technical reference',{exact:true}).click();
+    await expect(page.getByRole('link',{name:'Identity v1 contract',exact:true})).toBeVisible();
   }finally{await browser.close();await new Promise(r=>server.close(r));}
 });
