@@ -96,3 +96,11 @@ test('a sharing link stays on the registered website, including subdirectory Wor
  assert.doesNotThrow(()=>registeredClients([structuredClone(c)]));
  for(const sharing_uri of ['https://unrelated.example/','javascript:alert(1)','https://user:password@website.example/','https://website.example/#secret'])assert.throws(()=>registeredClients([{...c,sharing_uri}]));
 });
+
+test('hosted authentication requires a confidential client and an explicit exact backend origin',()=>{
+ const c={client_id:'hosted-site',name:'Hosted site',homepage:'https://website.example/',authentication_origin:'https://auth.example',redirect_uris:['https://auth.example/callback'],token_endpoint_auth_method:'client_secret_post'};
+ const secrets={'hosted-site':'s'.repeat(43)};
+ assert.doesNotThrow(()=>registeredClients([structuredClone(c)],secrets));
+ for(const changes of [{authentication_origin:undefined},{authentication_origin:'https://wrong.example'},{authentication_origin:'https://auth.example/path'},{authentication_origin:'http://auth.example'},{token_endpoint_auth_method:'none'},{homepage:'javascript:alert(1)'},{homepage:'https://user:password@website.example/'},{homepage:'https://website.example/#secret'}])assert.throws(()=>registeredClients([{...c,...changes}],secrets));
+ assert.throws(()=>registeredClients([{...c,sharing_uri:'https://auth.example/sharing'}],secrets));
+});

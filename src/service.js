@@ -55,7 +55,7 @@ export function createService(config,pact,{mountRoutes,memberDetails}={}) {
     pairwiseIdentifier:async(ctx,id,client)=>(await persona(db,id,client.clientId,encryption)).subject,
     pkce:{required:()=>true},
     responseTypes:['code'],
-    features:{devInteractions:{enabled:false},revocation:{enabled:true},rpInitiatedLogout:{enabled:false}},
+    features:{devInteractions:{enabled:false},revocation:{enabled:true},rpInitiatedLogout:{enabled:false},claimsParameter:{enabled:true}},
     ttl:{AccessToken:300,AuthorizationCode:60,IdToken:300,Interaction:600,Session:1800,Grant:30*24*3600,
       RefreshToken:(_ctx,token)=>Math.max(1,7*24*3600-token.totalLifetime())},
     interactions:{policy,url:(_ctx,interaction)=>base+'/interaction/'+interaction.uid},
@@ -85,7 +85,9 @@ export function createService(config,pact,{mountRoutes,memberDetails}={}) {
   });
   provider.proxy=true;
   const app=express();
-  const formOrigins=[...new Set(config.clients.flatMap(c=>c.redirect_uris.map(u=>new URL(u).origin)))].join(' ');
+  // A hosted authentication callback can redirect the browser back to its
+  // registered website; CSP checks the whole form-redirect chain.
+  const formOrigins=[...new Set(config.clients.flatMap(c=>[new URL(c.homepage).origin,...c.redirect_uris.map(u=>new URL(u).origin)]))].join(' ');
   app.disable('x-powered-by');
   app.enable('strict routing');
   app.set('trust proxy','loopback');
@@ -183,7 +185,11 @@ export function createService(config,pact,{mountRoutes,memberDetails}={}) {
     disconnect(db,user.id,clientId,{keepInteraction:details.uid});
     const grant=new provider.Grant({accountId:user.id,clientId});
     grant.addOIDCScope(String(details.params.scope));
-    if(details.prompt.details.missingOIDCClaims)grant.addOIDCClaims(details.prompt.details.missingOIDCClaims);
+    // Replacement grants retain every explicitly requested claim, including
+    // those already present in the old grant, so returning members do not loop.
+    const requestedClaims=details.params.claims?JSON.parse(details.params.claims):{};
+    const claimNames=['id_token','userinfo'].flatMap(part=>Object.keys(requestedClaims[part]??{}));
+    grant.addOIDCClaims([...new Set([...claimNames,...(details.prompt.details.missingOIDCClaims??[])])]);
     const grantId=await grant.save();
     db.prepare('INSERT OR REPLACE INTO connections VALUES (?,?,?,?,?,?,?)').run(user.id,clientId,name,JSON.stringify(memberships),grantId,1,new Date().toISOString());
     if(confirmations.length)db.prepare('INSERT OR REPLACE INTO confirmation_choices VALUES (?,?,?)').run(user.id,clientId,JSON.stringify(confirmations));

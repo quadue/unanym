@@ -5,6 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createServer} from 'node:http';
+import {createServer as createSecureServer} from 'node:https';
 import {chromium} from '@playwright/test';
 import {randomBytes,createHash} from 'node:crypto';
 import {standaloneAccounts} from '../src/standalone/accounts.js';
@@ -12,6 +13,46 @@ import {createStandalone} from '../src/standalone/server.js';
 import {configuration} from '../src/config.js';
 import {verifyConfirmation} from '../src/confirmation-contract.js';
 import {verifyMembership,membershipKey} from '../src/community-contract.js';
+
+test('hosted callback and explicitly requested name survive replacement consent grants',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'unanym-hosted-auth-'));
+ execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-subj','/CN=localhost','-keyout',join(dir,'tls.key'),'-out',join(dir,'tls.pem'),'-days','1'],{stdio:'pipe'});
+ const backend=createSecureServer({key:readFileSync(join(dir,'tls.key')),cert:readFileSync(join(dir,'tls.pem'))});
+ await new Promise(r=>backend.listen(0,'127.0.0.1',r));
+ const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const origin='http://127.0.0.1:'+server.address().port,authenticationOrigin='https://localhost:'+backend.address().port,callback=authenticationOrigin+'/callback',client='hosted-site',secret='fictional-hosted-secret-'.repeat(3);
+ backend.on('request',(_req,res)=>{res.writeHead(302,{location:origin+'/returned'});res.end();});
+ const registry=join(dir,'clients.json'),secrets=join(dir,'secrets.json');
+ writeFileSync(registry,JSON.stringify([{client_id:client,name:'Fictional hosted website',homepage:origin,authentication_origin:authenticationOrigin,redirect_uris:[callback],token_endpoint_auth_method:'client_secret_post'}]));
+ writeFileSync(secrets,JSON.stringify({[client]:secret}));
+ const config=configuration({IDENTITY_CONTRACT:'community-v1',IDENTITY_ORIGIN:origin,IDENTITY_OPERATOR_NAME:'Test operator',IDENTITY_CLIENTS:registry,IDENTITY_CLIENT_SECRETS:secrets,IDENTITY_DATA_DIR:dir});
+ const service=createStandalone(config,{bootstrapEmail:'operator@example.test',sendCode:async()=>{throw Error('No mail in this test');}});
+ server.on('request',service.app);const browser=await chromium.launch();
+ try{
+  const context=await browser.newContext({ignoreHTTPSErrors:true}),page=await context.newPage();
+  // The issuer and separate HTTPS backend run locally with fictional accounts.
+  service.app.get('/returned',(_req,res)=>res.send('Returned to fictional website'));
+  const account='synthetic-hosted-account',token=randomBytes(32).toString('base64url');
+  service.accounts.db.prepare('INSERT INTO accounts VALUES (?,?,1,?)').run(account,'member@example.test',Date.now());
+  service.accounts.db.prepare('INSERT INTO sessions VALUES (?,?,?)').run(createHash('sha256').update(token).digest('hex'),account,Date.now()+60000);
+  await context.addCookies([{name:'community_account',value:token,url:origin}]);
+  const discovery=await (await fetch(config.issuer+'/.well-known/openid-configuration')).json();assert.equal(discovery.claims_parameter_supported,true);
+  let previousSubject;
+  for(let attempt=0;attempt<2;attempt++){
+   const verifier=randomBytes(32).toString('base64url'),auth=new URL(discovery.authorization_endpoint);
+   auth.search=new URLSearchParams({client_id:client,redirect_uri:callback,response_type:'code',scope:'openid profile',prompt:'consent',claims:JSON.stringify({id_token:{name:{essential:true}},userinfo:{name:{essential:true}}}),state:'test-'+attempt,nonce:'test-'+attempt,code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256'});
+   const response=await page.goto(auth.href);const csp=response.headers()['content-security-policy'];assert(csp.includes(origin));assert(csp.includes(authenticationOrigin));
+   await page.getByLabel('Your name on this website').fill('Robin '+attempt);
+   const returned=page.waitForRequest(request=>request.url().startsWith(callback+'?'));
+   await page.getByRole('button',{name:'Allow and continue'}).click();const callbackURL=new URL((await returned).url());
+   await page.waitForURL(origin+'/returned');assert.equal(callbackURL.searchParams.get('state'),'test-'+attempt);assert(callbackURL.searchParams.get('code'));
+   const responseToken=await fetch(discovery.token_endpoint,{method:'POST',body:new URLSearchParams({grant_type:'authorization_code',client_id:client,client_secret:secret,redirect_uri:callback,code:callbackURL.searchParams.get('code'),code_verifier:verifier})});assert.equal(responseToken.status,200);
+   const tokens=await responseToken.json(),claims=JSON.parse(Buffer.from(tokens.id_token.split('.')[1],'base64url'));
+   assert.equal(claims.name,'Robin '+attempt);if(previousSubject)assert.equal(claims.sub,previousSubject);previousSubject=claims.sub;
+   const info=await (await fetch(discovery.userinfo_endpoint,{headers:{Authorization:'Bearer '+tokens.access_token}})).json();assert.equal(info.name,'Robin '+attempt);assert.equal(info.email,undefined);
+  }
+ }finally{await browser.close();server.closeAllConnections();backend.closeAllConnections();await Promise.all([new Promise(r=>server.close(r)),new Promise(r=>backend.close(r))]);service.close();rmSync(dir,{recursive:true,force:true});}
+});
 
 test('email codes are browser-bound, one-use, limited, expiring and survive restart',async()=>{
   const dir=mkdtempSync(join(tmpdir(),'unanym-codes-')),mail=[];let now=Date.now();
