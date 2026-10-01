@@ -1,5 +1,17 @@
 # Candidate evidence — 2026-09-24
 
+## Member entry update — 2026-10-01
+
+The public landing and overview lead directly to Create your Unanym or Sign in.
+`/learn` now explains account creation and selective sharing without a fictional
+practice account. The public service links to the separately hosted account
+service; `PUBLIC_ACCOUNT_URL` can select that host. Email-code screens use the
+private member home's visual style. The first verified code creates a persistent
+account, and an existing session opens the member home directly. Accounts start
+with no website connections or memberships. Issuers, per-website identities and
+sharing permissions are unchanged. This presentation change does not establish
+completion of the acceptance items in the release-readiness document.
+
 ## 0.4.0-rc.3 — independent Unanym presentation
 
 Standalone installations and the WordPress fallback now use Unanym by default.

@@ -8,6 +8,14 @@ store and changes no website identity, consent scope or admission rule.
 
 ## Your private member home
 
+The public Create your Unanym and Sign in links open the account host directly.
+A new member enters their email and confirms a code before an account is created.
+Returning members use the same flow; an existing session opens the home without
+another code. The new account has no website connections or memberships until
+the member connects a website and an organiser separately approves membership.
+`/learn` is an explanation of these steps, with no practice account or pretend
+permission controls.
+
 The home brings together identity and custody information, current shareable
 memberships and confirmations, website connections and the eight most recent
 recorded changes. Opening it requires a current member session, is never cached,
@@ -88,6 +96,11 @@ and 320 pixels with scripts disabled. A second fixture holds 14 communities and
 14 websites, checks the six-item previews, complete lists and matching palette,
 and disconnects a website beyond the preview without changing another connection.
 It also checks the home's stacked layout at 860 pixels. Existing tests cover scripted consent.
+`tests/public-site.test.js` also follows the public action to a separate standalone
+account host with scripts disabled. It verifies account creation only after code
+confirmation, no default memberships or connections, and returning to the same
+persisted account and session after the service restarts. Email is captured within
+that isolated test; the check does not establish external SMTP delivery.
 
 `UNANYM_CAPTURE_DIR=/tmp/member-places node --test tests/member-places.test.js`
 also writes desktop and phone screenshots of the fictional authenticated views.

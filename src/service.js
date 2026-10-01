@@ -120,7 +120,7 @@ export function createService(config,pact,{mountRoutes,memberDetails}={}) {
     return user;
   }
   app.get(base,(_req,res)=>res.redirect(base+'/'));
-  app.get(base+'/',(_req,res)=>res.send(frontPage(config,{home:base+'/',signIn:standalone?base+'/account':pact.loginURL(base+'/sites')})));
+  app.get(base+'/',(_req,res)=>standalone?res.redirect(303,base+'/account'):res.send(frontPage(config,{home:base+'/',signIn:pact.loginURL(base+'/sites')})));
   app.get(base+'/about',(_req,res)=>res.send(standalone?standalonePage(config,'about'):about(config)));
   app.get(base+'/developers',(_req,res)=>res.send(developerPage(config)));
   app.get(base+'/wordpress',(_req,res)=>res.send(developerPage(config)));
@@ -131,7 +131,7 @@ export function createService(config,pact,{mountRoutes,memberDetails}={}) {
   app.get(base+'/docs/',(_req,res)=>res.send(docsIndex(config)));
   for(const name of guideNames)app.get(base+'/docs/'+name,(_req,res)=>res.send(guidePage(config,name)));
   for(const key of Object.keys(referenceDocs))app.get(base+'/docs/'+key,(_req,res)=>res.send(referencePage(config,key)));
-  app.get(base+'/learn',(_req,res)=>res.send(standalone?standalonePage(config,'home'):learnView(config)));
+  app.get(base+'/learn',(_req,res)=>res.send(learnView(config)));
   // Local interaction review. The service name is Unanym; identifiers stay stable.
   if(config.demo)app.get(base+'/overview',(_req,res)=>res.send(frontPage(config,{home:base+'/',signIn:standalone?base+'/account':pact.loginURL(base+'/sites')})));
   if(!standalone)app.get(base+'/rehearsal',(_req,res)=>res.send(rehearsalView(config)));

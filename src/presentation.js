@@ -5,6 +5,7 @@ import {exampleClient,exampleURL} from './example-site.js';
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const displayName=config=>config.displayName??'Unanym';
 export const developerURL=config=>config.developerURL??(config.basePath??'/identity')+'/developers';
+export const memberAccountURL=config=>config.accountURL??(config.basePath??'/identity')+(config.contract==='legacy-firn'?'/sites':'/account');
 const template=name=>readFileSync(new URL('../web/'+name,import.meta.url),'utf8');
 // Asset URLs carry a hash of the shipped styles and scripts, so a deploy is
 // never paired with a stylesheet or script cached from the previous release.
@@ -18,7 +19,7 @@ export function frontPage(config,{assets=(config.basePath??'/identity')+'/assets
 }
 export function overviewPage(config,{assets='/assets/'}={}) {
   const built=release();
-  return render(template('overview.html'),{assets,guides:'/docs/',developers:developerURL(config),version:built.version??'',
+  return render(template('overview.html'),{assets,guides:'/docs/',account_url:memberAccountURL(config),developers:developerURL(config),version:built.version??'',
     tested_wordpress:built.tested?.wordpress??'',tested_generic:built.tested?.openid_connect_generic??''}).replace(/<!--chapter:([a-z]+)-->/g,(_m,name)=>chapters[name]());
 }
 // Geometry vocabulary shared by the hero, the chapters and the mark.
@@ -124,7 +125,7 @@ const chapters={
       cube(own[0],own[1],20),`<text class="or" x="180" y="${own[1]+5}" text-anchor="middle">or</text>`,
       label([community[0],204],'Community host'),label([own[0],204],'Your own host')].join(''));}};
 
-// The member introduction (/learn): the same vocabulary, drawn still and in light colours.
+// The member introduction (/learn): the same vocabulary, with text explaining every step.
 export function learnArt() {
   const w=280,h=170,small=([x,y],side,colour)=>`<g class="site"><rect class="node" x="${x-30}" y="${y-19}" width="60" height="38" rx="10"/>${face(side,colour,x,y,11)}</g>`;
   const signIn=(()=>{const c=[62,85],ring=40,to=[[[222,30],'left','coral'],[[222,85],'right','amber'],[[222,140],'top','blue']],defs=[],lines=[];
@@ -144,14 +145,14 @@ export function learnArt() {
 export const receiptArt=()=>svg('geo receipt-art',64,32,face('left','coral',16,16,13)+`<g class="receipt-token">${token([48,16],'a',15)}</g>`);
 
 export function homePage(config,{assets='/assets/'}={}) {
-  const page=render(template('home.html'),{assets,guides:'/docs/',developers:developerURL(config)});
+  const page=render(template('home.html'),{assets,guides:'/docs/',account_url:memberAccountURL(config),developers:developerURL(config)});
   return page.replace('<!--hero-->',heroWide()+heroTall()).replace(/<!--chapter:([a-z]+)-->/g,(_m,name)=>chapters[name]());
 }
 // Written by the build next to the WordPress package; absent in an unbuilt checkout.
 const release=()=>{try{return JSON.parse(readFileSync(new URL('../dist/release.json',import.meta.url),'utf8'));}catch{return {};}};
 export function developerPage(config,{assets=(config.basePath??'/identity')+'/assets/',home=config.publicDocs?'/learn':config.accountSource==='frrn'?config.origin+'/':(config.basePath??'/identity')+'/'}={}) {
   const base=config.basePath??'/identity',built=release(),frrn=config.accountSource==='frrn';
-  return render(template('developers.html'),{assets,home,home_label:config.publicDocs?'Member walkthrough':displayName(config)+' ↗',home_footer:config.publicDocs?'Try the member walkthrough':'Back to '+displayName(config),developer_home:config.publicDocs?'/':developerURL(config),brand:displayName(config),issuer:config.issuer??'Supplied by your operator',
+  return render(template('developers.html'),{assets,home,home_label:config.publicDocs?'Getting started':displayName(config)+' ↗',home_footer:config.publicDocs?'Getting started':'Back to '+displayName(config),developer_home:config.publicDocs?'/':developerURL(config),brand:displayName(config),issuer:config.issuer??'Supplied by your operator',
     scopes:config.contract==='legacy-firn'?'openid profile drop_identity drop_memberships':'openid profile identity.v1 memberships.v1',
     contract:config.contract??'community-v1',wordpress_download:base+'/wordpress.zip',download_hidden:config.demo||config.wordpressDownload?'':'hidden',
     documentation:base+'/docs/'+(frrn?'frrn-host':'hosting'),contract_doc:base+'/docs/contract',guides:base+'/docs/',websites_guide:base+'/docs/websites',operators_guide:base+'/docs/operators',
@@ -173,14 +174,16 @@ export const glyphs={
 };
 
 // Shared private member shell: home and complete lists use the same navigation and palette.
-export function memberPage(config,title,body,{csrf,canSignOut,current='account',directory=false}={}) {
+export function memberPage(config,title,body,{csrf,canSignOut,current='account',directory=false,access=false}={}) {
   const base=config.basePath??'/identity',brand=escape(displayName(config));
   const mark=['Unanym','FRRN'].includes(displayName(config))?brand.toLowerCase():brand,frrn=config.accountSource==='frrn';
   const exit=canSignOut?`<form method="post" action="${base}/logout"><input type="hidden" name="csrf" value="${escape(csrf(base+'/logout'))}"><button class="pill">Sign out</button></form>`
     :frrn?'<a class="pill" href="/account">FRRN account <span aria-hidden="true">↗</span></a>':'';
+  const privacy=config.publicDocs?base+'/docs/members#who-can-connect-the-dots':base+'/about';
+  const navigation=access?`<a href="${base}/learn">Learn about ${brand}</a><a href="${escape(memberAccountURL(config))}">Sign in</a>`:`<a href="${base}/account" ${current==='account'?'aria-current="page"':''}>Your ${brand}</a><a href="${base}/sites" ${current==='sites'?'aria-current="page"':''}>Connections</a><a href="${base}/records" ${current==='records'?'aria-current="page"':''}>Records</a>${exit}`;
   return versionAssets(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="robots" content="noindex,nofollow"><title>${escape(title)} · ${brand}</title><link rel="stylesheet" href="${base}/assets/front.css"><link rel="icon" href="${base}/assets/favicon.svg" type="image/svg+xml"></head><body class="developer member${directory?' member-directory':''}">
-  <a class="skip" href="#main">Skip to content</a><header class="site-header"><a class="wordmark" href="${base}/" aria-label="${brand} home"><img src="${base}/assets/front-mark.svg" alt="" width="25" height="32">${mark}</a><nav class="doc-nav member-nav" aria-label="Account"><a href="${base}/account" ${current==='account'?'aria-current="page"':''}>Your ${brand}</a><a href="${base}/sites" ${current==='sites'?'aria-current="page"':''}>Connections</a><a href="${base}/records" ${current==='records'?'aria-current="page"':''}>Records</a>${exit}</nav></header>
+  <a class="skip" href="#main">Skip to content</a><header class="site-header"><a class="wordmark" href="${base}/" aria-label="${brand} home"><img src="${base}/assets/front-mark.svg" alt="" width="25" height="32">${mark}</a><nav class="doc-nav member-nav" aria-label="${access?'Main':'Account'}">${navigation}</nav></header>
   ${config.demo?'<aside class="member-demo">Local demonstration · fictional accounts</aside>':''}
   <main id="main">${body}</main>
-  <footer class="site-footer"><span>One you. Many places.</span><div><a href="${base}/about">Privacy</a><a href="${escape(developerURL(config))}">Identity by Unanym <span aria-hidden="true">↗</span></a></div></footer></body></html>`);
+  <footer class="site-footer"><span>One you. Many places.</span><div><a href="${privacy}">Privacy</a><a href="${escape(developerURL(config))}">Identity by Unanym <span aria-hidden="true">↗</span></a></div></footer></body></html>`);
 }

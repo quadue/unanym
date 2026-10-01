@@ -3,8 +3,68 @@ import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import {createPublicSite} from '../src/public-site.js';
 import {chromium,expect} from '@playwright/test';
+import {createServer} from 'node:http';
+import {mkdtempSync,writeFileSync,rmSync,mkdirSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {configuration} from '../src/config.js';
+import {createStandalone} from '../src/standalone/server.js';
+
+test('public entry creates one verified persistent account and resumes it without granting memberships or connections',async t=>{
+  const dir=mkdtempSync(join(tmpdir(),'unanym-entry-')),server=createServer(),mail=[];
+  let service,publicServer,browser;
+  t.after(async()=>{await browser?.close();if(publicServer)await new Promise(r=>publicServer.close(r));await new Promise(r=>server.close(r));service?.close();rmSync(dir,{recursive:true,force:true});});
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
+  const clients=join(dir,'clients.json');writeFileSync(clients,'[]');
+  const config=configuration({IDENTITY_CONTRACT:'community-v1',IDENTITY_ORIGIN:origin,IDENTITY_OPERATOR_NAME:'Fictional test operator',IDENTITY_CLIENTS:clients,IDENTITY_DATA_DIR:join(dir,'identity')});
+  const options={bootstrapEmail:'operator@example.test',sendCode:async m=>mail.push(m)};
+  service=createStandalone(config,options);server.on('request',service.app);
+  publicServer=createPublicSite({accountURL:origin+'/identity/account'}).listen(0,'127.0.0.1');await once(publicServer,'listening');
+  const publicOrigin='http://127.0.0.1:'+publicServer.address().port;
+  browser=await chromium.launch();const page=await browser.newPage({javaScriptEnabled:false,viewport:{width:375,height:812},reducedMotion:'reduce'});
+  const capture=async name=>{if(process.env.UNANYM_CAPTURE_DIR){mkdirSync(process.env.UNANYM_CAPTURE_DIR,{recursive:true});await page.screenshot({path:join(process.env.UNANYM_CAPTURE_DIR,name+'.png'),fullPage:true});}};
+  await page.goto(publicOrigin+'/');await capture('account-entry-landing');
+  await page.locator('.landing-intro').getByRole('link',{name:'Create your Unanym',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Your Unanym',exact:true})).toBeVisible();
+  await expect(page.getByText('Confirm it to create your account', {exact:false})).toBeVisible();
+  for(const width of [1220,375,320]){
+    await page.setViewportSize({width,height:812});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'account entry '+width);
+  }
+  await capture('account-entry-email');
+  await page.getByLabel('Email address').fill('new-member@example.test');await page.getByRole('button',{name:'Send code',exact:true}).click();
+  assert.equal(service.accounts.db.prepare('SELECT count(*) n FROM accounts').get().n,0,'requesting a code does not create an unverified member');
+  assert.equal(mail.length,1);await page.getByLabel('Sign-in code').fill(mail[0].code);await page.getByRole('button',{name:'Sign in',exact:true}).click();
+  await page.waitForURL(origin+'/identity/account');
+  await expect(page.getByRole('heading',{name:'One you. No places yet.',exact:true})).toBeVisible();
+  await expect(page.locator('.member-email')).toHaveText('new-member@example.test');
+  await expect(page.locator('.member-site,.member-community')).toHaveCount(0);
+  const account=service.accounts.db.prepare('SELECT id,verified FROM accounts').get();assert.equal(account.verified,1);
+  for(const table of ['memberships','operators','administrators'])assert.equal(service.accounts.db.prepare('SELECT count(*) n FROM '+table).get().n,0,table);
+  for(const table of ['personas','connections'])assert.equal(service.db.prepare('SELECT count(*) n FROM '+table).get().n,0,table);
+  await capture('account-entry-home');
+  // Restart the account service against the same store; the member session and account survive.
+  server.removeAllListeners('request');service.close();service=createStandalone(config,options);server.on('request',service.app);
+  await page.goto(publicOrigin+'/');await page.getByRole('link',{name:'Sign in',exact:true}).click();
+  await page.waitForURL(origin+'/identity/account');assert.equal(mail.length,1);
+  assert.equal(service.accounts.db.prepare('SELECT id FROM accounts').get().id,account.id);
+  assert.equal(service.accounts.db.prepare('SELECT count(*) n FROM accounts').get().n,1);
+  await page.goto(origin+'/identity/login');await page.waitForURL(origin+'/identity/account');
+  for(const path of ['/','/identity/']){
+    await page.goto(origin+path);await page.waitForURL(origin+'/identity/account');
+    await expect(page.locator('.place-select')).toHaveCount(0);
+  }
+  await page.goto(publicOrigin+'/learn');await capture('account-entry-learn');
+  await page.getByRole('link',{name:'Create your Unanym',exact:true}).click();await page.waitForURL(origin+'/identity/account');
+  assert.equal(mail.length,1,'creating again resumes the same signed-in account');
+  await page.getByRole('button',{name:'Sign out',exact:true}).click();await page.waitForURL(origin+'/identity/login');
+  assert.equal((await page.request.get(origin+'/identity/account',{maxRedirects:0})).status(),302);
+  await page.goto(origin+'/identity/');await page.waitForURL('**/identity/login?next=**');
+  await expect(page.getByLabel('Email address')).toBeVisible();
+});
 
 test('public Unanym pages have independent branding and no account or issuer endpoints',async()=>{
+  for(const accountURL of ['javascript:alert(1)','https://user:secret@example.test/account','https://example.test/account#fragment','http://example.test/account'])
+    assert.throws(()=>createPublicSite({accountURL}),/Account URL/);
   const server=createPublicSite().listen(0,'127.0.0.1');await once(server,'listening');
   const origin='http://127.0.0.1:'+server.address().port;
   try{
@@ -29,30 +89,25 @@ test('public Unanym pages have independent branding and no account or issuer end
   }finally{await new Promise(r=>server.close(r));}
 });
 
-test('public member practice completes on a phone without signing in or sending choices',async()=>{
+test('public learning explains real accounts on a phone without simulated sharing or writes',async()=>{
   const server=createPublicSite().listen(0,'127.0.0.1');await once(server,'listening');
   const origin='http://127.0.0.1:'+server.address().port,browser=await chromium.launch();
   try{
-    const page=await browser.newPage({viewport:{width:375,height:812},reducedMotion:'reduce'}),writes=[];
-    page.on('request',r=>{if(r.method()!=='GET'||new URL(r.url()).origin!==origin)writes.push(r.url());});
-    await page.goto(origin+'/learn');
-    await page.getByRole('button',{name:'Continue with Unanym',exact:true}).click();
-    await expect(page.locator('#practice-progress')).toHaveText('Step 1 of 3 · Choosing with Unanym');
-    await page.getByLabel('Your name on this website').selectOption('River');
-    // The receipt glyph shows the membership square only once it is ticked.
-    const glyphToken=page.locator('[data-step="choose"] .receipt-token');
-    await expect(glyphToken).toBeHidden();
-    await page.getByRole('checkbox').check();
-    await expect(glyphToken).toBeVisible();
-    await page.getByRole('button',{name:'Allow and continue',exact:true}).click();
-    await expect(page.getByRole('heading',{name:'Welcome, River.'})).toBeVisible();
-    await page.getByRole('button',{name:'Manage what I share',exact:true}).click();
-    await page.getByRole('button',{name:'Disconnect',exact:true}).click();
-    await expect(page.getByRole('heading',{name:'Practice connection ended'})).toBeVisible();
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-    assert.deepEqual(writes,[]);
-    await page.getByRole('link',{name:'Member guide',exact:true}).click();
-    await expect(page.getByRole('heading',{name:'For members',exact:true})).toBeVisible();
+    for(const javaScriptEnabled of [true,false]){
+      const context=await browser.newContext({javaScriptEnabled,viewport:{width:375,height:812},reducedMotion:'reduce'});
+      const page=await context.newPage(),writes=[];
+      page.on('request',r=>{if(r.method()!=='GET'||new URL(r.url()).origin!==origin)writes.push(r.url());});
+      await page.goto(origin+'/learn');
+      await expect(page.getByRole('link',{name:'Create your Unanym',exact:true})).toHaveAttribute('href','https://unanym.org/identity/account');
+      await expect(page.locator('.learn-cards article')).toHaveCount(3);
+      await expect(page.locator('#practice-app,select,input,form')).toHaveCount(0);
+      await expect(page.locator('main')).not.toContainText(/practice|pretend|hypothetical|alpha/i);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+      assert.deepEqual(writes,[]);assert.deepEqual(await context.cookies(),[]);
+      await page.getByRole('link',{name:'Read how your information is handled'}).click();
+      await expect(page.getByRole('heading',{name:'For members',exact:true})).toBeVisible();
+      await context.close();
+    }
   }finally{await browser.close();await new Promise(r=>server.close(r));}
 });
 
@@ -94,20 +149,18 @@ test('public overview addresses members first and states what websites do not re
     const page=await browser.newPage({viewport:{width:375,height:812}});
     await page.goto(origin+'/overview');
     await expect(page.getByRole('heading',{level:1})).toContainText('Show you belong.');
-    await expect(page.getByRole('link',{name:'Try the member walkthrough'})).toHaveAttribute('href','/learn');
+    await expect(page.getByRole('link',{name:'Create your Unanym'})).toHaveAttribute('href','https://unanym.org/identity/account');
     await expect(page.getByRole('link',{name:'Set up a website'})).toHaveAttribute('href','/developers');
     await expect(page.getByRole('heading',{name:'Does not receive'})).toBeVisible();
     await expect(page.getByText('can see which websites you connect')).toBeVisible();
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     await page.getByRole('link',{name:'Set up a website'}).click();
     await expect(page.getByRole('heading',{name:'Connect WordPress'})).toBeVisible();
-    // Every reading page shares the landing's ground, and the member practice stays light.
-    for(const path of ['/overview','/developers','/docs/','/']){
+    // Reading and account pages share the landing's ground.
+    for(const path of ['/overview','/developers','/docs/','/','/learn']){
       await page.goto(origin+path);
       assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),'rgb(23, 24, 30)',path);
     }
-    await page.goto(origin+'/learn');
-    assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),'rgb(244, 244, 241)');
     await page.goto(origin+'/developers');
     await page.getByRole('link',{name:'unanym',exact:true}).click();
     await expect(page).toHaveURL(origin+'/');

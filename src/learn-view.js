@@ -1,35 +1,23 @@
-import {page,escape} from './views.js';
-import {displayName,learnArt,receiptArt} from './presentation.js';
+import {escape} from './views.js';
+import {displayName,learnArt,memberAccountURL,memberPage} from './presentation.js';
 
-// The illustrations are decorative: all their meaning is repeated in nearby text.
+// Reading this page never creates an account or changes sharing permission.
 export function learnView(config) {
- const brand=escape(displayName(config)),base=config.basePath??'/identity',pictures=learnArt(),glyph=receiptArt();
- return page('Try a practice connection',`<div class="learn" data-brand="${brand}">
- <section class="hero compact"><p class="eyebrow">A gentle introduction</p><h1>Your communities.<br><em>You choose what to share.</em></h1><p class="lead">${brand} is a shared sign-in for independent communities. It helps you visit different community websites and choose what each one learns about you.</p><a class="button" href="#practice">Try it with a practice account</a><p class="learn-small">No registration. No real personal details. Take your time.</p></section>
- <section aria-label="How it works" class="visual-story">
- <div class="learn-cards">
- <article data-scene="0">${pictures[0]}<span class="learn-number">1</span><h2>One familiar sign-in</h2><p>Sign in through ${brand}. Each community keeps its own website and rules.</p></article>
- <article data-scene="1">${pictures[1]}<span class="learn-number">2</span><h2>Choose what to share</h2><p>Choose a name and, if you wish, a membership. The website receives no email address from ${brand}.</p></article>
- <article data-scene="2">${pictures[2]}<span class="learn-number">3</span><h2>Review or disconnect</h2><p>Manage your connections with ${brand}. Disconnect to stop further access through this service.</p></article>
- </div>
- <div id="animation-controls" class="actions" hidden><button class="secondary" id="watch-story">Watch the steps</button><button class="secondary" id="next-scene">Next illustration</button><span id="story-caption" role="status">Read at your own pace, or watch the three steps.</span></div>
- </section>
- <section id="practice" class="practice" aria-labelledby="practice-title">
- <p class="eyebrow">Practice only · fictional account and website</p>
- <h2 id="practice-title">Have a go as Robin</h2><p>This is a pretend connection to “Garden community”. Your choices stay on this page. Nothing is sent to a community website or saved as a connection.</p>
- <noscript><p>The interactive practice needs JavaScript. The three illustrations above explain the same steps: sign in through ${brand}, choose what to share, and manage the connection with ${brand}.</p></noscript>
- <div id="practice-app" hidden>
- <p id="practice-progress" class="practice-location">Start · At the fictional community website</p>
- <div data-step="start"><h3 tabindex="-1">Welcome to Garden community</h3><p>On a connected website, this button takes you to ${brand} to sign in.</p><button data-go="choose">Continue with ${brand}</button></div>
- <div data-step="choose" hidden><h3 tabindex="-1">What may Garden community see?</h3><p>For this practice, Robin is already signed in to ${brand}.</p><label for="practice-name">Your name on this website</label><select id="practice-name"><option>Robin</option><option>River</option></select><p class="learn-small">These are fictional names. In the real service, you can enter a first name or a pseudonym.</p>
- <fieldset><legend>Membership to share (optional)</legend><label class="choice"><input type="checkbox" id="practice-membership"><span>Meadow circle<small>A fictional membership for this practice</small></span></label></fieldset>
- <div class="practice-receipt" aria-live="polite">${glyph}<h4>This website would receive</h4><ul><li>Name: <strong data-preview-name>Robin</strong></li><li>Its own member number for you</li><li data-preview-membership>No community memberships</li></ul><p>Your email and other memberships would not be shared.</p></div>
- <div class="actions"><button data-go="connected">Allow and continue</button><button class="secondary" data-go="start">Not now</button></div></div>
- <div data-step="connected" hidden><h3 tabindex="-1">Welcome, <span data-preview-name>Robin</span>.</h3><p>You have made a practice connection. Garden community would receive:</p><div class="practice-receipt">${glyph}<ul><li>Name: <strong data-preview-name>Robin</strong></li><li>Its own member number for you</li><li data-preview-membership>No community memberships</li></ul><p>No email address from ${brand}.</p></div><p>Next, find where you can stop this connection.</p><button data-go="manage">Manage what I share</button></div>
- <div data-step="manage" hidden><h3 tabindex="-1">My connections</h3><div class="practice-receipt">${glyph}<p><strong>Garden community</strong> <span class="badge">Connected in practice</span></p><p>Name shared: <span data-preview-name>Robin</span></p><p data-preview-membership>No community memberships</p><button class="secondary" data-go="done">Disconnect</button></div><p>Disconnecting stops further access through ${brand}. It does not erase information a website already received. Connected websites must check that permission is still current.</p><button class="secondary" data-go="choose">Change the practice choices</button></div>
- <div data-step="done" hidden><h3 tabindex="-1">Practice connection ended</h3><p>You chose what to share, reviewed the connection and disconnected it.</p><p>On a real website, disconnection stops further access through ${brand}. Information already shared may remain with that website.</p><p><strong>Before trying it for real:</strong> could you explain what Garden community received, and where you went to disconnect?</p><div class="actions"><button class="secondary" id="restart-practice">Practise again</button><a class="button" href="${base}/${config.publicDocs?'docs/members':'example/'}">${config.publicDocs?'Member guide':'Try an example website →'}</a></div><p class="learn-small">On participating websites, you sign in with your identity service and choose what to share. Each community decides its own admission rules.</p></div>
- </div></section>
- <section class="learn-boundaries" aria-labelledby="know-title"><h2 id="know-title">A few things to know</h2><p><strong>A pseudonym is welcome.</strong> Your shared name or membership may still make you recognisable. This is not complete anonymity.</p><p><strong>The service operator holds the records and signing keys.</strong> It can associate your connections. Ask the operator how it handles your information.</p><p><strong>Membership is not a safety guarantee.</strong> It does not confirm training. A shared membership does not certify qualifications or personal safety.</p><p><a href="${base}/${config.publicDocs?'docs/members#who-can-connect-the-dots':'about'}">Read how your information is handled</a></p></section>
- <aside class="note"><div><h2>Do you look after a community website?</h2><p>The setup instructions have their own place.</p></div><a class="text-link" href="${config.publicDocs?'/developers':base+'/developers'}">Website setup →</a></aside>
- </div><script type="module" src="${base}/assets/learn.js"></script>`,config);
+  const brand=escape(displayName(config)),base=config.basePath??'/identity',pictures=learnArt();
+  const account=escape(memberAccountURL(config)),hosted=config.contract==='community-v1'&&config.accountSource!=='frrn';
+  return memberPage(config,'Getting started',`<div class="learn member-learn" data-brand="${brand}">
+    <section class="learn-intro"><h1>One you.<br>Start here.</h1><p>${brand} holds your account. You choose what each website sees.</p>
+      <div class="landing-actions"><a class="pill accent" href="${account}">${hosted?'Create your '+brand:'Your '+brand+' account'}</a></div>
+      <p class="learn-small">${hosted?'Confirm a code sent to your email. If you already have an account, the same code signs you in.':'Use your existing account to sign in.'}</p></section>
+    <section aria-label="How it works" class="visual-story"><div class="learn-cards">
+      <article data-scene="0">${pictures[0]}<span class="learn-number">1</span><h2>${hosted?'Create your account':'Sign in'}</h2><p>${hosted?'Enter your email and confirm the code. Your account starts with no websites connected.':'Sign in through '+brand+'.'} Each community keeps its own website and rules.</p></article>
+      <article data-scene="1">${pictures[1]}<span class="learn-number">2</span><h2>Choose what to share</h2><p>On a participating website, choose Continue with ${brand}. Pick a name and any memberships you want to share. The website receives no email address from ${brand}.</p></article>
+      <article data-scene="2">${pictures[2]}<span class="learn-number">3</span><h2>Review your connections</h2><p>Your ${brand} shows your communities and what each website receives. Change your choices or disconnect to stop new access through this service.</p></article>
+    </div><div id="animation-controls" class="actions" hidden><button class="pill" id="watch-story">Watch the steps</button><button class="pill" id="next-scene">Next illustration</button><span id="story-caption" role="status">Read at your own pace, or watch the three steps.</span></div></section>
+    <section class="learn-boundaries"><h2>Your account, your choices</h2>
+      <p>You can create an account before connecting a website or joining a community. An organiser approves a membership; creating your account does not grant one.</p>
+      <p>Use a first name or pseudonym for each website. Your email stays with the account service. Shared names or memberships can still make you recognisable.</p>
+      <p>The operator holds the records and signing keys and can link your connections. Disconnecting stops new access; websites may keep earlier copies. Membership does not certify training or safety.</p>
+      <a href="${base}/${config.publicDocs?'docs/members':'about'}">Read how your information is handled →</a></section>
+  </div><script type="module" src="${base}/assets/learn.js"></script>`,{access:true});
 }

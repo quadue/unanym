@@ -8,8 +8,10 @@ import {docsIndex,guidePage,guideNames,referencePage,referenceDocs} from './port
 import {learnView} from './learn-view.js';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
-export function createPublicSite({origin='https://unanym.org'}={}) {
-  const config={publicDocs:true,origin,basePath:'',developerURL:'/developers',displayName:'Unanym',
+export function createPublicSite({origin='https://unanym.org',accountURL='https://unanym.org/identity/account'}={}) {
+  const account=new URL(accountURL);
+  if(account.username||account.password||account.hash||(account.protocol!=='https:'&&!(account.protocol==='http:'&&['localhost','127.0.0.1'].includes(account.hostname))))throw new Error('Account URL must use HTTPS or a loopback host');
+  const config={publicDocs:true,origin,accountURL:account.href,basePath:'',developerURL:'/developers',displayName:'Unanym',
     contract:'community-v1',operatorName:'your identity service operator',
     issuer:'Supplied by your identity operator',clients:[],wordpressDownload:true};
   const app=express();app.disable('x-powered-by');
@@ -39,7 +41,7 @@ export function createPublicSite({origin='https://unanym.org'}={}) {
   return app;
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
-  const app=createPublicSite({origin:process.env.PUBLIC_ORIGIN??'https://unanym.org'});
+  const app=createPublicSite({origin:process.env.PUBLIC_ORIGIN??'https://unanym.org',accountURL:process.env.PUBLIC_ACCOUNT_URL});
   const server=app.listen(Number(process.env.PORT??4386),process.env.HOST??'127.0.0.1',()=>console.log('Unanym public site listening'));
   for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>server.close(()=>process.exit(0)));
 }

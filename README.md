@@ -116,11 +116,22 @@ choice separate from website accounts, consent and organisational authority.
 
 ## Public website
 
-`npm run start:site` serves the independent Unanym overview, guides, fictional
-member practice and WordPress download at port 4386. Set `PUBLIC_ORIGIN`, `HOST`
-and `PORT` for deployment. Build assets first with `npm run build`. This entry
+`npm run start:site` serves the independent Unanym overview, guides, getting-started
+explanation and WordPress download at port 4386. Create your Unanym and Sign in
+lead to the account host at `https://unanym.org/identity/account` by default.
+Set `PUBLIC_ACCOUNT_URL` to use another account host; HTTPS is required except
+for loopback development. Set `PUBLIC_ORIGIN`, `HOST` and `PORT` for deployment.
+Build assets first with `npm run build`. This entry
 point is documentation only: it opens no account database and has no sign-in or
 issuer endpoints. The public site can move domains without migrating accounts.
+
+The account host creates a persistent account only after an email code is
+verified. The same flow signs returning members into their existing account;
+members already signed in go straight to their private home. Creating an
+account grants no memberships and connects no websites. `/learn` explains this
+flow without creating a practice identity or simulating sharing controls.
+The standalone host's `/` and `/identity/` entry points open the private home,
+requesting an email code when the member is signed out.
 
 ## Development
 

@@ -71,7 +71,7 @@ test('standalone browser: email code, admin approval, consent, signed UserInfo, 
   server.on('request',service.app);
   const browser=await chromium.launch();let stopped=false;
   const login=async(page,email)=>{
-    await page.goto(origin+'/identity/login');assert.equal(await page.title(),'Sign in · Harbour');await page.getByLabel('Email address').fill(email);await page.getByRole('button',{name:'Send code',exact:true}).click();
+    await page.goto(origin+'/identity/login');assert.equal(await page.title(),'Your Harbour · Harbour');await page.getByLabel('Email address').fill(email);await page.getByRole('button',{name:'Send code',exact:true}).click();
     await page.getByLabel('Sign-in code').fill(mail.get(email));await page.getByRole('button',{name:'Sign in',exact:true}).click();await page.waitForURL('**/identity/account');
   };
   try{

@@ -1,25 +1,6 @@
-// A local, fictional walkthrough. No account APIs, persistence or analytics.
+// Optional illustration controls. Account creation happens at the linked host.
 const root=document.querySelector('.learn');
 const brand=root.dataset.brand||'Unanym';
-const select=root.querySelector('#practice-name');
-const membership=root.querySelector('#practice-membership');
-const labels={start:'Start · At the fictional community website',choose:`Step 1 of 3 · Choosing with ${brand}`,connected:'Step 2 of 3 · Back at Garden community',manage:`Step 3 of 3 · My connections with ${brand}`,done:'Finished · Practice only'};
-function preview(){
- root.querySelectorAll('[data-preview-name]').forEach(el=>el.textContent=select.value);
- root.querySelectorAll('[data-preview-membership]').forEach(el=>el.textContent=membership.checked?'Membership: Meadow circle':'No community memberships');
-}
-function go(step){
- root.querySelectorAll('[data-step]').forEach(el=>el.hidden=el.dataset.step!==step);
- root.querySelector('#practice-progress').textContent=labels[step];
- const heading=root.querySelector(`[data-step="${step}"] h3`);
- heading.focus({preventScroll:true});
- root.querySelector(step==='start'?'#practice':'#practice-progress').scrollIntoView({block:'start',behavior:'instant'});
-}
-root.querySelectorAll('[data-go]').forEach(button=>button.addEventListener('click',()=>go(button.dataset.go)));
-select.addEventListener('change',preview);membership.addEventListener('change',preview);
-root.querySelector('#restart-practice').addEventListener('click',()=>{select.value='Robin';membership.checked=false;preview();go('start');});
-root.querySelector('#practice-app').hidden=false;
-
 const cards=[...root.querySelectorAll('[data-scene]')];
 const play=root.querySelector('#watch-story');
 const next=root.querySelector('#next-scene');

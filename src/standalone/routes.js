@@ -2,7 +2,7 @@ import express from 'express';
 import {createHmac,randomBytes,timingSafeEqual} from 'node:crypto';
 import {accountCookie} from './accounts.js';
 import {page,escape} from '../views.js';
-import {frontPage} from '../presentation.js';
+import {displayName,memberPage} from '../presentation.js';
 
 export function standaloneRoutes(app,config,accounts) {
   const secure=new URL(config.origin).protocol==='https:';
@@ -19,19 +19,21 @@ export function standaloneRoutes(app,config,accounts) {
     next();
   }
   const view=(res,title,html)=>res.send(page(title,`<section class="narrow"><h1>${escape(title)}</h1>${html}</section>`,config));
+  const accessView=(res,title,html)=>res.send(memberPage(config,title,`<section class="member-access"><h1>${escape(title)}</h1>${html}</section>`,{access:true}));
   const field=(label,name,type='text',required=true)=>`<label>${label}<input name="${name}" type="${type}" ${required?'required':''}></label>`;
   function user(req,res){const value=accounts.adapter.session(req);if(!value)res.redirect('/identity/login?next='+encodeURIComponent(req.path));return value;}
   function codeForm(req,res,id,next,message='Check your email for an eight-digit code.'){
-    return view(res,'Enter your code',`<p>${escape(message)}</p><form method="post" action="/identity/login/verify">${hidden(req,'/identity/login/verify')}<input type="hidden" name="challenge" value="${escape(id)}"><input type="hidden" name="next" value="${escape(next)}"><label>Sign-in code<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" maxlength="8" required></label><button>Sign in</button></form><p><a href="/identity/login?next=${encodeURIComponent(next)}">Request another code</a></p>`);
+    return accessView(res,'Enter your code',`<p>${escape(message)}</p><form method="post" action="/identity/login/verify">${hidden(req,'/identity/login/verify')}<input type="hidden" name="challenge" value="${escape(id)}"><input type="hidden" name="next" value="${escape(next)}"><label>Sign-in code<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" maxlength="8" required></label><button>Sign in</button></form><p><a href="/identity/login?next=${encodeURIComponent(next)}">Request another code</a></p>`);
   }
-  app.get('/',(_req,res)=>res.send(frontPage(config)));
+  app.get('/',(_req,res)=>res.redirect(303,'/identity/account'));
   app.get('/identity/login',(req,res)=>{
+    if(accounts.adapter.session(req))return res.redirect(303,safeNext(req.query.next));
     if(!/^[A-Za-z0-9_-]{43}$/.test(bind(req))){const value=randomBytes(32).toString('base64url');res.cookie(bindingName,value,{httpOnly:true,secure,sameSite:'lax',path:'/',maxAge:600_000});req.headers.cookie=(req.headers.cookie?req.headers.cookie+'; ':'')+bindingName+'='+value;}
-    view(res,'Sign in',`<p>Use your email to receive a code. It is not shared with community websites.</p><form method="post" action="/identity/login/request">${hidden(req,'/identity/login/request')}<input type="hidden" name="next" value="${escape(safeNext(req.query.next))}">${field('Email address','email','email')}<button>Send code</button></form>`);
+    accessView(res,'Your '+displayName(config),`<p>Enter your email to receive a code. Confirm it to create your account or sign in to the one you already have.</p><p class="help">Your email stays here. Websites receive only what you choose to share.</p><form method="post" action="/identity/login/request">${hidden(req,'/identity/login/request')}<input type="hidden" name="next" value="${escape(safeNext(req.query.next))}"><label>Email address<input name="email" type="email" autocomplete="email" required></label><button>Send code</button></form><p class="help">A new account starts with no connections. Communities approve memberships separately.</p>`);
   });
   app.post('/identity/login/request',body,protect,async(req,res)=>{
     try{const id=await accounts.requestCode(req.body.email,bind(req),req.ip);codeForm(req,res,id,safeNext(req.body.next));}
-    catch(e){res.status(e.status??400);view(res,'Sign-in needs another try',`<p>${escape(e.message)}</p><a href="/identity/login">Return to sign-in</a>`);}
+    catch(e){res.status(e.status??400);accessView(res,'Sign-in needs another try',`<p>${escape(e.message)}</p><a href="/identity/login">Return to sign-in</a>`);}
   });
   app.post('/identity/login/verify',body,protect,(req,res)=>{
     const next=safeNext(req.body.next);
