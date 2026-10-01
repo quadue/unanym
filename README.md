@@ -9,9 +9,9 @@ Run Unanym on your own domain, with your own operator and branding. It supplies
 accounts, organisation approvals and member-controlled sharing independently
 of any community platform. Membership rules belong to your community.
 
-**Status: private release candidate.** WordPress is the tested integration.
+**Status: release candidate.** WordPress is the tested integration.
 Real member acceptance and an independent security review are still pending.
-The source and local tests are available for evaluation; this is not yet a
+The source and local tests are prepared for evaluation; this is not yet a
 supported production release.
 
 ## Try it locally
@@ -119,13 +119,24 @@ choice separate from website accounts, consent and organisational authority.
 ## Public website
 
 `npm run start:site` serves the independent Unanym overview, guides, getting-started
-explanation and WordPress download at port 4386. Create your Unanym and Sign in
+explanation and WordPress download at port 4386. Create your nym and Sign in
 lead to the account host at `https://unanym.org/identity/account` by default.
 Set `PUBLIC_ACCOUNT_URL` to use another account host; HTTPS is required except
 for loopback development. Set `PUBLIC_ORIGIN`, `HOST` and `PORT` for deployment.
 Build assets first with `npm run build`. This entry
 point is documentation only: it opens no account database and has no sign-in or
 issuer endpoints. The public site can move domains without migrating accounts.
+
+`PUBLIC_COMMUNITY_URL` adds a Telegram discussion link in a small community
+section at the bottom of the landing. `PUBLIC_SOURCE_URL` adds the public GitHub
+source link there, in the footer and in the operator guide. Both require HTTPS;
+leave either unset until its destination is available. These are ordinary links,
+with no embedded chat widget or third-party scripts.
+
+Visitors can join [Unanym Community](https://t.me/unanymcommunity) to ask questions
+and share feedback. Joining the chat is separate from creating an account or
+receiving a community membership. Use the private route in `SECURITY.md` for
+security reports.
 
 The account host creates a persistent account only after an email code is
 verified. The same flow signs returning members into their existing account;

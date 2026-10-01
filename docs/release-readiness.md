@@ -16,13 +16,20 @@ does not declare a production release or complete an international member pilot.
 - Concrete fictional choir example and an independent WordPress setup trial
   packet. The packet is prepared, not evidence that a person completed it.
 
-## Before public release
+## Before publishing the source
 
 1. Confirm the named maintainer, private reporting channel and support scope.
 2. Review this snapshot and dependency/licence inventory; preserve attribution.
-3. Obtain independent review of authentication, disclosure, linking and recovery.
-4. Confirm the public repository/name and test the agreed private reporting route.
-5. Verify CI on the exact candidate and document the release's supported boundary.
+3. Confirm the public repository/name and test the agreed private reporting route.
+4. Verify CI on the exact candidate and document the release's supported boundary.
+
+Source publication makes the code available under Apache 2.0. It does not certify
+an installation or complete the operational acceptance below.
+
+## Before designating a supported production release
+
+Obtain independent review of authentication, disclosure, linking and recovery,
+resolve its findings, and agree the maintenance and support commitments.
 
 ## Before inviting real members
 

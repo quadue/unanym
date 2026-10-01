@@ -141,7 +141,11 @@ export const receiptArt=()=>svg('geo receipt-art',64,32,face('left','coral',16,1
 
 export function homePage(config,{assets='/assets/'}={}) {
   const page=render(template('home.html'),{assets,guides:'/docs/',account_url:memberAccountURL(config),developers:developerURL(config)});
-  return page.replace('<!--hero-->',heroWide()+heroTall()).replace(/<!--chapter:([a-z]+)-->/g,(_m,name)=>chapters[name]());
+  const source=config.sourceURL?`<a class="pill" href="${escape(config.sourceURL)}">Source on GitHub</a>`:'';
+  const chat=config.communityURL?`<a class="pill" href="${escape(config.communityURL)}">Telegram discussion</a>`:'';
+  const community=chat||source?`<section class="landing-community" aria-labelledby="community-title"><div><h2 id="community-title">${chat?'Join the conversation':'Build with Unanym'}</h2><p>${chat?'Ask questions, share feedback, or help build Unanym.':'Run it yourself, adapt it, or contribute. Unanym is available under Apache 2.0.'}</p></div><div class="landing-actions">${chat}${source}</div></section>`:'';
+  const sourceFooter=config.sourceURL?`<a href="${escape(config.sourceURL)}">GitHub</a>`:'';
+  return page.replace('<!--hero-->',heroWide()+heroTall()).replace(/<!--chapter:([a-z]+)-->/g,(_m,name)=>chapters[name]()).replace('<!--community-->',community).replace('<!--source-link-->',sourceFooter);
 }
 // Written by the build next to the WordPress package; absent in an unbuilt checkout.
 const release=()=>{try{return JSON.parse(readFileSync(new URL('../dist/release.json',import.meta.url),'utf8'));}catch{return {};}};

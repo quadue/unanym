@@ -1,5 +1,15 @@
 # Candidate evidence — 2026-09-24
 
+## Community links — 2026-10-01
+
+The public landing can link to a Telegram discussion and a public GitHub source
+repository through `PUBLIC_COMMUNITY_URL` and `PUBLIC_SOURCE_URL`. Links appear
+only when configured; there is no chat embed or external script. The main account
+action and navigation remain the same. The opening sentence now explains that
+one account connects community websites and the member chooses what each sees.
+Source publication and the remaining security and operational acceptance are
+tracked separately in the release-readiness document.
+
 ## Member entry update — 2026-10-01
 
 The presentation now has a short public landing, one How it works page and the

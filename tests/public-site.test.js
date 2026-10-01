@@ -89,6 +89,35 @@ test('public Unanym pages have independent branding and no account or issuer end
   }finally{await new Promise(r=>server.close(r));}
 });
 
+test('configured community links work without scripts and load no external content',async t=>{
+  for(const name of ['sourceURL','communityURL']){
+    for(const value of ['javascript:alert(1)','http://example.test/','https://user:secret@example.test/','https://example.test/?token=private','https://example.test/#fragment'])
+      assert.throws(()=>createPublicSite({[name]:value}),new RegExp(name==='sourceURL'?'Source URL':'Community URL'));
+  }
+  const sourceURL='https://github.com/example/unanym',communityURL='https://t.me/example_community';
+  const server=createPublicSite({sourceURL,communityURL}).listen(0,'127.0.0.1');await once(server,'listening');
+  const origin='http://127.0.0.1:'+server.address().port,browser=await chromium.launch();
+  t.after(async()=>{await browser.close();await new Promise(r=>server.close(r));});
+  const page=await browser.newPage({javaScriptEnabled:false,reducedMotion:'reduce'}),external=[];
+  page.on('request',r=>{if(new URL(r.url()).origin!==origin)external.push(r.url());});
+  for(const width of [1440,860,375,320]){
+    await page.setViewportSize({width,height:900});await page.goto(origin+'/');
+    const community=page.locator('.landing-community');await community.scrollIntoViewIfNeeded();
+    await expect(community.getByRole('link',{name:'Telegram discussion',exact:true})).toHaveAttribute('href',communityURL);
+    await expect(community.getByRole('link',{name:'Source on GitHub',exact:true})).toHaveAttribute('href',sourceURL);
+    await expect(page.locator('.site-header nav a')).toHaveCount(2);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'community links '+width);
+  }
+  await page.goto(origin+'/docs/operators');
+  await expect(page.getByRole('link',{name:'Get the source on GitHub',exact:true})).toHaveAttribute('href',sourceURL);
+  assert.deepEqual(external,[],'ordinary links do not load a chat widget or GitHub content');
+  const unconfigured=createPublicSite().listen(0,'127.0.0.1');await once(unconfigured,'listening');
+  try{
+    const html=await(await fetch('http://127.0.0.1:'+unconfigured.address().port+'/')).text();
+    assert.doesNotMatch(html,/class="landing-community"|Telegram discussion|Source on GitHub/);
+  }finally{await new Promise(r=>unconfigured.close(r));}
+});
+
 test('public learning explains real accounts on a phone without simulated sharing or writes',async()=>{
   const server=createPublicSite().listen(0,'127.0.0.1');await once(server,'listening');
   const origin='http://127.0.0.1:'+server.address().port,browser=await chromium.launch();
