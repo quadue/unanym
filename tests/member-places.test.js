@@ -10,6 +10,7 @@ import {configuration} from '../src/config.js';
 import {createService} from '../src/service.js';
 import {memberSharing,sharingExport} from '../src/member-sharing.js';
 import {independentFixture} from '../scripts/independent-fixture.js';
+import {persona,consentReceipt} from '../src/drop.js';
 
 test('sharing projection excludes revoked evidence, stopped connections and client-disabled confirmations without changing saved choices',()=>{
   const membership={slug:'membership',name:'Lakeside',organisation:{name:'Lakeside'}};
@@ -29,6 +30,67 @@ test('sharing projection excludes revoked evidence, stopped connections and clie
   const exported=sharingExport({operatorName:'Example operator'},state);
   assert.doesNotMatch(JSON.stringify(exported),/must-not-leave-registry|revoked|withdrawn/);
   assert.equal(exported.places[1].name_status,'previously_shared');
+});
+
+test('long member lists stay bounded on the home and remain reachable in matching complete views without scripts',async t=>{
+  const dir=mkdtempSync(join(tmpdir(),'unanym-long-lists-')),server=createServer();let service,browser;
+  t.after(async()=>{await browser?.close();await new Promise(r=>server.close(r));service?.close();rmSync(dir,{recursive:true,force:true});});
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));
+  const origin='http://127.0.0.1:'+server.address().port,base='/identity',clients=join(dir,'clients.json');
+  const registry=Array.from({length:14},(_,i)=>({client_id:'site-'+String(i).padStart(2,'0'),
+    name:'Website '+i+' with a longer neighbourhood name',homepage:'https://website-'+i+'.example/',
+    sharing_uri:'https://website-'+i+'.example/sharing',description:'Fictional long-list fixture',redirect_uris:['https://website-'+i+'.example/callback']}));
+  writeFileSync(clients,JSON.stringify(registry));
+  const config=configuration({IDENTITY_CONTRACT:'community-v1',IDENTITY_ORIGIN:origin,IDENTITY_CLIENTS:clients,
+    IDENTITY_OPERATOR_NAME:'Fictional operator',IDENTITY_DEMO:'1',IDENTITY_DATA_DIR:join(dir,'identity')});
+  const f=independentFixture({v1:true});
+  const records=Array.from({length:14},(_,i)=>({slug:'community-'+i,name:'Community '+i+' with a longer organisation name',
+    organisation:{id:'urn:example:community-'+i,name:'Community '+i+' with a longer organisation name'},approvedAt:'2026-09-01T09:00:00Z',validUntil:null}));
+  f.adapter.memberships=id=>id==='robin'?records:[];
+  service=createService(config,f.adapter);server.on('request',service.app);
+  for(const [i,client] of registry.entries()){
+    const person=await persona(service.db,'robin',client.client_id,Buffer.from(config.keys.encryption,'base64url'));
+    await consentReceipt(service.db,person,{name:'Robin '+i,memberships:[records[i].slug],active:i!==13},config);
+    service.db.prepare('INSERT INTO connections VALUES (?,?,?,?,?,?,?)').run('robin',client.client_id,'Robin '+i,
+      JSON.stringify([records[i].slug]),null,i!==13?1:0,'2026-09-30T10:00:00Z');
+  }
+  browser=await chromium.launch();const context=await browser.newContext({javaScriptEnabled:false,viewport:{width:1220,height:920}});
+  await context.addCookies([{name:'pl_session',value:f.login('robin'),url:origin}]);const page=await context.newPage();
+  await page.goto(origin+base+'/account');
+  assert.equal(await page.locator('.member-site').count(),6);assert.equal(await page.locator('.member-community').count(),6);
+  assert.equal(await page.getByRole('heading',{name:'One you. 13 places.',exact:true}).count(),1);
+  assert.match(await page.locator('.member-out .member-list-more').innerText(),/Showing 6 of 14 websites/);
+  assert.match(await page.locator('.member-in .member-list-more').innerText(),/Showing 6 of 14 communities/);
+  assert.equal(await page.locator('.member-activity li').count(),8);
+  const ground=await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor);
+  const capture=async name=>{if(process.env.UNANYM_CAPTURE_DIR){mkdirSync(process.env.UNANYM_CAPTURE_DIR,{recursive:true});await page.screenshot({path:join(process.env.UNANYM_CAPTURE_DIR,name+'.png'),fullPage:true,animations:'disabled'});}};
+  for(const width of [1220,860,375,320]){
+    await page.setViewportSize({width,height:920});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'home width '+width);
+    if(width===1220||width===375)await capture('long-home-'+width);
+  }
+  await page.getByRole('link',{name:'View all connections',exact:false}).click();
+  assert.equal(await page.locator('.place-card').count(),14);assert.equal(await page.locator('.place-disconnected').count(),1);
+  assert.equal(await page.locator('header [aria-current=page]').innerText(),'Connections');
+  assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),ground);
+  await page.goto(origin+base+'/sites?place=site-12');const last=page.locator('[data-place="site-12"]');
+  assert.equal(await last.locator('.place-sharing').evaluate(d=>d.open),true);
+  for(const width of [1220,375,320]){
+    await page.setViewportSize({width,height:920});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'connections width '+width);
+    if(width===1220||width===375)await capture('long-connections-'+width);
+  }
+  await last.getByRole('button',{name:'Disconnect',exact:true}).click();await page.waitForURL('**/identity/sites');
+  assert.equal(service.db.prepare('SELECT active FROM connections WHERE account=? AND client=?').get('robin','site-12').active,0);
+  assert.equal(service.db.prepare('SELECT active FROM connections WHERE account=? AND client=?').get('robin','site-11').active,1);
+  await page.goto(origin+base+'/account');await page.getByRole('link',{name:'View all records',exact:false}).click();
+  assert.equal(await page.locator('.member-record').count(),14);
+  assert.equal(await page.locator('header [aria-current=page]').innerText(),'Records');
+  assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),ground);
+  for(const width of [1220,375,320]){
+    await page.setViewportSize({width,height:920});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'records width '+width);
+    if(width===1220||width===375)await capture('long-records-'+width);
+  }
+  await page.getByRole('link',{name:registry[11].name,exact:true}).click();
+  assert.equal(await page.locator('[data-place="site-11"] .place-sharing').evaluate(d=>d.open),true);
 });
 
 test('member places: two consented identities, scoped records, current evidence, private export and one-site disconnection without scripts',async t=>{
@@ -70,14 +132,14 @@ test('member places: two consented identities, scoped records, current evidence,
     const unchanged=()=>JSON.stringify(['connections','receipts','personas'].map(table=>service.db.prepare('SELECT * FROM '+table).all()));
     const beforeHome=unchanged();
     await page.goto(origin+base+'/account');
-    assert.equal(await page.getByRole('heading',{name:'Your FRRN',exact:true}).count(),1);
+    assert.equal(await page.title(),'Your FRRN · FRRN');assert.equal(await page.getByRole('heading',{name:'One you. Two places.',exact:true}).count(),1);
     assert.equal(await page.locator('h1').count(),1);
     assert.equal(await page.locator('header [aria-current="page"]').innerText(),'Your FRRN');
     assert.equal(await page.locator('.member-activity li').count(),2);
-    assert.equal(await page.locator('.place-card').count(),2);
+    assert.equal(await page.locator('.member-site').count(),2);assert.equal(await page.locator('.member-community').count(),2);
     for(const [id,subject] of [['first',firstInfo.sub],['second',secondInfo.sub]]){
       const card=page.locator('[data-place="'+id+'"]');
-      await card.locator('.place-sharing>summary').click();await card.locator('.place-identity>summary').click();
+      await card.locator('.place-identity>summary').click();
       assert.equal(await card.locator('.place-identity dd').first().innerText(),subject);
       assert.match(await card.locator('.place-identity dd').last().innerText(),/^[a-f0-9]{64}$/);
     }
@@ -118,7 +180,7 @@ test('member places: two consented identities, scoped records, current evidence,
     assert.equal(await samPage.getByRole('link',{name:'Try the example website'}).count(),0,'no dead example link on installations without an example client');
     assert.deepEqual((await (await samPage.request.get(origin+base+'/sharing-summary')).json()).places,[]);
     await samPage.goto(origin+base+'/records');assert.equal(await samPage.locator('.member-record').count(),0);
-    await samPage.goto(origin+base+'/account');assert.equal(await samPage.locator('.member-record,.place-card,.member-activity li').count(),0);
+    await samPage.goto(origin+base+'/account');assert.equal(await samPage.locator('.member-community,.member-site,.member-activity li').count(),0);
     assert.doesNotMatch(await samPage.locator('main').innerText(),/Lakeside community|Learning exchange|Private listening circle|Neighbourhood website/);
     const forged=await samPage.request.post(origin+base+'/sites/first/disconnect',{headers:{Origin:origin},form:{csrf:'forged'}});assert.equal(forged.status(),403);
     await sam.close();
@@ -135,8 +197,9 @@ test('member places: two consented identities, scoped records, current evidence,
     assert.match(await firstCard.innerText(),/Previously known as/);assert.match(await firstCard.innerText(),/Sharing stopped/);
     const disconnected=(await (await page.request.get(origin+base+'/sharing-summary')).json()).places.find(p=>p.website_name==='Learning exchange');
     assert.deepEqual(disconnected.memberships,[]);assert.deepEqual(disconnected.confirmations,[]);
-    await page.goto(origin+base+'/account');assert.match(await page.locator('.member-activity li').first().innerText(),/Website disconnected.*Learning exchange/s);
-    assert.match(await firstCard.innerText(),/Sharing stopped/);assert.match(await secondCard.innerText(),/Connected/);
+    await page.goto(origin+base+'/account');assert.match(await page.locator('.member-activity li').first().innerText(),/Disconnected.*Learning exchange/s);
+    assert.match(await firstCard.innerText(),/Stopped/);assert.match(await secondCard.innerText(),/Sees\s+R\./);
+    assert.equal(await page.locator('.member-site.off').count(),1);
     await page.setViewportSize({width:320,height:740});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     if(process.env.UNANYM_CAPTURE_DIR){await page.goto(origin+base+'/records');await page.screenshot({path:join(process.env.UNANYM_CAPTURE_DIR,'records-mobile.png'),fullPage:true});}
 });

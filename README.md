@@ -47,6 +47,8 @@ together your identity, current community records, website connections and
 recent sharing changes. The standalone host also shows your private sign-in
 email, recovery information and organisation updates. A FRRN-backed installation
 uses its own member-facing name and keeps account management with FRRN.
+The home previews up to six communities and six websites; larger lists link to
+the complete Connections and Records pages, which share its dark visual style.
 
 **Connections / Your places** gives each connected website a card with its chosen name and
 sharing controls. **Memberships & confirmations** shows current records and

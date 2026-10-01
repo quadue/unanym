@@ -15,6 +15,13 @@ and creates no key, connection, permission or history record. Inspecting a recor
 does not share it. Identity details within each connection show that website's
 existing identifier and public key; private keys are never shown.
 
+The home draws the member's communities, identity and website connections using
+the public site's dark palette and geometric symbols. It previews at most six
+communities and six websites, while the heading counts all active connections.
+Larger lists show their total and links to View all records or View all connections.
+Those complete pages use the same member shell and retain every current record
+and registered connection, including stopped connections and sharing controls.
+
 The standalone host shows the member's own sign-in email, email-code recovery
 limits and a protected sign-out form. Its organisation activity comes from existing
 audit records targeted at that member, with only approved action labels,
@@ -32,7 +39,7 @@ records while an earlier sharing change remains in history.
 This is the hosted community-v1 interface. It does not add the separate wallet
 experiment, credential import, personal key custody or automatic recovery.
 
-Each connected website has its own card and chosen name. Its native expandable
+On Connections, each connected website has its own card and chosen name. Its native expandable
 section contains the records currently available under the member's choices,
 Change sharing when the site has registered a sharing address, and Disconnect.
 Selecting a destination from Memberships opens that particular website card.
@@ -77,7 +84,10 @@ website's actual subject, and verify the empty account cannot see another
 member's records or activity. Standalone tests check private email and organisation
 activity, administrator separation, withdrawal and session-bound sign-out. Browser
 checks cover keyboard expansion, destination selection, and widths of 1220, 375
-and 320 pixels with scripts disabled. Existing tests cover scripted consent.
+and 320 pixels with scripts disabled. A second fixture holds 14 communities and
+14 websites, checks the six-item previews, complete lists and matching palette,
+and disconnects a website beyond the preview without changing another connection.
+It also checks the home's stacked layout at 860 pixels. Existing tests cover scripted consent.
 
 `UNANYM_CAPTURE_DIR=/tmp/member-places node --test tests/member-places.test.js`
 also writes desktop and phone screenshots of the fictional authenticated views.

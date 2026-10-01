@@ -162,3 +162,25 @@ export function developerPage(config,{assets=(config.basePath??'/identity')+'/as
     organiser_alt:frrn?'A FRRN community’s management page. Under Membership approvals, each member is listed with an Approve membership or Withdraw approval button.'
       :'An organisation’s administration page. The administrator enters a member’s email address, optionally sets an end date, and approves or revokes memberships.'}).replace(/<!--chapter:([a-z]+)-->/g,(_m,name)=>chapters[name]());
 }
+// Single pieces of the vocabulary for HTML pages that draw their own layout.
+export const glyphs={
+  cube:(s=34)=>svg('geo glyph-cube',n(1.732*s+4),2*s+4,cube(n(.866*s+2),s+2,s)),
+  you:(r=70,s=34)=>svg('geo glyph-you',2*r+4,2*r+4,`<circle class="service" cx="${r+2}" cy="${r+2}" r="${r}"/>`+cube(r+2,r+2,s)),
+  face:(side,colour,s=14)=>svg('geo glyph-face',2*s,2*s,face(side,colour,s,s,s)),
+  community:(size=40)=>svg('geo glyph-community',size+4,size+4,org([size/2+2,size/2+2],'x',size)),
+  token:(size=12,round=false)=>svg('geo glyph-token',size,size,round?`<circle class="token" cx="${size/2}" cy="${size/2}" r="${size/2-1}"/>`:token([size/2,size/2],'x',size)),
+  email:()=>svg('geo glyph-email',58,34,`<circle class="email" cx="17" cy="17" r="15"/><text class="at" x="17" y="22" text-anchor="middle">@</text>`+lock([44,13]))
+};
+
+// Shared private member shell: home and complete lists use the same navigation and palette.
+export function memberPage(config,title,body,{csrf,canSignOut,current='account',directory=false}={}) {
+  const base=config.basePath??'/identity',brand=escape(displayName(config));
+  const mark=['Unanym','FRRN'].includes(displayName(config))?brand.toLowerCase():brand,frrn=config.accountSource==='frrn';
+  const exit=canSignOut?`<form method="post" action="${base}/logout"><input type="hidden" name="csrf" value="${escape(csrf(base+'/logout'))}"><button class="pill">Sign out</button></form>`
+    :frrn?'<a class="pill" href="/account">FRRN account <span aria-hidden="true">↗</span></a>':'';
+  return versionAssets(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="robots" content="noindex,nofollow"><title>${escape(title)} · ${brand}</title><link rel="stylesheet" href="${base}/assets/front.css"><link rel="icon" href="${base}/assets/favicon.svg" type="image/svg+xml"></head><body class="developer member${directory?' member-directory':''}">
+  <a class="skip" href="#main">Skip to content</a><header class="site-header"><a class="wordmark" href="${base}/" aria-label="${brand} home"><img src="${base}/assets/front-mark.svg" alt="" width="25" height="32">${mark}</a><nav class="doc-nav member-nav" aria-label="Account"><a href="${base}/account" ${current==='account'?'aria-current="page"':''}>Your ${brand}</a><a href="${base}/sites" ${current==='sites'?'aria-current="page"':''}>Connections</a><a href="${base}/records" ${current==='records'?'aria-current="page"':''}>Records</a>${exit}</nav></header>
+  ${config.demo?'<aside class="member-demo">Local demonstration · fictional accounts</aside>':''}
+  <main id="main">${body}</main>
+  <footer class="site-footer"><span>One you. Many places.</span><div><a href="${base}/about">Privacy</a><a href="${escape(developerURL(config))}">Identity by Unanym <span aria-hidden="true">↗</span></a></div></footer></body></html>`);
+}

@@ -17,9 +17,9 @@ export function memberSharing(connections,memberships,confirmations=[]) {
   });
   const destinations=(kind,id)=>places.filter(p=>p.active&&p[kind].some(c=>c.slug===id)).map(p=>({client:p.client,name:p.site.name}));
   return {places,
-    memberships:memberships.map(m=>({name:m.name,organisation:m.organisation?.name??m.name,recordedAt:m.approvedAt,validUntil:m.validUntil,
+    memberships:memberships.map(m=>({slug:m.slug,name:m.name,organisation:m.organisation?.name??m.name,recordedAt:m.approvedAt,validUntil:m.validUntil,
       sharedWith:destinations('memberships',m.slug)})),
-    confirmations:confirmations.map(c=>({name:c.name,organisation:c.organisation.name,recordedAt:c.confirmedAt,validUntil:c.validUntil,
+    confirmations:confirmations.map(c=>({slug:c.slug,name:c.name,organisation:c.organisation.name,recordedAt:c.confirmedAt,validUntil:c.validUntil,
       sharedWith:destinations('confirmations',c.slug)}))
   };
 }

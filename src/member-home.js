@@ -1,8 +1,8 @@
-import {page,escape,placesBody,recordCards} from './views.js';
-import {displayName} from './presentation.js';
+import {escape} from './views.js';
+import {displayName,glyphs,memberPage} from './presentation.js';
 
-const actions={membership_approved:'Membership approved',membership_revoked:'Membership withdrawn',
-  introduction_confirmed:'Introduction confirmed',introduction_withdrawn:'Introduction withdrawn'};
+const actions={membership_approved:'Approved',membership_revoked:'Withdrawn',
+  introduction_confirmed:'Confirmed',introduction_withdrawn:'Confirmation withdrawn'};
 
 // A bounded private view of existing history. No new identity, grant or log is
 // created by reading it, and no administrator details or raw proofs are returned.
@@ -12,7 +12,7 @@ export function recentChanges(db,account,clients,organisationChanges=[]) {
     .flatMap(row=>{
       const site=sites.get(row.client),event=JSON.parse(row.event);
       if(!site||event.t!=='node.minted'||!['share','withdraw'].includes(event.body?.permission))return [];
-      return [{at:new Date(event.ts).toISOString(),label:event.body.permission==='share'?'Sharing choices saved':'Website disconnected',
+      return [{at:new Date(event.ts).toISOString(),label:event.body.permission==='share'?'Shared':'Disconnected',
         name:site.name,client:row.client}];
     });
   const approvals=organisationChanges.filter(change=>actions[change.action]).map(change=>({
@@ -22,26 +22,67 @@ export function recentChanges(db,account,clients,organisationChanges=[]) {
     .sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)).slice(0,8);
 }
 
+// The landing's colour meanings: communities each get a colour of their own,
+// each website is shown one face of you (coral, amber, blue), structure is grey.
+const communityColours=4;
+const faceFor=i=>[['left','coral'],['right','amber'],['top','blue']][i%3];
+const numbers=['No','One','Two','Three','Four','Five','Six','Seven','Eight','Nine'];
+const previewLimit=6;
+
+
 export function memberHomeView(config,sharing,{details={},activity=[],csrf}) {
   const base=config.basePath??'/identity',brand=displayName(config),frrn=config.accountSource==='frrn';
+  const when=(value,time=true)=>escape(new Date(value).toLocaleString('en-GB',{day:'numeric',month:'short',...(time?{hour:'2-digit',minute:'2-digit'}:{year:'numeric'}),timeZone:'UTC'}));
+  const colours=new Map();
+  const colourOf=organisation=>{if(!colours.has(organisation))colours.set(organisation,'tone-'+colours.size%communityColours);return colours.get(organisation);};
+  sharing.memberships.forEach(m=>colourOf(m.organisation));sharing.confirmations.forEach(c=>colourOf(c.organisation));
+  const organisationOf=new Map(sharing.memberships.map(m=>[m.slug,m.organisation]));
   const connected=sharing.places.filter(p=>p.active).length;
-  const recordCount=sharing.memberships.length+sharing.confirmations.length;
-  const date=value=>escape(new Date(value).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'UTC'}));
-  return page('Your '+brand,`<section class="member-home">
-    <div class="member-welcome"><div><p class="eyebrow">Your private member home</p><h1>Your ${escape(brand)}</h1><p class="lead small">Your identities, records and website connections.</p></div><span class="badge">Signed in</span></div>
-    <nav class="member-sections" aria-label="On this page"><a href="#your-identity">Identity</a><a href="#your-records">Records <span>${recordCount}</span></a><a href="#your-connections">Connections <span>${connected}</span></a><a href="#recent-changes">Recent changes</a></nav>
-    <section class="member-identity" id="your-identity" aria-labelledby="identity-heading"><div><p class="eyebrow">Private to your account</p><h2 id="identity-heading">Your identity</h2>
-      ${details.email?`<p class="member-email">${escape(details.email)}</p><p class="help">Your sign-in email is not shared with connected websites.</p>`:`<p>You are signed in through ${frrn?'FRRN':'this account service'}. Each website gets its own identity and the name you choose there.</p>`}
-      <p>A different name for each place. Review your website identities below.</p></div>
-      <div class="member-custody"><h3>Who holds your records?</h3><p>${frrn?'FRRN holds your account and community approvals. '+escape(config.operatorName)+' holds your website identity keys and sharing choices.':escape(config.operatorName)+' holds your website identity keys and sharing choices. '+(details.email?'Your account and organisation approval records are stored with this service.':'Membership records come from your account service.')}</p><p class="help">The operator can associate your website identities with this account.</p>
-      <details id="account-recovery"><summary>Sign-in & recovery</summary>${details.email?`<p>Sign in with a code sent to your email. If you lose access to that email, ask ${escape(config.operatorName)} to review recovery with you. Automatic lost-mailbox recovery is not available.</p>`:`<p>Your account provider manages sign-in and recovery.</p>${frrn?'<a href="/account">Manage your FRRN account</a>':''}`}
-      <p><a href="${base}/sharing-summary">Download your sharing summary</a>. This records your choices; it cannot restore your account or keys.</p>${details.canSignOut?`<form method="post" action="${base}/logout"><input type="hidden" name="csrf" value="${escape(csrf(base+'/logout'))}"><button class="secondary">Sign out of this account</button></form>`:''}</details></div></section>
-    <section class="member-section" id="your-records" aria-labelledby="records-heading"><div class="member-section-heading"><h2 id="records-heading">Your records</h2><a href="${base}/records">Record details →</a></div><p>Current memberships and confirmations you can choose to share. Nothing is shared just by viewing this page.</p>
-      ${recordCards(config,sharing.memberships,'Membership')}${sharing.confirmations.length?`<h3 class="member-subheading">Confirmations</h3>${recordCards(config,sharing.confirmations,'Confirmation')}`:''}</section>
-    <section class="member-section" id="your-connections" aria-labelledby="connections-heading">${placesBody(config,sharing,id=>csrf(base+'/sites/'+id+'/disconnect'),null,{home:true})}</section>
-    <section class="member-section" id="recent-changes" aria-labelledby="changes-heading"><h2 id="changes-heading">Recent changes</h2><p class="help">Recorded sharing changes${details.activity?' and organisation updates':''}. This is not a log of visits to other websites. Times are UTC.</p>
-      ${activity.length?`<ol class="member-activity">${activity.map(change=>`<li><div><strong>${escape(change.label)}</strong>${change.client?`<a href="${base}/sites?place=${escape(encodeURIComponent(change.client))}">${escape(change.name)}</a>`:`<span>${escape(change.name)}</span>`}</div><time datetime="${escape(change.at)}">${date(change.at)}</time></li>`).join('')}</ol>`:'<p class="records-empty">No changes recorded here yet. Your first connection starts at a website that uses this service.</p>'}</section>
-    ${details.organisations?.length||details.isOperator?`<section class="member-admin" aria-labelledby="admin-heading"><h2 id="admin-heading">Organisation administration</h2>${details.organisations?.length?`<ul>${details.organisations.map(org=>`<li><a href="${base}/organisations/${escape(encodeURIComponent(org.id))}">${escape(org.name)}</a></li>`).join('')}</ul>`:''}${details.isOperator?`<a href="${base}/operator">Register an organisation</a>`:''}</section>`:''}
-    <p class="member-privacy">Each website decides what grants access. Disconnecting stops new access through this service; a website may retain earlier copies. <a href="${base}/about">How your information is handled</a></p>
-  </section>`,config);
+  const faceOf=client=>{const i=sharing.places.findIndex(p=>p.client===client);return i<0||!sharing.places[i].active?['left','mute']:faceFor(i);};
+  const tokens=(items,round)=>items.map(([label,organisation])=>`<li class="${colourOf(organisation)}">${glyphs.token(12,round)}${escape(label)}</li>`).join('');
+
+  const organisations=[...colours.keys()];
+  const communities=organisations.length?organisations.slice(0,previewLimit).map(organisation=>{
+    const membership=sharing.memberships.find(m=>m.organisation===organisation);
+    const confirmations=sharing.confirmations.filter(c=>c.organisation===organisation);
+    return `<li class="member-node member-community ${colourOf(organisation)}">${glyphs.community(34)}<div><strong>${escape(organisation)}</strong>
+      <small>${membership?'Member'+(membership.validUntil?' · until '+when(membership.validUntil,false):''):'Not a member'}</small>
+      ${confirmations.length?`<ul class="member-tokens">${tokens(confirmations.map(c=>[c.name,organisation]),true)}</ul>`:''}</div></li>`;
+  }).join(''):`<li class="member-node member-empty"><span class="member-hollow" aria-hidden="true"></span><div><strong>No memberships yet</strong><small>An organiser approves you</small></div></li>`;
+
+  const websites=sharing.places.length?sharing.places.slice(0,previewLimit).map((p,i)=>{
+    const [side,colour]=faceFor(i),shared=[...p.memberships.map(m=>[m.name,organisationOf.get(m.slug)??m.name,false]),...p.confirmations.map(c=>[c.name,c.organisation,true])];
+    return `<li class="member-node member-site face-${p.active?colour:'off'}${p.active?'':' off'}" data-place="${escape(p.client)}">
+      <div class="member-site-head">${glyphs.face(side,p.active?colour:'mute',13)}<div><strong>${escape(p.site.name)}</strong><span>${escape(new URL(p.site.homepage).host)}</span></div>
+      <a class="member-open" href="${escape(p.active?p.site.homepage:(p.site.sharing_uri??p.site.homepage))}">${p.active?'Open':'Connect again'} <span aria-hidden="true">↗</span></a></div>
+      <div class="member-gets"><span class="member-as">${p.active?'Sees':'Saw'} <b>${escape(p.name)}</b></span>${p.active?(shared.length?`<ul class="member-tokens">${shared.map(([label,organisation,round])=>`<li class="${colourOf(organisation)}">${glyphs.token(12,round)}${escape(label)}</li>`).join('')}</ul>`:'<span class="member-only">Name only</span>'):'<span class="member-only">Stopped · may keep earlier copies</span>'}</div>
+      ${p.unavailable?'<p class="member-changed">Some earlier choices are no longer available.</p>':''}
+      <div class="member-site-foot">${p.active&&p.site.sharing_uri?`<a class="member-action" href="${escape(p.site.sharing_uri)}">Change</a>`:''}${p.active?`<form method="post" action="${base}/sites/${escape(encodeURIComponent(p.client))}/disconnect"><input type="hidden" name="csrf" value="${escape(csrf(base+'/sites/'+p.client+'/disconnect'))}"><button class="member-action" type="submit">Disconnect</button></form>`:''}
+      <details class="place-identity"><summary>Identifier</summary><dl>${p.identity?`<dt>For this website only</dt><dd>${escape(p.identity.subject)}</dd><dt>Public key</dt><dd>${escape(p.identity.publicKey)}</dd>`:''}</dl><a href="${base}/sites/${escape(encodeURIComponent(p.client))}/receipt">Signed record ↓</a></details></div></li>`;
+  }).join(''):`<li class="member-node member-empty"><span class="member-hollow" aria-hidden="true"></span><div><strong>No websites yet</strong><small>Choose Continue with ${escape(brand)} on one</small>${config.clients?.some(c=>c.client_id==='example')?`<a class="member-action" href="${base}/example/">Try the example</a>`:''}</div></li>`;
+
+  const centre=`<div class="member-you">${glyphs.you(66,32)}<span class="member-you-label">You</span>
+    ${details.email?`<div class="member-kept">${glyphs.email()}<span class="member-email">${escape(details.email)}</span><small>Stays here</small></div>`:''}</div>`;
+
+  const recent=activity.length?`<ol class="member-activity">${activity.map(change=>`<li>${change.client?glyphs.face(...faceOf(change.client),8):`<span class="${colourOf(change.name)}">${glyphs.token(10)}</span>`}<span><strong>${escape(change.label)}</strong> ${change.client?`<a href="${base}/sites?place=${escape(encodeURIComponent(change.client))}">${escape(change.name)}</a>`:escape(change.name)}</span><time datetime="${escape(change.at)}">${when(change.at)}</time></li>`).join('')}</ol>`
+    :'<p class="member-quiet">Nothing yet.</p>';
+
+  const holders=frrn?`<dt>Account &amp; approvals</dt><dd>FRRN</dd><dt>Website keys</dt><dd>${escape(config.operatorName)}</dd>`:`<dt>Held by</dt><dd>${escape(config.operatorName)}</dd>`;
+  const admin=details.organisations?.length||details.isOperator?`<div class="member-admin"><h3>You organise</h3><ul>${(details.organisations??[]).map(org=>`<li><a href="${base}/organisations/${escape(encodeURIComponent(org.id))}">${escape(org.name)}</a></li>`).join('')}${details.isOperator?`<li><a href="${base}/operator">Register an organisation</a></li>`:''}</ul></div>`:'';
+
+  return memberPage(config,'Your '+brand,`<section class="member-top"><h1>One you.<br>${numbers[connected]??connected} ${connected===1?'place':'places'}${connected?'':' yet'}.</h1>
+    <p>What each website gets from you.</p></section>
+  <div class="member-map${organisations.length?'':' no-in'}${sharing.places.length?'':' no-out'}">
+    <section class="member-col member-in" aria-labelledby="communities-heading"><h2 class="member-label" id="communities-heading">Communities</h2><ul class="member-nodes">${communities}</ul>${organisations.length>previewLimit?`<p class="member-list-more">Showing ${previewLimit} of ${organisations.length} communities.<br><a href="${base}/records">View all records →</a></p>`:''}</section>
+    ${centre}
+    <section class="member-col member-out" aria-labelledby="websites-heading"><h2 class="member-label" id="websites-heading">Websites</h2><ul class="member-nodes">${websites}</ul>${sharing.places.length>previewLimit?`<p class="member-list-more">Showing ${previewLimit} of ${sharing.places.length} websites.<br><a href="${base}/sites">View all connections →</a></p>`:''}</section>
+  </div>
+  <ul class="member-legend" aria-label="Key"><li>${glyphs.token(10)}Membership</li><li>${glyphs.token(10,true)}Confirmation</li><li><i class="wire"></i>Shared</li><li><i class="wire off"></i>Disconnected</li></ul>
+  <div class="member-lower">
+    <section aria-labelledby="changes-heading"><h2 class="member-label" id="changes-heading">Recent</h2>${recent}<p class="member-quiet">Changes saved here, not visits to websites. Times UTC.</p></section>
+    <section aria-labelledby="account-heading" class="member-account"><h2 class="member-label" id="account-heading">Account</h2><dl>${holders}</dl>
+      <p class="member-quiet">The operator can link your websites to this account.</p>
+      <details id="account-recovery"><summary>Recovery</summary><p>${details.email?`Sign in with a code sent to your email. Lost the mailbox? Ask ${escape(config.operatorName)}.`:frrn?'FRRN handles sign-in and recovery. <a href="/account">Manage your FRRN account</a>':'Your account provider handles sign-in and recovery.'}</p></details>
+      <a class="member-download" href="${base}/sharing-summary">Sharing summary ↓</a>${admin}</section>
+  </div>`,{csrf,canSignOut:details.canSignOut});
 }
