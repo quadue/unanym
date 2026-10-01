@@ -24,7 +24,7 @@ test('public entry creates one verified persistent account and resumes it withou
   browser=await chromium.launch();const page=await browser.newPage({javaScriptEnabled:false,viewport:{width:375,height:812},reducedMotion:'reduce'});
   const capture=async name=>{if(process.env.UNANYM_CAPTURE_DIR){mkdirSync(process.env.UNANYM_CAPTURE_DIR,{recursive:true});await page.screenshot({path:join(process.env.UNANYM_CAPTURE_DIR,name+'.png'),fullPage:true});}};
   await page.goto(publicOrigin+'/');await capture('account-entry-landing');
-  await page.locator('.landing-intro').getByRole('link',{name:'Create your Unanym',exact:true}).click();
+  await page.locator('.landing-intro').getByRole('link',{name:'Create your nym',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Your Unanym',exact:true})).toBeVisible();
   await expect(page.getByText('Confirm it to create your account', {exact:false})).toBeVisible();
   for(const width of [1220,375,320]){
@@ -54,7 +54,7 @@ test('public entry creates one verified persistent account and resumes it withou
     await expect(page.locator('.place-select')).toHaveCount(0);
   }
   await page.goto(publicOrigin+'/learn');await capture('account-entry-learn');
-  await page.getByRole('link',{name:'Create your Unanym',exact:true}).click();await page.waitForURL(origin+'/identity/account');
+  await page.getByRole('link',{name:'Create your nym',exact:true}).click();await page.waitForURL(origin+'/identity/account');
   assert.equal(mail.length,1,'creating again resumes the same signed-in account');
   await page.getByRole('button',{name:'Sign out',exact:true}).click();await page.waitForURL(origin+'/identity/login');
   assert.equal((await page.request.get(origin+'/identity/account',{maxRedirects:0})).status(),302);
@@ -98,7 +98,7 @@ test('public learning explains real accounts on a phone without simulated sharin
       const page=await context.newPage(),writes=[];
       page.on('request',r=>{if(r.method()!=='GET'||new URL(r.url()).origin!==origin)writes.push(r.url());});
       await page.goto(origin+'/learn');
-      await expect(page.getByRole('link',{name:'Create your Unanym',exact:true})).toHaveAttribute('href','https://unanym.org/identity/account');
+      await expect(page.getByRole('link',{name:'Create your nym',exact:true})).toHaveAttribute('href','https://unanym.org/identity/account');
       await expect(page.locator('.learn-cards article')).toHaveCount(3);
       await expect(page.locator('#practice-app,select,input,form')).toHaveCount(0);
       await expect(page.locator('main')).not.toContainText(/practice|pretend|hypothetical|alpha/i);
@@ -116,7 +116,7 @@ test('public landing shows the shape in few words and leads to details on reques
   const server=createPublicSite().listen(0,'127.0.0.1');await once(server,'listening');
   const origin='http://127.0.0.1:'+server.address().port,browser=await chromium.launch();
   try{
-    for(const width of [1440,375]){
+    for(const width of [1440,860,375,320]){
       const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce'});
       await page.goto(origin+'/');
       await expect(page.getByRole('heading',{level:1})).toHaveText('One you. Many places.');
@@ -157,7 +157,7 @@ test('public explanation consolidates old entry pages and keeps setup and techni
     await expect(page.locator('#privacy-details')).toContainText('can link your websites');
     await page.goto(origin+'/overview');await expect(page).toHaveURL(origin+'/learn');
     await expect(page.getByRole('heading',{level:1})).toHaveText('How Unanym works');
-    await expect(page.getByRole('link',{name:'Create your Unanym'})).toHaveAttribute('href','https://unanym.org/identity/account');
+    await expect(page.getByRole('link',{name:'Create your nym'})).toHaveAttribute('href','https://unanym.org/identity/account');
     await expect(page.locator('.learn-questions details[open]')).toHaveCount(0);
     await page.getByText('Do you run a website or community?',{exact:true}).click();
     await page.getByRole('link',{name:'Connect a website',exact:true}).click();
@@ -173,7 +173,14 @@ test('public explanation consolidates old entry pages and keeps setup and techni
     }
     await page.goto(origin+'/');
     await expect(page.getByRole('navigation',{name:'Main'}).locator('a')).toHaveText(['How it works','Sign in']);
-    await expect(page.locator('.chapter,.landing-example')).toHaveCount(0);
+    await expect(page.locator('.landing-example')).toBeVisible();
+    await expect(page.locator('.example-steps li')).toHaveCount(4);
+    await expect(page.locator('.chapter')).toHaveCount(4);
+    await expect(page.locator('main input,main form')).toHaveCount(0);
+    await page.getByRole('link',{name:'What websites see',exact:true}).click();
+    await expect(page).toHaveURL(origin+'/learn#sharing');
+    await expect(page.locator('#sharing-details')).toHaveAttribute('open','');
+    await page.goto(origin+'/');
     await page.getByRole('link',{name:'Documentation',exact:true}).click();
     await expect(page.getByRole('heading',{level:1})).toHaveText('Documentation');
     await expect(page.locator('.doc-reference')).not.toHaveAttribute('open','');
