@@ -23,7 +23,7 @@ export function createStandalone(config,{bootstrapEmail,sendCode}) {
       writeFileSync(path,JSON.stringify({contract:config.contract,issuer:config.issuer,account_source:'standalone'}),{mode:0o600,flag:'wx'});
     }
     accounts=standaloneAccounts({dir:config.dir,key:config.keys.cookie,bootstrapEmail,sendCode,cookieName:config.origin.startsWith('https:')?'__Host-community_account':'community_account'});
-    service=createService(config,accounts.adapter,{mountRoutes:app=>standaloneRoutes(app,config,accounts)});
+    service=createService(config,accounts.adapter,{memberDetails:id=>accounts.memberDetails(id),mountRoutes:app=>standaloneRoutes(app,config,accounts)});
   }catch(e){accounts?.adapter.close();release();throw e;}
   const timer=setInterval(()=>accounts.cleanup(),60_000);timer.unref();accounts.cleanup();
   return {...service,accounts,close(){clearInterval(timer);service.close();release();}};

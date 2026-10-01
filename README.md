@@ -42,7 +42,13 @@ separate from membership and is shared only when selected.
 
 ## Manage your sharing
 
-**Your places** gives each connected website a card with its chosen name and
+**Your Unanym** is the private member home at `/identity/account`. It brings
+together your identity, current community records, website connections and
+recent sharing changes. The standalone host also shows your private sign-in
+email, recovery information and organisation updates. A FRRN-backed installation
+uses its own member-facing name and keeps account management with FRRN.
+
+**Connections / Your places** gives each connected website a card with its chosen name and
 sharing controls. **Memberships & confirmations** shows current records and
 where they are shared. Members can download a readable summary of their choices;
 this is not a key backup or proof of website access. The views work without

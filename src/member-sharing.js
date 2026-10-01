@@ -8,7 +8,7 @@ export function memberSharing(connections,memberships,confirmations=[]) {
     const chosenMemberships=c.memberships.filter(id=>availableMemberships.has(id));
     const chosenConfirmations=(c.confirmations??[]).filter(id=>c.site.allow_confirmations&&availableConfirmations.has(id));
     return {
-      client:c.client,name:c.name,active,updated:c.updated,
+      client:c.client,name:c.name,active,updated:c.updated,identity:c.identity,
       site:{name:c.site.name,homepage:c.site.homepage,sharing_uri:c.site.sharing_uri},
       memberships:active?chosenMemberships.map(id=>({slug:id,name:availableMemberships.get(id).name})):[],
       confirmations:active?chosenConfirmations.map(id=>({slug:id,name:availableConfirmations.get(id).name,organisation:availableConfirmations.get(id).organisation.name})):[],

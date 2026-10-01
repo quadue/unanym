@@ -17,7 +17,7 @@ writeFileSync(resolve(dir,'clients.json'),JSON.stringify([{client_id:'example',n
 const f=independentFixture({v1:true});
 const config=configuration({IDENTITY_CONTRACT:'community-v1',IDENTITY_ORIGIN:identityOrigin,IDENTITY_OPERATOR_NAME:'Local demonstration operator',
   IDENTITY_DATA_DIR:resolve(dir,'identity'),IDENTITY_CLIENTS:resolve(dir,'clients.json'),IDENTITY_DEMO:'1',IDENTITY_DISPLAY_NAME:process.env.IDENTITY_DISPLAY_NAME});
-const service=createService(config,f.adapter,{mountRoutes:app=>app.get('/identity/account',(_req,res)=>res.redirect('/identity/sites'))});
+const service=createService(config,f.adapter);
 service.app.get('/',(req,res)=>{
   if(!req.query.next)return res.redirect('/identity/developers');
   const next=typeof req.query.next==='string' && req.query.next.startsWith('/identity/')?req.query.next:'/identity/';

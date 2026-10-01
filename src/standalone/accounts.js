@@ -144,7 +144,15 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
       return row&&isAdministrator(row.actor,m.organisation.id)?[{slug:'introduction:'+m.slug,name:confirmationLabel,organisation:m.organisation,confirmedAt:row.confirmed_at,validUntil:m.validUntil}]:[];
     });
   }
+  function memberDetails(id) {
+    const profile=db.prepare('SELECT email FROM accounts WHERE id=? AND verified=1').get(id);
+    if(!profile)return {};
+    return {email:profile.email,canSignOut:true,organisations:organisations(id),isOperator:isOperator(id),
+      activity:db.prepare(`SELECT a.at,a.action,o.name AS organisation FROM audit a JOIN organisations o ON o.id=a.organisation
+        WHERE a.target=? AND a.action IN ('membership_approved','membership_revoked','introduction_confirmed','introduction_withdrawn')
+        ORDER BY a.id DESC LIMIT 8`).all(id)};
+  }
   const adapter={session,account,memberships,confirmations,isOpen:()=>true,csrfBinding:req=>accountCookie(req,cookieName),loginURL:path=>'/identity/login?next='+encodeURIComponent(path),close:()=>db.close()};
-  return {db,adapter,cookieName,requestCode,verifyCode,isOperator,isAdministrator,organisations,createOrganisation,approve,revoke,listMembers,confirmIntroduction,cleanup,
+  return {db,adapter,cookieName,requestCode,verifyCode,isOperator,isAdministrator,organisations,createOrganisation,approve,revoke,listMembers,confirmIntroduction,memberDetails,cleanup,
     logout:req=>db.prepare('DELETE FROM sessions WHERE digest=?').run(hash(accountCookie(req,cookieName)))};
 }

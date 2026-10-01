@@ -1,9 +1,36 @@
-# Your places
+# Your Unanym and your places
 
-The community-v1 member interface has three entries: Your places, Memberships,
-and Your account. It works with the standalone host and the optional FRRN source.
+The community-v1 member interface starts at the private `/account` home, labelled
+Your Unanym (or the installation's configured member-facing name). Navigation
+links to Connections and Records. It works with the standalone host and the optional FRRN source.
 FRRN continues to own its accounts and approvals; this adds no second approval
 store and changes no website identity, consent scope or admission rule.
+
+## Your private member home
+
+The home brings together identity and custody information, current shareable
+memberships and confirmations, website connections and the eight most recent
+recorded changes. Opening it requires a current member session, is never cached,
+and creates no key, connection, permission or history record. Inspecting a record
+does not share it. Identity details within each connection show that website's
+existing identifier and public key; private keys are never shown.
+
+The standalone host shows the member's own sign-in email, email-code recovery
+limits and a protected sign-out form. Its organisation activity comes from existing
+audit records targeted at that member, with only approved action labels,
+organisation names and times. Administrator identities, private authorisation
+notes, raw proofs and other members' records are excluded. Organisation tools
+appear only for an assigned administrator or the operator.
+
+FRRN-backed hosts retain a link to FRRN's account management and do not read
+email into the identity adapter. Their timeline shows only existing Unanym
+sharing changes; it does not claim a complete history of community approvals
+or website visits. Times are labelled UTC. Current records and past changes
+are distinct: an expired or withdrawn record can disappear from available
+records while an earlier sharing change remains in history.
+
+This is the hosted community-v1 interface. It does not add the separate wallet
+experiment, credential import, personal key custody or automatic recovery.
 
 Each connected website has its own card and chosen name. Its native expandable
 section contains the records currently available under the member's choices,
@@ -36,7 +63,7 @@ choices, not a root key, credential wallet, recovery kit or website-access proof
 It excludes signing keys, client secrets, sessions and tokens. FRRN-backed hosts
 use their configured base path, including `/identity/v1`.
 
-The standalone account page explains email recovery and the current operator-held
+The standalone member home explains email recovery and the current operator-held
 keys. It does not claim automatic lost-mailbox recovery or user-held root backups.
 
 ## Verification
@@ -44,7 +71,11 @@ keys. It does not claim automatic lost-mailbox recovery or user-held root backup
 `tests/member-places.test.js` obtains two real OIDC grants with fictional accounts
 and different website hostnames. It checks per-site names and evidence choices,
 private routes/export and account isolation, expired/withdrawn projection,
-client-disabled confirmations, and disconnection of only one website. Browser
+client-disabled confirmations, and disconnection of only one website. The home
+checks compare stored identities and permissions before/after reading, show each
+website's actual subject, and verify the empty account cannot see another
+member's records or activity. Standalone tests check private email and organisation
+activity, administrator separation, withdrawal and session-bound sign-out. Browser
 checks cover keyboard expansion, destination selection, and widths of 1220, 375
 and 320 pixels with scripts disabled. Existing tests cover scripted consent.
 

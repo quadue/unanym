@@ -10,6 +10,7 @@ import {validateAccountAdapter} from './accounts.js';
 import {persona,signerFrom,consentReceipt,membershipReceipt} from './drop.js';
 import {page,consentView,sitesView,recordsView,about,escape,rehearsalView} from './views.js';
 import {memberSharing,sharingExport} from './member-sharing.js';
+import {memberHomeView,recentChanges} from './member-home.js';
 import {issueMembership,membershipKey} from './community-contract.js';
 import {issueConfirmation,confirmationLabel} from './confirmation-contract.js';
 import {standalonePage} from './standalone/views.js';
@@ -19,7 +20,7 @@ import {mountExample} from './example-site.js';
 
 const ROOT=fileURLToPath(new URL('../',import.meta.url));
 const VERSION=JSON.parse(readFileSync(resolve(ROOT,'package.json'),'utf8')).version;
-export function createService(config,pact,{mountRoutes}={}) {
+export function createService(config,pact,{mountRoutes,memberDetails}={}) {
   validateAccountAdapter(pact);
   const base=config.basePath??'/identity';
   const standalone=config.contract==='community-v1';
@@ -198,8 +199,9 @@ export function createService(config,pact,{mountRoutes}={}) {
     await provider.interactionFinished(req,res,{error:'access_denied',error_description:'You chose not to connect this website.'},{mergeWithLastSubmission:false});
   });
   function memberConnections(id) {
-    return db.prepare('SELECT client FROM connections WHERE account=? ORDER BY updated DESC,client').all(id)
-      .map(({client})=>({...connection(db,id,client),site:registry.get(client)})).filter(x=>x.site);
+    return db.prepare('SELECT c.client,p.subject,p.identity_event FROM connections c LEFT JOIN personas p ON p.account=c.account AND p.client=c.client WHERE c.account=? ORDER BY c.updated DESC,c.client').all(id)
+      .map(({client,subject,identity_event})=>({...connection(db,id,client),site:registry.get(client),
+        identity:subject?{subject,publicKey:JSON.parse(identity_event).pub}:null})).filter(x=>x.site);
   }
   function sharingFor(id) {return memberSharing(memberConnections(id),pact.memberships(id),confirmationsFor(id));}
   app.get(base+'/sites',(req,res)=>{
@@ -211,6 +213,12 @@ export function createService(config,pact,{mountRoutes}={}) {
     res.send(sitesView(config,rows,id=>csrf(req,base+'/sites/'+id+'/disconnect')));
   });
   if(standalone){
+    app.get(base+'/account',(req,res)=>{
+      const user=account(req,res);if(!user)return;
+      const details=memberDetails?.(user.id)??{};
+      res.send(memberHomeView(config,sharingFor(user.id),{details,
+        activity:recentChanges(db,user.id,config.clients,details.activity),csrf:action=>csrf(req,action)}));
+    });
     app.get(base+'/records',(req,res)=>{
       const user=account(req,res);if(!user)return;
       res.send(recordsView(config,sharingFor(user.id)));

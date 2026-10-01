@@ -70,6 +70,14 @@ test('versioned FRRN routes keep the legacy issuer separate and pin the new URL'
   assert.equal((await fetch(origin+'/identity/oidc/.well-known/openid-configuration')).status,404);
   const redirect=await fetch(origin+'/identity/v1/sites',{redirect:'manual'});
   assert.equal(redirect.headers.get('location'),'/?next=%2Fidentity%2Fv1%2Fsites');
+  const homePath='/identity/v1/account';
+  assert.equal((await fetch(origin+homePath,{redirect:'manual'})).headers.get('location'),'/?next=%2Fidentity%2Fv1%2Faccount');
+  const homeResponse=await fetch(origin+homePath,{headers:{Cookie:'pl_session='+f.login('robin')}}),home=await homeResponse.text();
+  assert.equal(homeResponse.status,200);assert.equal(homeResponse.headers.get('cache-control'),'no-store');
+  assert.match(home,/<h1>Your Unanym<\/h1>/);assert.match(home,/Manage your FRRN account/);
+  assert.match(home,/FRRN holds your account and community approvals/);
+  assert.doesNotMatch(home,/robin@example.invalid|Sign out of this account/);
+  assert.equal(existsSync(join(config.dir,'accounts.db')),false,'the member home creates no second account store');
   const html=await (await fetch(origin+'/identity/v1/developers')).text();
   assert.match(html,/\/identity\/v1\/assets\/front.css/);assert.match(html,/\/identity\/v1\/docs\/frrn-host/);assert.match(html,/\/identity\/v1\/docs\/contract/);
   for(const path of ['/identity/v1/docs/frrn-host','/identity/v1/docs/contract','/identity/v1/docs/organisers'])assert.equal((await fetch(origin+path)).status,200);

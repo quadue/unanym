@@ -65,7 +65,32 @@ test('member places: two consented identities, scoped records, current evidence,
     };
     const first=await connect('first','Robin',true),second=await connect('second','R.',false);
     const info=token=>fetch(config.issuer+'/me',{headers:{Authorization:'Bearer '+token}});
-    assert.notEqual((await (await info(first)).json()).sub,(await (await info(second)).json()).sub);
+    const firstInfo=await (await info(first)).json(),secondInfo=await (await info(second)).json();
+    assert.notEqual(firstInfo.sub,secondInfo.sub);
+    const unchanged=()=>JSON.stringify(['connections','receipts','personas'].map(table=>service.db.prepare('SELECT * FROM '+table).all()));
+    const beforeHome=unchanged();
+    await page.goto(origin+base+'/account');
+    assert.equal(await page.getByRole('heading',{name:'Your FRRN',exact:true}).count(),1);
+    assert.equal(await page.locator('h1').count(),1);
+    assert.equal(await page.locator('header [aria-current="page"]').innerText(),'Your FRRN');
+    assert.equal(await page.locator('.member-activity li').count(),2);
+    assert.equal(await page.locator('.place-card').count(),2);
+    for(const [id,subject] of [['first',firstInfo.sub],['second',secondInfo.sub]]){
+      const card=page.locator('[data-place="'+id+'"]');
+      await card.locator('.place-sharing>summary').click();await card.locator('.place-identity>summary').click();
+      assert.equal(await card.locator('.place-identity dd').first().innerText(),subject);
+      assert.match(await card.locator('.place-identity dd').last().innerText(),/^[a-f0-9]{64}$/);
+    }
+    assert.equal(unchanged(),beforeHome,'inspecting identity and records creates no keys, permission or history');
+    const homeResponse=await page.request.get(origin+base+'/account');assert.equal(homeResponse.headers()['cache-control'],'no-store');
+    const homeHTML=await homeResponse.text();
+    for(const row of service.db.prepare('SELECT private_key FROM personas').all())assert.equal(homeHTML.includes(row.private_key),false);
+    if(process.env.UNANYM_CAPTURE_DIR){mkdirSync(process.env.UNANYM_CAPTURE_DIR,{recursive:true});await page.screenshot({path:join(process.env.UNANYM_CAPTURE_DIR,'home-desktop.png'),fullPage:true});}
+    for(const width of [375,320]){
+      await page.setViewportSize({width,height:812});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+      if(process.env.UNANYM_CAPTURE_DIR)await page.screenshot({path:join(process.env.UNANYM_CAPTURE_DIR,'home-'+width+'.png'),fullPage:true});
+    }
+    await page.setViewportSize({width:1220,height:920});
     await page.goto(origin+base+'/sites?place=first');
     const firstCard=page.locator('[data-place="first"]'),secondCard=page.locator('[data-place="second"]');
     assert.equal(await firstCard.locator('.place-person strong').innerText(),'Robin');
@@ -87,12 +112,14 @@ test('member places: two consented identities, scoped records, current evidence,
     const exportResponse=await page.request.get(origin+base+'/sharing-summary');assert.equal(exportResponse.status(),200);assert.equal(exportResponse.headers()['cache-control'],'no-store');
     const exported=await exportResponse.json();assert.equal(exported.places.length,2);assert.equal(exported.confirmations[0].shared_with.length,1);
     assert.doesNotMatch(JSON.stringify(exported),/private_key|client_secret|access_token|pl_session/);
-    for(const path of ['/sites','/records','/sharing-summary'])assert.equal((await fetch(origin+base+path,{redirect:'manual'})).status,302,'private page requires a member session');
+    for(const path of ['/account','/sites','/records','/sharing-summary'])assert.equal((await fetch(origin+base+path,{redirect:'manual'})).status,302,'private page requires a member session');
     const sam=await browser.newContext();await sam.addCookies([{name:'pl_session',value:f.login('sam'),url:origin}]);
     const samPage=await sam.newPage();await samPage.goto(origin+base+'/sites?place=first');assert.equal(await samPage.locator('.place-card').count(),0);
     assert.equal(await samPage.getByRole('link',{name:'Try the example website'}).count(),0,'no dead example link on installations without an example client');
     assert.deepEqual((await (await samPage.request.get(origin+base+'/sharing-summary')).json()).places,[]);
     await samPage.goto(origin+base+'/records');assert.equal(await samPage.locator('.member-record').count(),0);
+    await samPage.goto(origin+base+'/account');assert.equal(await samPage.locator('.member-record,.place-card,.member-activity li').count(),0);
+    assert.doesNotMatch(await samPage.locator('main').innerText(),/Lakeside community|Learning exchange|Private listening circle|Neighbourhood website/);
     const forged=await samPage.request.post(origin+base+'/sites/first/disconnect',{headers:{Origin:origin},form:{csrf:'forged'}});assert.equal(forged.status(),403);
     await sam.close();
     config.clients[0].allow_confirmations=false;
@@ -108,6 +135,8 @@ test('member places: two consented identities, scoped records, current evidence,
     assert.match(await firstCard.innerText(),/Previously known as/);assert.match(await firstCard.innerText(),/Sharing stopped/);
     const disconnected=(await (await page.request.get(origin+base+'/sharing-summary')).json()).places.find(p=>p.website_name==='Learning exchange');
     assert.deepEqual(disconnected.memberships,[]);assert.deepEqual(disconnected.confirmations,[]);
+    await page.goto(origin+base+'/account');assert.match(await page.locator('.member-activity li').first().innerText(),/Website disconnected.*Learning exchange/s);
+    assert.match(await firstCard.innerText(),/Sharing stopped/);assert.match(await secondCard.innerText(),/Connected/);
     await page.setViewportSize({width:320,height:740});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     if(process.env.UNANYM_CAPTURE_DIR){await page.goto(origin+base+'/records');await page.screenshot({path:join(process.env.UNANYM_CAPTURE_DIR,'records-mobile.png'),fullPage:true});}
 });
