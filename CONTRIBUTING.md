@@ -2,15 +2,17 @@
 
 Start with a reproducible issue using fictional accounts. Keep changes small and
 describe the behaviour being changed, the receiving-site impact and validation.
-Use the private route in `SECURITY.md` for suspected vulnerabilities.
+Read [SECURITY.md](SECURITY.md) before reporting suspected vulnerabilities.
 
 Questions and early feedback are welcome in
 [Unanym Community](https://t.me/unanymcommunity). Keep private account details and
 security reports out of the public chat.
 
-Open ordinary changes against `main` in the canonical private Gitea repository.
+Open ordinary issues and pull requests against `main` at
+[quadue/unanym](https://github.com/quadue/unanym). Maintainers carry reviewed
+contributions into the canonical Gitea release source.
 Require a successful Verify job on the exact candidate revision before merging.
-The workflow is in `.gitea/workflows/verify.yml`; the GitHub copy is secondary.
+The workflows are in `.github/workflows/verify.yml` and `.gitea/workflows/verify.yml`.
 See [repository workflow](docs/repository.md). Do not include private operator
 settings, participant information or completed trial reports in a contribution.
 

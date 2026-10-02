@@ -1,8 +1,9 @@
 # Repository and release workflow
 
-The private Gitea repository is the canonical source. `origin` points to it and
-`main` is the reviewed candidate branch. The optional `github` remote is a
-secondary copy; it is not the release authority. Moving source does not change
+The public contribution entry point is [quadue/unanym](https://github.com/quadue/unanym).
+Maintainers retain the private Gitea repository as the canonical release source.
+Their `origin` points to Gitea and `github` to the public repository; a contributor's
+clone normally has GitHub as `origin`. Moving source does not change
 an identity issuer, signing key, account mapping or live service.
 
 ## Verify a candidate
@@ -10,8 +11,9 @@ an identity issuer, signing key, account mapping or live service.
 Work on a branch and open an ordinary pull request against `main`. The pinned
 workflow in `.gitea/workflows/verify.yml` runs for pushes to `main` and the public
 landing branch, and for pull requests against `main`. Other branches can use
-workflow dispatch or a pull request. The GitHub workflow remains available for
-an optional secondary copy.
+workflow dispatch or a pull request. The GitHub workflow verifies public pushes
+and pull requests. Maintainers carry reviewed public contributions into Gitea
+before releasing them.
 
 The Gitea job uses the runner's `ubuntu-latest` label, Node 24 and the locked npm
 dependencies. `scripts/ci-php.sh` uses installed PHP with Sodium when available.
@@ -49,6 +51,12 @@ branch. Verify the candidate, then merge through the reviewed pull request or
 fast-forward when the existing main is an ancestor and that update is authorised.
 Never force-push over another contributor's work. Confirm the new remote main
 revision and its Gitea Verify result after the push.
+
+Before updating public GitHub, review every newly exposed commit as well as the
+current tracked files for private data and credentials. Preserve the existing
+public history; use a reviewed pull request or authorised fast-forward when its
+main is an ancestor. Confirm the public revision and its GitHub Verify result.
+Keep publication status separate from the live deployment revision.
 
 The source merge does not deploy a service. A deployment needs its own exact
 revision, preserved running configuration and rollback plan. Keep public

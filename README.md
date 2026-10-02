@@ -11,14 +11,16 @@ of any community platform. Membership rules belong to your community.
 
 **Status: release candidate.** WordPress is the tested integration.
 Real member acceptance and an independent security review are still pending.
-The source and local tests are prepared for evaluation; this is not yet a
+The source is public under Apache 2.0 and the local tests support evaluation; this is not yet a
 supported production release.
 
 ## Try it locally
 
-Install Node.js 24 and npm, then run from this checkout:
+Install Node.js 24 and npm, then clone the public repository:
 
 ```sh
+git clone https://github.com/quadue/unanym.git
+cd unanym
 npm run quickstart
 ```
 
@@ -135,8 +137,8 @@ with no embedded chat widget or third-party scripts.
 
 Visitors can join [Unanym Community](https://t.me/unanymcommunity) to ask questions
 and share feedback. Joining the chat is separate from creating an account or
-receiving a community membership. Use the private route in `SECURITY.md` for
-security reports.
+receiving a community membership. Read [the security reporting policy](SECURITY.md)
+before reporting a suspected vulnerability.
 
 The account host creates a persistent account only after an email code is
 verified. The same flow signs returning members into their existing account;
@@ -153,11 +155,12 @@ requesting an email code when the member is signed out.
 
 ## Development
 
-The private Gitea repository is canonical. `origin` points there; `main` is the
-reviewed candidate branch. The optional `github` remote is a secondary copy.
-Gitea Actions runs the pinned verification workflow in
-`.gitea/workflows/verify.yml`. Passing CI does not deploy the public site or an
-identity service. See [repository and release workflow](docs/repository.md).
+External contributors can use [GitHub](https://github.com/quadue/unanym) for
+issues and pull requests. Maintainers keep the canonical release source in
+Gitea and carry reviewed changes between the two repositories. Each forge has
+a pinned verification workflow. Passing CI does not deploy the public site or
+an identity service. See [repository and release workflow](docs/repository.md)
+and the [ordered development backlog](docs/roadmap.md).
 
 ```sh
 npm ci

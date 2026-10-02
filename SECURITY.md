@@ -1,23 +1,25 @@
-# Security policy — release preparation
+# Security policy
 
-This is a private release candidate. No version is currently designated as a
-supported production release, and no independent security audit is claimed.
+Unanym is public source and remains a release candidate. No version is currently
+designated as a supported production release; no independent security audit or
+response-time commitment is claimed.
 
-## Private reporting
+## Reporting a vulnerability
 
-The named security maintainer, private contact channel and response expectations
-must be confirmed before public release. They are deliberately not invented in
-this draft. During the private review, use the existing private channel agreed
-with the repository owner. Do not put credentials, member records, signing keys,
-session tokens or a live exploit in an ordinary issue or pull request.
+GitHub private vulnerability reporting was disabled when checked on 2 October
+2026. A tested confidential reporting route is an outstanding maintainer task.
+Do not assume an ordinary issue, pull request or Telegram discussion is private.
 
-The canonical source is in a private Gitea repository. Ordinary repository issues
-are not a confidential reporting channel. Before any public source release,
-agree a named security maintainer, private reporting address or channel and
-response expectations, then test that channel and replace this preparation text
-with the accepted details. Do not assume GitHub-specific reporting facilities
-exist on another forge. No new contact address or response commitment is claimed
-by this repository migration.
+If you already have an agreed private channel with the repository owner, use it.
+Otherwise, open an issue at [quadue/unanym](https://github.com/quadue/unanym/issues)
+asking the owner for a private security contact, without disclosing the finding.
+Wait for that contact before sending exploit details. Do not post credentials,
+member records, signing keys, session tokens or a live exploit publicly.
+
+The repository owner is responsible for appointing the security maintainer,
+enabling confidential reports, checking notifications and agreeing response
+expectations. Update this policy after that route has been tested.
+See [GitHub's configuration guide](https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/configure-vulnerability-reporting/configure-for-a-repository).
 
 ## Review scope
 

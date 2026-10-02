@@ -275,3 +275,44 @@
 .member-nav>span{font-size:14px;color:var(--muted)}
 .dev-flow,.dev-reference{margin:30px 0;border-top:1px solid var(--line);padding-top:10px}.dev-flow>summary,.dev-reference>summary,.doc-reference>summary{cursor:pointer;min-height:48px;padding-block:12px;font-size:17px;font-weight:600}.dev-flow[open]>summary,.dev-reference[open]>summary{margin-bottom:20px}
 @media(max-width:760px){.landing-promises{grid-template-columns:1fr;gap:24px;padding:28px 22px 35px}.landing-simple-footer>div{gap:14px 20px}.learn-questions{margin-top:32px}.learn-questions summary{font-size:16px}.member-nav>span{font-size:12px}}
+
+/* Consent, administration and privacy continue the private member shell. */
+.member-form-page{margin:40px 0 70px;overflow-wrap:anywhere}
+.member-form-page .narrow{max-width:680px;margin-inline:auto}
+.member-form-page h1{font-size:clamp(36px,5vw,62px);line-height:1.08;letter-spacing:-.04em;margin-bottom:26px}
+.member-form-page h2{font-size:22px;line-height:1.3;margin:32px 0 14px}
+.member-form-page p{color:var(--muted);line-height:1.75;margin:14px 0}
+.member-form-page strong{color:var(--ink)}
+.member-form-page .help{font-size:13px;line-height:1.7}
+.member-form-page form{margin:26px 0}
+.member-form-page label:not(.choice){display:block;font-size:14px;font-weight:600}
+.member-form-page input:not([type=checkbox]):not([type=hidden]){display:block;width:100%;min-width:0;min-height:50px;margin:10px 0 20px;padding:12px 15px;border:1px solid #575d6d;border-radius:10px;background:var(--panel);color:var(--ink);font:inherit}
+.member-form-page button,.member-form-page .button{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 20px;border:1px solid var(--ink);border-radius:26px;background:var(--ink);color:var(--ground);font-size:14px;font-weight:650;text-decoration:none;line-height:1.4}
+.member-form-page .secondary{background:transparent;color:var(--ink);border-color:#575d6d}
+.member-form-page summary{cursor:pointer;min-height:48px;padding:12px 0;font-size:14px;font-weight:600}
+.member-form-page details{border-top:1px solid var(--line);margin:24px 0}
+.member-form-page code{font-size:13px;overflow-wrap:anywhere}
+.member-form-page .connection{padding:20px 24px;background:var(--panel);border:1px solid var(--line);border-radius:14px;margin:14px 0;min-width:0}
+.member-form-page .connection form{margin:16px 0 0}.member-form-page .connection p{margin:8px 0}
+.member-form-page .consent-space{max-width:1060px;margin-inline:auto}
+.member-form-page .consent-recipient{font-size:14px;margin:0 0 16px}
+.member-form-page .consent-flow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+.member-form-page .consent-you,.member-form-page .consent-site{min-width:0;padding:26px;border:1px solid var(--line);border-radius:18px;background:var(--panel)}
+.member-form-page .consent-you>h2{margin:0 0 24px}
+.member-form-page fieldset{min-width:0;border:0;border-top:1px solid var(--line);padding:18px 0 0;margin:28px 0 0}
+.member-form-page legend{padding-right:12px;font-weight:650;font-size:16px}
+.member-form-page .optional{font-weight:400;font-size:12px;color:var(--muted);margin-left:6px}
+.member-form-page .choice{display:flex;align-items:center;gap:14px;cursor:pointer;min-height:60px;margin:10px 0;padding:14px;border:1px solid var(--line);border-radius:10px;font-size:15px}
+.member-form-page .choice:has(input:checked){border-color:var(--accent);background:#2bc6b10d}
+.member-form-page .choice input{flex-shrink:0;width:20px;height:20px;margin:0;accent-color:var(--accent)}
+.member-form-page .choice span{min-width:0}.member-form-page .choice small{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+.member-form-page .consent-kept{border-top:1px dashed var(--line);margin-top:26px;padding-top:18px;font-size:13px}.member-form-page .consent-kept p{margin:6px 0 0;font-size:12px}
+.member-form-page .consent-site .eyebrow{font-size:11px!important;margin:0 0 14px!important;color:var(--muted)!important}
+.member-form-page .consent-site h2{margin:0;font-size:26px}.member-form-page .destination{font-size:13px;margin:8px 0 24px}
+.member-form-page .consent-preview{padding:22px;background:var(--ground);border:1px solid var(--line);border-radius:12px}
+.member-form-page .consent-preview>strong{font-size:24px}.member-form-page .consent-preview p,.member-form-page .consent-preview li{font-size:13px}
+.member-form-page .consent-preview p{margin:8px 0 0}.member-form-page .consent-preview ul{padding-left:20px;margin:16px 0 0}
+.member-form-page .consent-details{margin-bottom:0}.member-form-page .consent-details p{margin:10px 0}
+.member-form-page .consent-bridge{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+.member-form-page .consent-arrow{display:none}
+@media(max-width:760px){.member-form-page{margin:28px 0 50px}.member-form-page .consent-flow{grid-template-columns:1fr;gap:18px}.member-form-page .consent-you,.member-form-page .consent-site{padding:20px}.member-form-page .consent-preview{padding:18px}.member-form-page .consent-bridge{gap:12px}.member-form-page .connection{padding:18px}}

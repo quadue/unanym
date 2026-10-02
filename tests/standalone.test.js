@@ -111,6 +111,16 @@ test('standalone browser: email code, admin approval, consent, signed UserInfo, 
   service.app.get('/test/callback',(_req,res)=>res.send('Returned to website'));
   server.on('request',service.app);
   const browser=await chromium.launch();let stopped=false;
+  const checkLayout=async(page,screen)=>{
+    for(const width of [1280,375,320]){
+      await page.setViewportSize({width,height:900});
+      assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),screen+' fits '+width+'px');
+      const controls=await page.locator('main button, main summary').evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect()).filter(r=>r.width&&r.height).map(r=>r.height));
+      assert(controls.every(height=>height>=44),screen+' has usable controls');
+      if(process.env.UNANYM_CAPTURE_DIR)await page.screenshot({path:process.env.UNANYM_CAPTURE_DIR+'/'+screen+'-'+width+'.png',fullPage:true});
+    }
+    await page.setViewportSize({width:1280,height:720});
+  };
   const login=async(page,email)=>{
     await page.goto(origin+'/identity/login');assert.equal(await page.title(),'Your Harbour · Harbour');await page.getByLabel('Email address').fill(email);await page.getByRole('button',{name:'Send code',exact:true}).click();
     await page.getByLabel('Sign-in code').fill(mail.get(email));await page.getByRole('button',{name:'Sign in',exact:true}).click();await page.waitForURL('**/identity/account');
@@ -118,11 +128,14 @@ test('standalone browser: email code, admin approval, consent, signed UserInfo, 
   try{
     const operator=await browser.newPage();await login(operator,'operator@example.test');
     await operator.getByRole('link',{name:'Register an organisation',exact:true}).click();
+    await checkLayout(operator,'registration');
     await operator.getByLabel('Organisation name').fill('Test circle');await operator.getByLabel('Administrator email').fill('admin@example.test');await operator.getByLabel('Authorisation reference').fill('Fictional appointment for this automated test');await operator.getByRole('button',{name:'Register organisation',exact:true}).click();await operator.waitForURL('**/identity/account');
     const admin=await browser.newPage();await login(admin,'admin@example.test');await admin.getByRole('link',{name:'Test circle',exact:true}).click();
     await admin.getByLabel('Member email').fill('member@example.test');await admin.getByRole('button',{name:'Approve membership',exact:true}).click();await admin.getByText('member@example.test',{exact:true}).waitFor();
+    await checkLayout(admin,'administration');
     await admin.getByText('Community introductions',{exact:true}).click();await admin.getByRole('button',{name:'Confirm introduction',exact:true}).click();
-    const member=await browser.newPage();await login(member,'member@example.test');assert.equal(await member.locator('.member-community').filter({hasText:'Test circle'}).count(),1);
+    // The complete member login and consent journey also works without scripts.
+    const member=await browser.newPage({javaScriptEnabled:false});await login(member,'member@example.test');assert.equal(await member.locator('.member-community').filter({hasText:'Test circle'}).count(),1);
     assert.equal(await member.title(),'Your Harbour · Harbour');
     assert.equal(await member.locator('.member-email').innerText(),'member@example.test');
     assert.equal(await member.locator('.member-activity li').count(),2);
@@ -134,6 +147,7 @@ test('standalone browser: email code, admin approval, consent, signed UserInfo, 
     const verifier=randomBytes(32).toString('base64url');
     const auth=new URL(discovery.authorization_endpoint);auth.search=new URLSearchParams({client_id:client,redirect_uri:callback,response_type:'code',scope:'openid profile identity.v1 memberships.v1 confirmations.v1',state:'bound-in-test',nonce:'test-nonce',code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256'});
     await member.goto(auth.href);
+    await checkLayout(member,'consent');
     assert.equal(await member.locator('.consent-details').evaluate(d=>d.open),false);await member.locator('.consent-details summary').click();assert.equal(await member.locator('.consent-details').evaluate(d=>d.open),true);await member.locator('.consent-details summary').click();
     const form=member.locator('form[action$="/confirm"]'),action=await form.getAttribute('action'),csrf=await form.locator('[name=csrf]').inputValue();
     const selectedConfirmation=await member.locator('input[name=confirmations]').inputValue();

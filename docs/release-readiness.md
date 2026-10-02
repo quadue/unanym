@@ -1,7 +1,8 @@
 # Release readiness
 
-This repository is a private candidate for review. Preparing source in Gitea
-does not declare a production release or complete an international member pilot.
+The source is public at [quadue/unanym](https://github.com/quadue/unanym).
+It remains a release candidate. Source availability, current release publication,
+production operation and an international member pilot are separate evidence.
 
 ## Included
 
@@ -12,16 +13,19 @@ does not declare a production release or complete an international member pilot.
 - Fictional local quickstart, automated checks, installation and restore guide.
 - Gitea verification workflow with read-only code permissions and pinned actions;
   the GitHub copy is secondary.
-- Draft security policy, compatibility boundary and contributor guidance.
+- Security reporting policy, compatibility boundary and contributor guidance.
 - Concrete fictional choir example and an independent WordPress setup trial
   packet. The packet is prepared, not evidence that a person completed it.
 
-## Before publishing the source
+## Public source follow-through
 
-1. Confirm the named maintainer, private reporting channel and support scope.
-2. Review this snapshot and dependency/licence inventory; preserve attribution.
-3. Confirm the public repository/name and test the agreed private reporting route.
-4. Verify CI on the exact candidate and document the release's supported boundary.
+1. Synchronise the reviewed candidate with the existing public history; audit all
+   newly exposed commits and preserve dependency/licence attribution.
+2. Enable and test a confidential reporting route with the responsible maintainer.
+   GitHub private vulnerability reporting was disabled when checked on 2 October 2026.
+3. Verify GitHub CI on the exact published revision and state its support boundary.
+
+The [development backlog](roadmap.md) gives these items completion criteria.
 
 Source publication makes the code available under Apache 2.0. It does not certify
 an installation or complete the operational acceptance below.

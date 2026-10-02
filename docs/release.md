@@ -1,5 +1,24 @@
 # Candidate evidence — 2026-09-24
 
+## Public contribution and remaining work — 2026-10-02
+
+The repository instructions now point external contributors to the existing
+public GitHub repository. The ordered backlog has completion criteria for
+source synchronisation, confidential security reporting, an independent
+WordPress trial, account lifecycle and operational acceptance. The security
+policy records the reporting gap rather than promising an unconfigured route.
+
+Community-v1 consent, organisation administration, privacy and rendered errors
+now use the private member home's dark shell and compact navigation. Existing
+form actions, consent choices and permissions remain unchanged; legacy adapters
+retain their presentation. The standalone test completes member login and
+consent without JavaScript, checks registration, administration and consent at
+320, 375 and 1280 pixels, then verifies signed claims, withdrawal and restore.
+
+Local verification passed 40 Node tests and 17 Chromium tests. These are fictional
+software checks, not independent human acceptance, live mail proof or a security
+audit. Public source revision and production deployment are recorded separately.
+
 ## Community links — 2026-10-01
 
 The public landing can link to a Telegram discussion and a public GitHub source
@@ -20,7 +39,7 @@ sections; Recent changes is expandable. Website setup keeps screenshots and
 protocol reference behind descriptive controls. Technical documentation and
 the original authenticated URLs remain available.
 
-The public landing and overview lead directly to Create your Unanym or Sign in.
+The public landing and overview lead directly to Create your nym or Sign in.
 `/learn` now explains account creation and selective sharing without a fictional
 practice account. The public service links to the separately hosted account
 service; `PUBLIC_ACCOUNT_URL` can select that host. Email-code screens use the
@@ -35,7 +54,9 @@ completion of the acceptance items in the release-readiness document.
 Standalone installations and the WordPress fallback now use Unanym by default.
 Explicit operator branding still applies. The public documentation site is a
 separate read-only service: it opens no identity database and creates no member
-accounts. It includes a fictional practice flow and webmaster questions.
+accounts. Its initial presentation included a fictional practice flow; the
+1 October member entry update replaced that with real account creation and `/learn`.
+Webmaster questions remain available.
 FRRN remains an optional account-source integration; its host selects its own
 brand explicitly. Issuers, scopes, account mappings and existing approvals are
 unchanged. The public site can move domains independently of sign-in services.

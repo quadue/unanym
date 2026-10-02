@@ -1,6 +1,7 @@
 import {displayName,developerURL,versionAssets,memberPage} from './presentation.js';
 export const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function page(title,body,config={}) {
+  if(config.contract==='community-v1')return memberPage(config,title,`<div class="member-form-page">${body}</div>`,{current:''});
   const base=config.basePath??'/identity';
   const {demo=false,contract}=config,brand=escape(displayName(config)),mark=brand==='FRRN'?'frrn':brand;
   const navigation=config.publicDocs?'<a href="/developers">For websites</a><a href="/docs/members">For members</a>':contract==='community-v1'?`<a href="${base}/account" ${title==='Your '+displayName(config)?'aria-current="page"':''}>Your ${brand}</a><a href="${base}/sites" ${title==='Your places'?'aria-current="page"':''}>Connections</a><a href="${base}/records" ${title==='Memberships & confirmations'?'aria-current="page"':''}>Records</a>`:`<a href="${base}/sites">My connections</a><a href="/">Your account</a>`;
