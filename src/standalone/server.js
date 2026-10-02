@@ -7,12 +7,14 @@ import {standaloneAccounts,emailAddress} from './accounts.js';
 import {standaloneRoutes} from './routes.js';
 import {smtpMailer} from './mail.js';
 import {dataLock} from './lock.js';
+import {accountPasskeys} from './passkeys.js';
+import {displayName} from '../presentation.js';
 
 export function createStandalone(config,{bootstrapEmail,sendCode}) {
   if(config.basePath && config.basePath!=='/identity')throw new Error('Standalone accounts use the default identity path');
   if(config.contract!=='community-v1')throw new Error('Standalone hosts require community-v1');
   emailAddress(bootstrapEmail);
-  const release=dataLock(config.dir);let accounts,service;
+  const release=dataLock(config.dir);let accounts,service,passkeys;
   try{
     const path=resolve(config.dir,'profile.json');
     if(existsSync(path)){
@@ -23,9 +25,11 @@ export function createStandalone(config,{bootstrapEmail,sendCode}) {
       writeFileSync(path,JSON.stringify({contract:config.contract,issuer:config.issuer,account_source:'standalone'}),{mode:0o600,flag:'wx'});
     }
     accounts=standaloneAccounts({dir:config.dir,key:config.keys.cookie,bootstrapEmail,sendCode,cookieName:config.origin.startsWith('https:')?'__Host-community_account':'community_account'});
-    service=createService(config,accounts.adapter,{memberDetails:id=>accounts.memberDetails(id),mountRoutes:app=>standaloneRoutes(app,config,accounts)});
+    passkeys=accountPasskeys(accounts,{origin:config.origin,name:displayName(config),key:config.keys.cookie});
+    service=createService(config,accounts.adapter,{memberDetails:id=>({...accounts.memberDetails(id),canManagePasskeys:passkeys.enabled}),mountRoutes:app=>standaloneRoutes(app,config,accounts,passkeys)});
   }catch(e){accounts?.adapter.close();release();throw e;}
-  const timer=setInterval(()=>accounts.cleanup(),60_000);timer.unref();accounts.cleanup();
+  const cleanup=()=>{accounts.cleanup();passkeys.cleanup();};
+  const timer=setInterval(cleanup,60_000);timer.unref();cleanup();
   return {...service,accounts,close(){clearInterval(timer);service.close();release();}};
 }
 

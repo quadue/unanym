@@ -116,7 +116,7 @@ test('standalone browser: email code, admin approval, consent, signed UserInfo, 
       await page.setViewportSize({width,height:900});
       assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),screen+' fits '+width+'px');
       const controls=await page.locator('main button, main summary').evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect()).filter(r=>r.width&&r.height).map(r=>r.height));
-      assert(controls.every(height=>height>=44),screen+' has usable controls');
+      assert(controls.every(height=>height>=44),screen+' has usable controls at '+width+'px: '+controls.join(', '));
       if(process.env.UNANYM_CAPTURE_DIR)await page.screenshot({path:process.env.UNANYM_CAPTURE_DIR+'/'+screen+'-'+width+'.png',fullPage:true});
     }
     await page.setViewportSize({width:1280,height:720});
@@ -128,6 +128,8 @@ test('standalone browser: email code, admin approval, consent, signed UserInfo, 
   try{
     const operator=await browser.newPage();await login(operator,'operator@example.test');
     await operator.getByRole('link',{name:'Register an organisation',exact:true}).click();
+    await operator.waitForURL(origin+'/identity/operator');
+    await operator.getByRole('heading',{name:'Register an organisation',exact:true}).waitFor();
     await checkLayout(operator,'registration');
     await operator.getByLabel('Organisation name').fill('Test circle');await operator.getByLabel('Administrator email').fill('admin@example.test');await operator.getByLabel('Authorisation reference').fill('Fictional appointment for this automated test');await operator.getByRole('button',{name:'Register organisation',exact:true}).click();await operator.waitForURL('**/identity/account');
     const admin=await browser.newPage();await login(admin,'admin@example.test');await admin.getByRole('link',{name:'Test circle',exact:true}).click();

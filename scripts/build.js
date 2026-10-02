@@ -5,6 +5,9 @@ import {zipSync} from 'fflate';
 
 for(const path of ['dist/assets/screens','dist/example','dist/starter'])mkdirSync(path,{recursive:true});
 await build({entryPoints:['web/client.js'],bundle:true,minify:true,format:'esm',target:'es2022',legalComments:'inline',outfile:'dist/assets/client.js'});
+const passkeyLicence=readFileSync('node_modules/@simplewebauthn/browser/LICENSE.md','utf8');
+await build({entryPoints:['web/passkeys.js'],bundle:true,minify:true,format:'esm',target:'es2022',legalComments:'inline',
+  banner:{js:'/*! @simplewebauthn/browser\n'+passkeyLicence+'\n*/'},outfile:'dist/assets/passkeys.js'});
 rmSync('dist/assets/learn.js',{force:true});
 for(const file of ['style.css','consent.js','front.css','front.js','developer.js','front-mark.svg','front-mark-light.svg','favicon.svg'])copyFileSync('web/'+file,'dist/assets/'+file);
 copyFileSync('examples/community/index.html','dist/example/index.html');

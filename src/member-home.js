@@ -1,25 +1,51 @@
 import {escape} from './views.js';
 import {displayName,glyphs,memberPage} from './presentation.js';
+import {createHash} from 'node:crypto';
 
 const actions={membership_approved:'Approved',membership_revoked:'Withdrawn',
-  introduction_confirmed:'Confirmed',introduction_withdrawn:'Confirmation withdrawn'};
+  introduction_confirmed:'Confirmed',introduction_withdrawn:'Confirmation withdrawn',passkey_added:'Passkey added',passkey_removed:'Passkey removed'};
 
 // A bounded private view of existing history. No new identity, grant or log is
 // created by reading it, and no administrator details or raw proofs are returned.
-export function recentChanges(db,account,clients,organisationChanges=[]) {
+export function recentChanges(db,account,clients,organisationChanges=[],limit=8) {
   const sites=new Map(clients.map(c=>[c.client_id,c]));
-  const sharing=db.prepare('SELECT client,event FROM receipts WHERE account=? ORDER BY id DESC LIMIT 8').all(account)
+  const sharing=db.prepare('SELECT id,client,event FROM receipts WHERE account=? ORDER BY id DESC').all(account)
     .flatMap(row=>{
       const site=sites.get(row.client),event=JSON.parse(row.event);
       if(!site||event.t!=='node.minted'||!['share','withdraw'].includes(event.body?.permission))return [];
-      return [{at:new Date(event.ts).toISOString(),label:event.body.permission==='share'?'Shared':'Disconnected',
+      return [{id:'sharing:'+row.id,at:new Date(event.ts).toISOString(),label:event.body.permission==='share'?'Shared':'Disconnected',
         name:site.name,client:row.client}];
     });
   const approvals=organisationChanges.filter(change=>actions[change.action]).map(change=>({
-    at:change.at,label:actions[change.action],name:change.organisation,client:null
+    id:'approval:'+(change.id??createHash('sha256').update(JSON.stringify(change)).digest('hex')),at:change.at,label:actions[change.action],name:change.organisation,client:null
   }));
   return [...sharing,...approvals].filter(change=>Number.isFinite(Date.parse(change.at)))
-    .sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)).slice(0,8);
+    .sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)||b.id.localeCompare(a.id,'en',{numeric:true})).slice(0,limit);
+}
+
+export function memberUpdates(db,account,clients,details={}) {
+  const read=new Set(db.prepare('SELECT update_id FROM member_update_reads WHERE account=?').all(account).map(r=>r.update_id));
+  return [...recentChanges(db,account,clients,details.activity,Infinity),...(details.expiryUpdates??[])]
+    .sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)||b.id.localeCompare(a.id,'en',{numeric:true})).map(update=>({...update,unread:!read.has(update.id)}));
+}
+
+export function markUpdatesRead(db,account,ids,available) {
+  if(!Array.isArray(ids)||!ids.length||ids.length>50||ids.some(id=>typeof id!=='string'||id.length>300))throw new Error('Return to your updates and try again.');
+  const own=new Set(available.map(update=>update.id));
+  if(ids.some(id=>!own.has(id)))throw new Error('Return to your updates and try again.');
+  db.transaction(()=>{for(const id of ids)db.prepare('INSERT OR IGNORE INTO member_update_reads VALUES(?,?)').run(account,id);})();
+}
+
+const when=value=>escape(new Date(value).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'UTC'}));
+export function updateReadForm(config,updates,csrf,page=null) {
+  const unread=updates.filter(u=>u.unread),base=config.basePath??'/identity';
+  return unread.length?`<form method="post" action="${base}/updates/read" class="member-read-form"><input type="hidden" name="csrf" value="${escape(csrf(base+'/updates/read'))}">${unread.map(u=>`<input type="hidden" name="updates" value="${escape(u.id)}">`).join('')}${page===null?'':`<input type="hidden" name="page" value="${page}">`}<button class="member-action">Mark shown as read</button></form>`:'';
+}
+
+export function updatesView(config,updates,{details,csrf,page=0}) {
+  const base=config.basePath??'/identity',size=50,start=page*size,shown=updates.slice(start,start+size),unread=updates.filter(u=>u.unread).length;
+  return memberPage(config,'Your updates',`<section class="member-updates"><h1>Your updates</h1><p class="member-quiet">${unread?unread+' unread':'All caught up'}. Times UTC.</p><ol class="member-activity">${shown.map(u=>`<li${u.unread?' class="unread"':''}><span class="member-update-dot" aria-hidden="true"></span><span><strong>${escape(u.label)}</strong> ${escape(u.name)}${u.unread?'<small class="member-update-new">Unread</small>':''}</span><time datetime="${escape(u.at)}">${when(u.at)}</time></li>`).join('')}</ol>${updateReadForm(config,shown,csrf,page)}
+    <nav class="member-pagination" aria-label="Update pages">${page>0?`<a href="${base}/updates?page=${page-1}">Newer updates</a>`:''}${start+size<updates.length?`<a href="${base}/updates?page=${page+1}">Older updates</a>`:''}</nav><p><a href="${base}/account">Back to your account</a></p></section>`,{csrf,canSignOut:details.canSignOut});
 }
 
 // The landing's colour meanings: communities each get a colour of their own,
@@ -30,7 +56,7 @@ const numbers=['No','One','Two','Three','Four','Five','Six','Seven','Eight','Nin
 const previewLimit=6;
 
 
-export function memberHomeView(config,sharing,{details={},activity=[],csrf}) {
+export function memberHomeView(config,sharing,{details={},activity=[],updates,csrf}) {
   const base=config.basePath??'/identity',brand=displayName(config),frrn=config.accountSource==='frrn';
   const when=(value,time=true)=>escape(new Date(value).toLocaleString('en-GB',{day:'numeric',month:'short',...(time?{hour:'2-digit',minute:'2-digit'}:{year:'numeric'}),timeZone:'UTC'}));
   const colours=new Map();
@@ -64,7 +90,8 @@ export function memberHomeView(config,sharing,{details={},activity=[],csrf}) {
   const centre=`<div class="member-you">${glyphs.you(66,32)}<span class="member-you-label">You</span>
     ${details.email?`<div class="member-kept">${glyphs.email()}<span class="member-email">${escape(details.email)}</span><small>Stays here</small></div>`:''}</div>`;
 
-  const recent=activity.length?`<ol class="member-activity">${activity.map(change=>`<li>${change.client?glyphs.face(...faceOf(change.client),8):`<span class="${colourOf(change.name)}">${glyphs.token(10)}</span>`}<span><strong>${escape(change.label)}</strong> ${change.client?`<a href="${base}/sites?place=${escape(encodeURIComponent(change.client))}">${escape(change.name)}</a>`:escape(change.name)}</span><time datetime="${escape(change.at)}">${when(change.at)}</time></li>`).join('')}</ol>`
+  const unread=updates?.filter(u=>u.unread).length??0;
+  const recent=activity.length?`<ol class="member-activity">${activity.map(change=>`<li${change.unread?' class="unread"':''}>${change.client?glyphs.face(...faceOf(change.client),8):`<span class="${colourOf(change.name)}">${glyphs.token(10)}</span>`}<span><strong>${escape(change.label)}</strong> ${change.client?`<a href="${base}/sites?place=${escape(encodeURIComponent(change.client))}">${escape(change.name)}</a>`:escape(change.name)}${change.unread?'<small class="member-update-new">Unread</small>':''}</span><time datetime="${escape(change.at)}">${when(change.at)}</time></li>`).join('')}</ol>`
     :'<p class="member-quiet">Nothing yet.</p>';
 
   const holders=frrn?`<dt>Account &amp; approvals</dt><dd>FRRN</dd><dt>Website keys</dt><dd>${escape(config.operatorName)}</dd>`:`<dt>Held by</dt><dd>${escape(config.operatorName)}</dd>`;
@@ -79,10 +106,11 @@ export function memberHomeView(config,sharing,{details={},activity=[],csrf}) {
   </div>
   <ul class="member-legend" aria-label="Key"><li>${glyphs.token(10)}Membership</li><li>${glyphs.token(10,true)}Confirmation</li><li><i class="wire"></i>Shared</li><li><i class="wire off"></i>Disconnected</li></ul>
   <div class="member-lower">
-    <section aria-labelledby="changes-heading"><details class="member-recent"><summary id="changes-heading">Recent changes</summary>${recent}<p class="member-quiet">Changes saved here, not website visits. Times UTC.</p></details></section>
+    <section aria-labelledby="changes-heading"><details class="member-recent"><summary id="changes-heading">Recent changes${unread?` <span class="member-unread-count">${unread} unread</span>`:''}</summary>${recent}${updates?updateReadForm(config,activity,csrf)+`<p><a class="member-action" href="${base}/updates">All updates →</a></p>`:''}<p class="member-quiet">Changes saved here, not website visits. Times UTC.</p></details></section>
     <section aria-labelledby="account-heading" class="member-account"><h2 class="member-label" id="account-heading">Account</h2><dl>${holders}</dl>
       <p class="member-quiet">The operator can link your websites to this account.</p>
-      <details id="account-recovery"><summary>Recovery</summary><p>${details.email?`Sign in with a code sent to your email. Lost the mailbox? Ask ${escape(config.operatorName)}.`:frrn?'FRRN handles sign-in and recovery. <a href="/account">Manage your FRRN account</a>':'Your account provider handles sign-in and recovery.'}</p></details>
+      ${details.canManagePasskeys?`<p><a class="member-download" href="${base}/security">Passkeys →</a></p>`:''}
+      <details id="account-recovery"><summary>Recovery</summary><p>${details.email?`Sign in with ${details.canManagePasskeys?'an added passkey or ':''}a code sent to your email. ${details.canManagePasskeys?'Lost both?':'Lost the mailbox?'} Ask ${escape(config.operatorName)}.`:frrn?'FRRN handles sign-in and recovery. <a href="/account">Manage your FRRN account</a>':'Your account provider handles sign-in and recovery.'}</p></details>
       <a class="member-download" href="${base}/sharing-summary">Sharing summary ↓</a>${admin}</section>
   </div>`,{csrf,canSignOut:details.canSignOut});
 }

@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-02",
+  "candidate": "0.4.0-rc.4",
+  "classification": "Automated fictional standalone accounts and Chromium virtual authenticator; no real mail or physical-device acceptance",
+  "node": "24.11.0",
+  "playwright": "1.63.0",
+  "chromium": "153.0.8010.12",
+  "simplewebauthn_server": "14.0.3",
+  "simplewebauthn_browser": "14.0.0",
+  "command": "npm run verify",
+  "node_tests": 44,
+  "browser_tests": 17,
+  "checks": [
+    "Real bundled-browser enrollment, sign-in and removal on an existing account",
+    "Passkey and email confirmation of an older session pin the signed-in account",
+    "Credential ownership, signature, exact origin, RP ID and user-verification checks",
+    "One-use expiring challenges bound to browser/session; failed responses cannot be replayed",
+    "Passkey login and private update read state survive consistent backup/restore",
+    "Existing website persona, subject, key, consent and grant records remain unchanged",
+    "Removal stops new key sign-ins while accurately preserving the current session",
+    "Membership reminders change on expiry and renewal and disappear on withdrawal",
+    "Read acknowledgement is member-scoped and preserves later unseen arrivals",
+    "Home previews eight updates and complete history paginates fifty",
+    "Private updates and email fallback work without JavaScript",
+    "Passkey and update views fit 320, 375 and 1280 pixel widths"
+  ],
+  "remaining": [
+    "Physical Android/iOS/computer/security-key trials",
+    "Independent authentication, consent and recovery review",
+    "Real operator/member acceptance and authorised inbox delivery checks",
+    "Reviewed lost-mailbox, deletion, retention and administrator-transfer procedures"
+  ],
+  "external_notifications": false,
+  "wallet_or_credential_import": false,
+  "enforced_two_factor_authentication": false
+}

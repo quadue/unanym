@@ -1,5 +1,38 @@
 # Candidate evidence — 2026-09-24
 
+## 0.4.0-rc.4 — passkeys and private account updates — 2026-10-02
+
+Standalone members can enroll and name up to ten browser passkeys after recent
+authentication, then sign into their existing account without requesting an
+email code. Management of an older session requires confirmation with that
+account's passkey or a code sent to its current email. Website subjects, keys,
+approvals and consent are preserved.
+Email fallback remains available; this is not enforced two-factor authentication
+or a credential wallet. Removing a passkey prevents new sign-ins with that key
+and preserves existing sessions until sign-out or expiry.
+
+Recent changes now has private unread state, read controls and a complete list
+in pages of fifty. Mark shown as read acknowledges only the displayed IDs for
+that member, preserving later arrivals. Standalone accounts also see impending
+and elapsed membership expiry, renewal and passkey changes. Read markers and
+passkey public records are included in the ordinary consistent backup. Notices
+refresh on visits; no external email/push dispatch or website messaging is added.
+
+Virtual-authenticator tests exercise the bundled browser SDK and actual signed
+WebAuthn ceremonies, enrollment/sign-in/removal, fresh-auth requirements,
+credential ownership, changed origins/RP/user handles, missing user verification,
+invalid signatures, challenge replay/expiry/browser binding, and backup/restore
+with existing persona continuity. Update tests cover expiry, renewal, account
+isolation, unseen arrivals, pagination and no-JavaScript operation. Physical
+phones/security keys, independent security review and real-member acceptance
+remain separate release gates.
+
+Local `npm run verify` passed 44 Node tests and 17 Chromium tests on Node
+24.11.0 / Chromium 153.0.8010.12. `npm audit --omit=dev` reported no known
+runtime vulnerabilities on 2 October 2026. The [account-flow evidence](evidence/account-passkeys-updates.json)
+records the fictional test boundary; these results do not establish physical
+device compatibility, live email delivery or independent security acceptance.
+
 ## Public contribution and remaining work — 2026-10-02
 
 The repository instructions now point external contributors to the existing

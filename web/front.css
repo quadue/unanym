@@ -272,6 +272,16 @@
 .learn-questions details{border-top:1px solid var(--line);padding:6px 0}.learn-questions details:last-child{border-bottom:1px solid var(--line)}
 .learn-questions summary{cursor:pointer;min-height:50px;padding:13px 0;font-size:17px;font-weight:600}.learn-questions p{font-size:15px;line-height:1.8;color:var(--muted);margin:12px 0 18px}.learn-questions a{color:var(--ink);display:inline-block;padding:8px 0}
 .member-recent>summary{font-size:14px;min-height:44px;padding:0 0 16px;cursor:pointer}.member-recent[open]>summary{margin-bottom:8px}
+.member-unread-count{display:inline-block;margin-left:8px;color:var(--face-amber);font-size:12px}
+.member-update-new{display:block;color:var(--face-amber);font-size:11px;margin-top:3px}
+.member-activity li.unread{border-left:2px solid var(--face-amber);padding-left:8px}
+.member-read-form{margin-top:12px}.member-read-form .member-action{min-height:44px}
+.member-updates{max-width:800px;margin:48px auto 72px}.member-updates h1{font-size:42px;letter-spacing:-.03em}
+.member-update-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);margin-left:4px}.unread .member-update-dot{background:var(--face-amber)}
+.member-pagination{display:flex;flex-wrap:wrap;gap:20px;margin:24px 0}.member-pagination a{min-height:44px;display:inline-flex;align-items:center}
+.member-passkeys{list-style:none;padding:0;margin:24px 0}.member-passkeys li{padding:16px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}.member-passkeys small{display:block;color:var(--muted);margin-top:8px}.member-access .member-passkeys form{margin:12px 0 0}
+.member-access button:disabled{opacity:.65;cursor:wait}.member-access details summary{min-height:44px;cursor:pointer;padding:12px 0}
+@media(max-width:480px){.member-activity li{grid-template-columns:18px minmax(0,1fr);gap:6px 10px}.member-activity time{grid-column:2;white-space:normal}.member-updates{margin-top:28px}.member-access button{max-width:100%;overflow-wrap:anywhere}}
 .member-nav>span{font-size:14px;color:var(--muted)}
 .dev-flow,.dev-reference{margin:30px 0;border-top:1px solid var(--line);padding-top:10px}.dev-flow>summary,.dev-reference>summary,.doc-reference>summary{cursor:pointer;min-height:48px;padding-block:12px;font-size:17px;font-weight:600}.dev-flow[open]>summary,.dev-reference[open]>summary{margin-bottom:20px}
 @media(max-width:760px){.landing-promises{grid-template-columns:1fr;gap:24px;padding:28px 22px 35px}.landing-simple-footer>div{gap:14px 20px}.learn-questions{margin-top:32px}.learn-questions summary{font-size:16px}.member-nav>span{font-size:12px}}

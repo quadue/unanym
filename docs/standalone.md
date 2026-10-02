@@ -146,6 +146,51 @@ recovery, self-service deletion and administrator transfer need an agreed,
 reviewed process before a broader release; do not improvise identity merges.
 Agree retention, support and account removal with the pilot organisation.
 
+### Browser passkeys
+
+After email verification, a member can open **Account → Passkeys** from the home
+and register a phone, computer or security key. Enrolling and removing keys
+requires a sign-in within the last ten minutes. Older sessions can confirm with
+a passkey belonging to that account or a code sent to its existing email.
+Neither confirmation flow can switch accounts.
+Up to ten keys can be named and removed independently. The sign-in page then
+offers **Sign in with a passkey**, with email codes retained as a fallback.
+This is an alternative sign-in method, not enforced two-factor authentication.
+
+Passkeys require JavaScript, a compatible browser/authenticator and a secure
+context. Local tests use `http://localhost`; IP-address origins still support
+email sign-in but do not offer passkeys. The RP ID is the configured origin's
+hostname. Keep that domain when moving the host. Origin and RP-ID checks,
+authenticator user verification, browser/session binding, one-use five-minute
+challenges, counters and credential ownership are verified server-side with
+the pinned SimpleWebAuthn library. Registration uses no identifying attestation.
+Neither an email address nor an internal account ID is sent to the authenticator.
+
+The authenticator holds the private key; Unanym stores its public key, counter,
+device/backup flags, opaque user handle, label and use dates in `accounts.db`.
+Synced passkeys may involve the member's chosen cloud provider; a physical
+security key offers a device-held option. Passkeys do not move website signing
+keys or community records out of operator custody. Email fallback means mailbox
+security still matters. Removing a key prevents future sign-ins with it; existing
+account sessions expire normally or can be signed out. No global session-revocation
+control is claimed. Independent review and physical-device acceptance remain open.
+
+### Private account updates
+
+Recent changes shows approvals, withdrawals, confirmations, sharing and passkey
+changes. Active memberships with an expiry produce one reminder in their final
+seven days and an expiry notice. Reapproval changes the reminder identity;
+withdrawal removes obsolete reminders. Updates are derived from existing records
+when the member visits, without a scheduler or an external mail/push service.
+They do not record website visits or deliver website messages.
+
+The home previews eight changes; All updates paginates fifty at a time. Mark shown
+as read acknowledges only the submitted member-owned update IDs. New arrivals
+remain unread, and opening a page does not mark it read. Read markers are in
+`identity.db`, so the normal two-database backup includes them and passkeys.
+Historical changes initially appear unread. A website may keep information it
+previously received regardless of an approval notice or disconnection.
+
 Back up accounts, identity data, keys, profile and registrations as one unit:
 
 1. Stop the standalone process cleanly. Backup refuses a live host's lock.
@@ -160,7 +205,8 @@ A crashed host leaves `standalone.lock`. Verify the recorded process is no longe
 running before removing that stale lock. The service never steals a live lock.
 A corrupted or missing lock needs operator inspection. SMTP settings are not in
 the backup; preserve them securely separately. Snapshots contain emails, sessions
-and signing material, not just public configuration. Hash checks detect damage,
+and signing material, passkey public records and private update read state,
+not just public configuration. Hash checks detect damage,
 not a malicious party rewriting both the backup and its manifest.
 
 Moving the service requires continued control of the same issuer domain and

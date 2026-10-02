@@ -9,9 +9,10 @@ store and changes no website identity, consent scope or admission rule.
 
 ## Your private member home
 
-The public Create your Unanym and Sign in links open the account host directly.
+The public Create your nym and Sign in links open the account host directly.
 A new member enters their email and confirms a code before an account is created.
-Returning members use the same flow; an existing session opens the home without
+Returning standalone members can use email codes or an enrolled passkey;
+an existing session opens the home without
 another code. The new account has no website connections or memberships until
 the member connects a website and an organiser separately approves membership.
 `/learn` is an explanation of these steps, with no practice account or pretend
@@ -34,6 +35,20 @@ and registered connection, including stopped connections and sharing controls.
 Recent changes open on request; Account keeps custody, recovery and export
 information together. Website and record lists are supporting views of this
 home, with a link back and a current-page label instead of competing menu entries.
+
+Recent changes also carries an unread count. Mark shown as read works without
+JavaScript, preserves new arrivals and affects only this account. All updates
+opens a complete list in pages of fifty. Standalone accounts additionally see
+passkey changes and approaching/elapsed membership expiry. Reminders refresh
+on visits, rather than being sent as mail or push. No third-party contact
+permission or website messaging has been added.
+
+Account → Passkeys lets standalone members enroll named keys and remove them
+after recent authentication. Passkeys sign into the existing account: they
+neither create a new nym for a website nor hold community credentials. Adding
+or using a passkey requires JavaScript; email codes and ordinary member controls
+remain usable without it. Email is still the fallback recovery method, and
+cloud-synced passkeys may involve a provider chosen by the member.
 
 The standalone host shows the member's own sign-in email, email-code recovery
 limits and a protected sign-out form. Its organisation activity comes from existing

@@ -11,6 +11,8 @@ export function openStore(path) {
     CREATE TABLE IF NOT EXISTS connections (account TEXT NOT NULL, client TEXT NOT NULL, name TEXT NOT NULL, memberships TEXT NOT NULL, grant_id TEXT, active INTEGER NOT NULL, updated TEXT NOT NULL, PRIMARY KEY(account,client));
     CREATE TABLE IF NOT EXISTS receipts (id INTEGER PRIMARY KEY, account TEXT NOT NULL, client TEXT NOT NULL, event TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS confirmation_choices (account TEXT NOT NULL,client TEXT NOT NULL,selected TEXT NOT NULL,PRIMARY KEY(account,client));
+    CREATE TABLE IF NOT EXISTS member_update_reads (account TEXT NOT NULL,update_id TEXT NOT NULL,PRIMARY KEY(account,update_id));
+    CREATE INDEX IF NOT EXISTS member_receipts ON receipts(account,id);
   `);
   return db;
 }

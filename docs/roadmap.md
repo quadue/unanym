@@ -11,6 +11,9 @@ introduction confirmations, per-website names and identifiers, selective sharing
 withdrawal and a WordPress integration. The operator holds records and keys.
 The private home brings together what the member holds and where it is shared.
 These records are not a self-custodied credential wallet.
+Standalone members can enroll optional passkeys. Private account updates have
+unread state, expiry notices and complete paginated history; they do not provide
+external push delivery or permission for websites to contact a member.
 
 ## 1. Publish the current candidate and establish security reporting
 

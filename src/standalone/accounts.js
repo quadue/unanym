@@ -73,12 +73,29 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
       if(bootstrap===row.email&&!db.prepare('SELECT account FROM operators LIMIT 1').get()){
         db.prepare('INSERT INTO operators VALUES(?)').run(account.id);audit(account.id,'operator_bootstrap',null,account.id);
       }
-      const token=randomBytes(32).toString('base64url'),expires=now()+24*3600_000;
-      db.prepare('INSERT INTO sessions VALUES(?,?,?)').run(hash(token),account.id,expires);
-      return {account:account.id,token,expires};
+      return issueSession(account.id);
     })();
   }
   const account=id=>db.prepare('SELECT id FROM accounts WHERE id=? AND verified=1').get(id)??null;
+  function issueSession(id) {
+    if(!account(id))throw new Error('Account unavailable.');
+    const token=randomBytes(32).toString('base64url'),expires=now()+24*3600_000;
+    db.prepare('INSERT INTO sessions VALUES(?,?,?)').run(hash(token),id,expires);
+    return {account:id,token,expires};
+  }
+  function isFresh(req) {
+    if(!session(req))return false;
+    // Sessions have a fixed 24-hour lifetime, including sessions issued before
+    // passkeys were introduced. No account/schema migration is needed.
+    const row=db.prepare('SELECT expires FROM sessions WHERE digest=?').get(hash(accountCookie(req,cookieName)));
+    return row.expires>now()+24*3600_000-600_000&&row.expires<=now()+24*3600_000;
+  }
+  function verifyAccountCode(id,code,binding,expectedAccount) {
+    const row=db.prepare('SELECT email FROM challenges WHERE id=?').get(id);
+    const profile=db.prepare('SELECT email FROM accounts WHERE id=? AND verified=1').get(expectedAccount);
+    if(!profile||row?.email!==profile.email)throw new Error('Request a new code for this account.');
+    return verifyCode(id,code,binding);
+  }
   function session(req) {
     const token=accountCookie(req,cookieName);
     if(!/^[A-Za-z0-9_-]{43}$/.test(token))return null;
@@ -148,11 +165,17 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
     const profile=db.prepare('SELECT email FROM accounts WHERE id=? AND verified=1').get(id);
     if(!profile)return {};
     return {email:profile.email,canSignOut:true,organisations:organisations(id),isOperator:isOperator(id),
-      activity:db.prepare(`SELECT a.at,a.action,o.name AS organisation FROM audit a JOIN organisations o ON o.id=a.organisation
-        WHERE a.target=? AND a.action IN ('membership_approved','membership_revoked','introduction_confirmed','introduction_withdrawn')
-        ORDER BY a.id DESC LIMIT 8`).all(id)};
+      canManagePasskeys:true,
+      expiryUpdates:db.prepare(`SELECT m.id,m.approved_at,m.valid_until,o.name FROM memberships m JOIN organisations o ON o.id=m.organisation
+        WHERE m.account=? AND m.status='active' AND m.valid_until IS NOT NULL AND m.valid_until<=?`).all(id,new Date(now()+7*24*3600_000).toISOString()).map(m=>({
+          id:'expiry:'+m.id+':'+m.approved_at+':'+m.valid_until+(Date.parse(m.valid_until)<=now()?':expired':':soon'),
+          at:Date.parse(m.valid_until)<=now()?m.valid_until:new Date(Math.max(Date.parse(m.approved_at),Date.parse(m.valid_until)-7*24*3600_000)).toISOString(),
+          label:Date.parse(m.valid_until)<=now()?'Membership expired':'Membership expires '+new Date(m.valid_until).toISOString().slice(0,10),name:m.name,client:null})),
+      activity:db.prepare(`SELECT a.id,a.at,a.action,COALESCE(o.name,'Your account') AS organisation FROM audit a LEFT JOIN organisations o ON o.id=a.organisation
+        WHERE a.target=? AND a.action IN ('membership_approved','membership_revoked','introduction_confirmed','introduction_withdrawn','passkey_added','passkey_removed')
+        ORDER BY a.id DESC`).all(id)};
   }
   const adapter={session,account,memberships,confirmations,isOpen:()=>true,csrfBinding:req=>accountCookie(req,cookieName),loginURL:path=>'/identity/login?next='+encodeURIComponent(path),close:()=>db.close()};
-  return {db,adapter,cookieName,requestCode,verifyCode,isOperator,isAdministrator,organisations,createOrganisation,approve,revoke,listMembers,confirmIntroduction,memberDetails,cleanup,
+  return {db,adapter,cookieName,requestCode,verifyCode,verifyAccountCode,issueSession,isFresh,isOperator,isAdministrator,organisations,createOrganisation,approve,revoke,listMembers,confirmIntroduction,memberDetails,cleanup,
     logout:req=>db.prepare('DELETE FROM sessions WHERE digest=?').run(hash(accountCookie(req,cookieName)))};
 }

@@ -10,7 +10,7 @@ import {validateAccountAdapter} from './accounts.js';
 import {persona,signerFrom,consentReceipt,membershipReceipt} from './drop.js';
 import {page,consentView,sitesView,recordsView,about,escape,rehearsalView} from './views.js';
 import {memberSharing,sharingExport} from './member-sharing.js';
-import {memberHomeView,recentChanges} from './member-home.js';
+import {memberHomeView,memberUpdates,markUpdatesRead,updatesView} from './member-home.js';
 import {issueMembership,membershipKey} from './community-contract.js';
 import {issueConfirmation,confirmationLabel} from './confirmation-contract.js';
 import {standalonePage} from './standalone/views.js';
@@ -109,7 +109,7 @@ export function createService(config,pact,{mountRoutes,memberDetails}={}) {
   const csrf=(req,action)=>createHmac('sha256',config.keys.cookie).update(pact.csrfBinding(req)+'\0'+action).digest('hex');
   function protect(req,res,next){
     const expected=csrf(req,req.path),actual=typeof req.body.csrf==='string'?req.body.csrf:'';
-    if(req.headers.origin!==config.origin || actual.length!==expected.length || !timingSafeEqual(Buffer.from(actual),Buffer.from(expected))) return res.status(403).send('Please return to the page and try again.');
+    if(req.headers.origin!==config.origin || !/^[a-f0-9]{64}$/.test(actual) || !timingSafeEqual(Buffer.from(actual),Buffer.from(expected))) return res.status(403).send('Please return to the page and try again.');
     next();
   }
   function account(req,res){
@@ -222,8 +222,23 @@ export function createService(config,pact,{mountRoutes,memberDetails}={}) {
     app.get(base+'/account',(req,res)=>{
       const user=account(req,res);if(!user)return;
       const details=memberDetails?.(user.id)??{};
+      const updates=memberUpdates(db,user.id,config.clients,details);
       res.send(memberHomeView(config,sharingFor(user.id),{details,
-        activity:recentChanges(db,user.id,config.clients,details.activity),csrf:action=>csrf(req,action)}));
+        activity:updates.slice(0,8),updates,csrf:action=>csrf(req,action)}));
+    });
+    app.get(base+'/updates',(req,res)=>{
+      const user=account(req,res);if(!user)return;
+      const details=memberDetails?.(user.id)??{},updates=memberUpdates(db,user.id,config.clients,details);
+      const requested=Number(req.query.page??0),page=Number.isSafeInteger(requested)&&requested>=0?Math.min(requested,Math.max(0,Math.ceil(updates.length/50)-1)):0;
+      res.send(updatesView(config,updates,{details,csrf:action=>csrf(req,action),page}));
+    });
+    app.post(base+'/updates/read',body,protect,(req,res)=>{
+      const user=account(req,res);if(!user)return;
+      const updates=memberUpdates(db,user.id,config.clients,memberDetails?.(user.id)??{});
+      try{markUpdatesRead(db,user.id,typeof req.body.updates==='string'?[req.body.updates]:req.body.updates,updates);}
+      catch{return res.status(400).send('Return to your updates and try again.');}
+      const page=Number(req.body.page);
+      res.redirect(303,req.body.page!==undefined&&Number.isSafeInteger(page)&&page>=0?base+'/updates?page='+page:base+'/account');
     });
     app.get(base+'/records',(req,res)=>{
       const user=account(req,res);if(!user)return;
@@ -261,7 +276,7 @@ export function createService(config,pact,{mountRoutes,memberDetails}={}) {
     if(pact.isOpen && !pact.isOpen())return;
     for(const {account:id} of db.prepare('SELECT DISTINCT account FROM personas').all()) if(!pact.account(id)) {
       db.transaction(()=>{
-        for(const table of ['personas','connections','receipts','confirmation_choices'])db.prepare('DELETE FROM '+table+' WHERE account=?').run(id);
+        for(const table of ['personas','connections','receipts','confirmation_choices','member_update_reads'])db.prepare('DELETE FROM '+table+' WHERE account=?').run(id);
         db.prepare("DELETE FROM oidc WHERE json_extract(payload,'$.accountId')=?").run(id);
       })();
     }

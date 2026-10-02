@@ -1,7 +1,7 @@
 name: Verify
 on:
   push:
-    branches: [main, feat/public-landing]
+    branches: [main, feat/public-landing, feat/member-home]
   pull_request:
     branches: [main]
   workflow_dispatch: {}

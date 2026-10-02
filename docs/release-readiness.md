@@ -8,6 +8,9 @@ production operation and an international member pilot are separate evidence.
 
 - Fresh source snapshot with an explicit file inventory and kernel provenance.
 - Independent email-code account host and organisation-admin approval.
+- Optional browser passkeys for existing standalone accounts, with recent
+  authentication for management; email codes remain a fallback.
+- Private unread account updates, membership expiry notices and paginated history.
 - Neutral, versioned website contract and WordPress companion, including a selectable private member page.
 - Optional FRRN account source: one organiser approval, member consent and real local WordPress access tested end to end.
 - Fictional local quickstart, automated checks, installation and restore guide.
@@ -72,3 +75,15 @@ They report current sharing permission, not receiving-site access. The standalon
 account explains its existing recovery boundary; no personal-root recovery or
 Pubky migration has been added. Independent review and real-member acceptance
 remain required. See [the member interface](member-places.md).
+
+## 0.4.0-rc.4 passkeys and private updates
+
+Virtual-authenticator tests exercise enrollment, sign-in, credential ownership,
+origin/RP/user-verification checks, stale sessions, challenge replay/expiry,
+removal and backup/restore while preserving website identities. Account updates
+exercise expiry, renewal, per-member read state, unseen arrivals, pagination,
+mobile widths and no-JavaScript operation. These are automated fictional checks.
+Test physical phones/security keys and recovery in the independent pilot, and
+include the new WebAuthn paths in the external authentication review. Passkeys
+are optional sign-in, not enforced stronger administrator authentication or a
+credential wallet. No website messaging or external notification dispatch ships.

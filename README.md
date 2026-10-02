@@ -151,7 +151,17 @@ questions. `/overview` and `/docs/members` redirect there, retaining incoming
 links. Website connection and technical documentation are separate contextual
 destinations rather than extra member onboarding pages.
 The standalone host's `/` and `/identity/` entry points open the private home,
-requesting an email code when the member is signed out.
+offering email-code sign-in when the member is signed out. Returning standalone
+members can also use a previously enrolled browser passkey. Passkey management
+is available under Account on the private home; it requires a sign-in within
+the last ten minutes and preserves the existing account and website identifiers.
+Email-code sign-in remains available, including without JavaScript.
+
+Recent changes now shows unread approvals, withdrawals, confirmations, sharing
+changes and passkey changes. Standalone members also see a reminder within seven
+days of membership expiry and a notice after expiry. Members can mark the shown
+updates as read and open a paginated complete list. These are private account
+updates, not external email/push notifications or messages from websites.
 
 ## Development
 
