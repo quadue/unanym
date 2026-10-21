@@ -251,6 +251,7 @@
 .member-access input{display:block;width:100%;margin:10px 0 20px;padding:13px 16px;min-height:50px;border:1px solid #575d6d;border-radius:10px;background:var(--panel);color:var(--ink);font:inherit}
 .member-access input[name=code]{font-size:24px;letter-spacing:.18em}
 .member-access button{border:0;border-radius:28px;background:var(--ink);color:var(--ground);min-height:48px;padding:12px 24px;font-weight:650}
+.member-access .code-resend{margin:8px 0}.member-access .code-resend button{background:transparent;color:var(--muted);border-radius:0;padding-inline:0;text-decoration:underline}
 .member-learn{margin:45px 0 70px}.learn-intro{max-width:650px;margin-bottom:45px}.learn-intro>p{font-size:20px;color:var(--muted);line-height:1.65}.learn-intro .landing-actions{margin:24px 0 16px}.learn-intro .learn-small{font-size:14px}
 .learn-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
 .learn-cards article{min-width:0;padding:24px;background:var(--panel);border:1px solid var(--line);border-radius:16px}
