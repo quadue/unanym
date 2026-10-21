@@ -22,6 +22,7 @@
     "The phone form works without JavaScript and rejects forged CSRF"
   ],
   "storage": "Additive challenge_resends table holding only HMACs; no plaintext or recoverable codes",
+  "public_layout": "Public entry pages fit 375px and 320px; documentation heading also checked with the wider DejaVu Sans system font",
   "remaining": "Recipient-wide quota exhaustion can still delay a first request; passkeys remain an existing fallback",
   "production_deployed": false
 }

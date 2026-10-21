@@ -16,6 +16,9 @@ requests remain usable after the table is introduced. Recipient-wide quota abuse
 before a first code is issued remains possible; this improves retrying delivery.
 The deployed rc.5 release and the public-source/privacy follow-up remain separate.
 
+Documentation headings wrap on narrow phones, including with wider system fonts.
+The existing public-page layout check now covers both 375px and 320px widths.
+
 ## 0.4.0-rc.5 — hosted-service risk fixes — 2026-10-21
 
 Prepared from the deployed rc.4 source. Ordinary WordPress URLs can no longer

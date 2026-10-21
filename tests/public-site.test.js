@@ -195,10 +195,13 @@ test('public explanation consolidates old entry pages and keeps setup and techni
     await page.getByText('See the connection steps',{exact:true}).click();
     await expect(page.locator('.flow-shot')).toHaveCount(4);
     await expect(page.locator('.flow-shot').first()).toBeVisible();
-    for(const path of ['/overview','/developers','/docs/','/','/learn']){
-      await page.goto(origin+path);
-      assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),'rgb(23, 24, 30)',path);
-      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,path);
+    for(const width of [375,320]){
+      await page.setViewportSize({width,height:812});
+      for(const path of ['/overview','/developers','/docs/','/','/learn']){
+        await page.goto(origin+path);
+        assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),'rgb(23, 24, 30)',path);
+        assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,path+' at '+width);
+      }
     }
     await page.goto(origin+'/');
     await expect(page.getByRole('navigation',{name:'Main'}).locator('a')).toHaveText(['How it works','Sign in']);
