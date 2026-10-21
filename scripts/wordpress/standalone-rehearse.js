@@ -9,7 +9,7 @@ import {once} from 'node:events';
 import {configuration} from '../../src/config.js';
 import {createStandalone} from '../../src/standalone/server.js';
 const lab=process.env.UNANYM_LAB_NAME??'unanym-standalone';
-if(!['unanym-standalone','frrn-frontpage','unanym-frrn','unanym-brand','unanym-trial'].includes(lab))throw new Error('Use a dedicated standalone lab');
+if(!['unanym-standalone','frrn-frontpage','unanym-frrn','unanym-brand','unanym-trial','unanym-security-20261021'].includes(lab))throw new Error('Use a dedicated standalone lab');
 const origin='http://localhost:'+(process.env.UNANYM_WP_PORT??4302),issuer='http://127.0.0.1:'+(process.env.UNANYM_ISSUER_PORT??4300),container=lab+'-wp';
 const brand=process.env.IDENTITY_DISPLAY_NAME??'Unanym';
 const wp=(...args)=>execFileSync('docker',['exec',container,'php','/usr/local/bin/wp-cli.phar','--allow-root',...args],{encoding:'utf8',stdio:['pipe','pipe','pipe']}).trim();
@@ -81,7 +81,8 @@ try{
  // A synthetic server-side access decision exercises the public plugin helper.
  // It is not a generic page-protection feature or a production integration.
  const fixture=`<?php add_action('template_redirect',function(){if(!isset($_GET['unanym_probe']))return;nocache_headers();if(!unanym_has_membership('${org}')){status_header(403);echo 'Membership required';}else{echo 'Membership accepted';}exit;});`;
- wp('eval',"wp_mkdir_p(WPMU_PLUGIN_DIR);file_put_contents(WPMU_PLUGIN_DIR.'/unanym-test-probe.php',base64_decode('"+Buffer.from(fixture).toString('base64')+"'));");
+ const throttle=`add_filter('pre_http_request',function($pre,$args,$url){if(get_option('unanym_test_token_throttle')&&str_ends_with(parse_url($url,PHP_URL_PATH)??'','/oidc/token'))return ['headers'=>[],'body'=>'{"error":"temporarily_unavailable"}','response'=>['code'=>429,'message'=>'Too Many Requests'],'cookies'=>[]];return $pre;},10,3);`;
+ wp('eval',"wp_mkdir_p(WPMU_PLUGIN_DIR);file_put_contents(WPMU_PLUGIN_DIR.'/unanym-test-probe.php',base64_decode('"+Buffer.from(fixture+throttle).toString('base64')+"'));");
  expect(wp('eval',"echo get_option('openid_connect_generic_settings')['login_button_text'];")).toBe('Continue with '+brand);
  pass('Real WordPress setup selects v1 scopes, pins the operator key, recognises the organisation and uses the host name for member sign-in.');
  const member=await browser.newContext();const p=await member.newPage();await p.goto(origin+'/wp-login.php');await p.getByRole('link',{name:'Continue with '+brand,exact:true}).click();await codeLogin(p,'member@example.test');
@@ -112,6 +113,11 @@ try{
  await organiser.getByLabel('Member email').fill('member@example.test');await organiser.getByRole('button',{name:'Approve membership',exact:true}).click();await organiser.getByRole('button',{name:'Revoke membership'}).waitFor();expect((await p.goto(origin+'/?unanym_probe=1')).status()).toBe(200);
  pass('Revocation removes membership access on the next request without deleting the WordPress account; reapproval restores current evidence.');
  wp('eval',`$sessions=get_user_meta(${Number(robin.ID)},'session_tokens',true);foreach($sessions as &$s){if(isset($s['drop_identity']))$s['drop_identity']['expires']=0;}unset($s);update_user_meta(${Number(robin.ID)},'session_tokens',$sessions);`);
+ wp('option','update','unanym_test_token_throttle','1');
+ try{expect((await p.goto(area)).status()).toBe(503);expect(await p.content()).not.toContain(memberText);}
+ finally{wp('option','delete','unanym_test_token_throttle');}
+ expect((await p.goto(area)).status()).toBe(200);await expect(p.getByText(memberText,{exact:true})).toBeVisible();
+ pass('A rate-limited refresh fails closed with 503, preserves the WordPress session and recovers without signing in again.');
  expect((await p.goto(origin+'/?unanym_probe=1')).status()).toBe(200);pass('WordPress renews the v1 server-side session without another member login.');
  // Reconnect while retaining the shared login, withholding the membership this time.
  await p.goto(origin+'/wp-login.php');await p.getByRole('link',{name:'Continue with '+brand,exact:true}).click();await consent(p,'Robin',false);expect((await p.goto(origin+'/?unanym_probe=1')).status()).toBe(403);pass('Withholding membership removes access even though organisation approval remains active.');
@@ -127,7 +133,18 @@ try{
  await p.goto(origin+'/wp-admin/profile.php');await expect(p.locator('#wpadminbar')).toBeVisible();pass('Issuer outage blocks connected access, preserves native admin login, and recovers.');
  const sessions=JSON.parse(wp('user','meta','get',String(robin.ID),'session_tokens','--format=json'));const refresh=Object.values(sessions).find(s=>s.drop_identity)?.drop_identity.refresh;
  expect(typeof refresh).toBe('string');expect(refresh.length).toBeGreaterThan(20);
- const manage=await member.newPage();await manage.goto(issuer+'/identity/sites');await manage.getByRole('button',{name:'Disconnect',exact:true}).click();await p.goto(origin+'/wp-admin/profile.php');await expect(p.getByText('Your '+brand+' connection ended.',{exact:false})).toBeVisible();await e.goto(origin+'/wp-admin/profile.php');await expect(e.locator('#wpadminbar')).toBeVisible();
+ const stolenState=await member.storageState();
+ const manage=await member.newPage();await manage.goto(issuer+'/identity/sites');await manage.getByRole('button',{name:'Disconnect',exact:true}).click();
+ const stolen=await browser.newContext({storageState:stolenState}),attacker=await stolen.newPage();
+ try{
+  await attacker.goto(origin+'/wp-admin/profile.php?action=openid-connect-authorize');
+  expect(new URL(attacker.url()).pathname).toBe('/wp-login.php');await expect(attacker.locator('#wpadminbar')).toHaveCount(0);
+  await expect(attacker.getByText('Your '+brand+' connection ended.',{exact:false})).toBeVisible();
+  expect((await attacker.goto(area+'&action=openid-connect-authorize')).status()).not.toBe(200);
+  expect(await attacker.content()).not.toContain(memberText);
+ }finally{await stolen.close();}
+ pass('A copied WordPress cookie cannot bypass disconnection by adding the callback action to an ordinary admin or private page URL.');
+ await p.goto(origin+'/wp-admin/profile.php');await expect(p.locator('#wpadminbar')).toHaveCount(0);await e.goto(origin+'/wp-admin/profile.php');await expect(e.locator('#wpadminbar')).toBeVisible();
  expect((await fetch(config.issuer+'/token',{method:'POST',body:new URLSearchParams({grant_type:'refresh_token',refresh_token:refresh,client_id:'wordpress-pilot',client_secret:secret})})).status).toBe(400);pass('Disconnect ends only that connection and revokes its refresh token.');
  await replaceHost();
  expect((await fetch(config.issuer+'/token',{method:'POST',body:new URLSearchParams({grant_type:'refresh_token',refresh_token:refresh,client_id:'wordpress-pilot',client_secret:secret})})).status).toBe(400);
@@ -139,4 +156,4 @@ try{
  await manage.setViewportSize({width:375,height:812});await manage.goto(issuer+'/identity/account');expect(await manage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await manage.screenshot({path:join(output,'account-mobile.png'),fullPage:true});pass('Account page fits a 375px viewport.');
  writeFileSync(join(output,'rehearsal.json'),JSON.stringify({date:new Date().toISOString(),classification:'Automated fictional standalone WordPress rehearsal; captured mail, no real delivery or human usability evidence',wordpress:wp('core','version'),generic:'3.11.3',contract:'community-v1',memberBrand:brand,host_move:{replacements:moves,kind:'Replacement service instances and restored directories on one workstation, same issuer; not a physical host, DNS, Pubky or independent-operator migration'},checks:evidence},null,2));
 }catch(error){console.error(error.message.replace(/https?:\/\/\S+/g,'[URL withheld]'));process.exitCode=1;}
-finally{try{if(labReady){wp('eval',"@unlink(WPMU_PLUGIN_DIR.'/unanym-test-probe.php');delete_option('unanym_member_area');");if(pageId)wp('post','delete',String(pageId),'--force');}}finally{await browser.close();await stop();rmSync(work,{recursive:true,force:true});}}
+finally{try{if(labReady){wp('eval',"@unlink(WPMU_PLUGIN_DIR.'/unanym-test-probe.php');delete_option('unanym_member_area');delete_option('unanym_test_token_throttle');");if(pageId)wp('post','delete',String(pageId),'--force');}}finally{await browser.close();await stop();rmSync(work,{recursive:true,force:true});}}

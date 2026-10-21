@@ -2,7 +2,7 @@
 // This type cannot be read as membership, a qualification or a safety assessment.
 import {createPrivateKey,createPublicKey,randomUUID} from 'node:crypto';
 import {SignJWT,jwtVerify,calculateJwkThumbprint} from 'jose';
-import {membershipKey,validateMembership} from './community-contract.js';
+import {membershipKey,validateMembership,disclosureDay} from './community-contract.js';
 
 export const confirmationKind='community_introduction';
 export const confirmationLabel='Community introduction completed';
@@ -22,7 +22,7 @@ export function validateConfirmation(p){
 export async function issueConfirmation(jwk,{issuer,subject,audience,organisation,confirmedAt,validUntil=null,now=Date.now()}){
   const iat=Math.floor(now/1000),exp=Math.min(iat+300,validUntil===null?Infinity:Math.floor(Date.parse(validUntil)/1000));
   const payload=validateConfirmation({ver:1,iss:issuer,sub:subject,aud:audience,iat,nbf:iat,exp,jti:randomUUID(),organisation,
-    confirmation:{kind:confirmationKind,status:'confirmed',confirmed_at:confirmedAt,valid_until:validUntil},authority:{mode:'operator_attested'}});
+    confirmation:{kind:confirmationKind,status:'confirmed',confirmed_at:disclosureDay(confirmedAt,now),valid_until:validUntil},authority:{mode:'operator_attested'}});
   const key=await membershipKey(jwk);
   return new SignJWT(payload).setProtectedHeader({typ:type,alg:'EdDSA',kid:key.kid}).sign(createPrivateKey({key:jwk,format:'jwk'}));
 }

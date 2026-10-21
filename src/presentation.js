@@ -140,7 +140,7 @@ export function learnArt() {
 export const receiptArt=()=>svg('geo receipt-art',64,32,face('left','coral',16,16,13)+`<g class="receipt-token">${token([48,16],'a',15)}</g>`);
 
 export function homePage(config,{assets='/assets/'}={}) {
-  const page=render(template('home.html'),{assets,guides:'/docs/',account_url:memberAccountURL(config),developers:developerURL(config)});
+  const page=render(template('home.html'),{assets,guides:'/docs/',account_url:memberAccountURL(config),developers:developerURL(config),privacy:config.privacyNotice?'/privacy':'/learn#privacy'});
   const source=config.sourceURL?`<a class="pill" href="${escape(config.sourceURL)}">Source on GitHub</a>`:'';
   const chat=config.communityURL?`<a class="pill" href="${escape(config.communityURL)}">Telegram discussion</a>`:'';
   const community=chat||source?`<section class="landing-community" aria-labelledby="community-title"><div><h2 id="community-title">${chat?'Join the conversation':'Build with Unanym'}</h2><p>${chat?'Ask questions, share feedback, or help build Unanym.':'Run it yourself, adapt it, or contribute. Unanym is available under Apache 2.0.'}</p></div><div class="landing-actions">${chat}${source}</div></section>`:'';
@@ -178,7 +178,7 @@ export function memberPage(config,title,body,{csrf,canSignOut,current='account',
   const mark=['Unanym','FRRN'].includes(displayName(config))?brand.toLowerCase():brand,frrn=config.accountSource==='frrn';
   const exit=canSignOut?`<form method="post" action="${base}/logout"><input type="hidden" name="csrf" value="${escape(csrf(base+'/logout'))}"><button class="pill">Sign out</button></form>`
     :frrn?'<a class="pill" href="/account">FRRN account <span aria-hidden="true">↗</span></a>':'';
-  const privacy=config.publicDocs?base+'/learn#privacy':base+'/about';
+  const privacy=config.privacyNotice?base+'/privacy':config.publicDocs?base+'/learn#privacy':base+'/about';
   const navigation=access?`<a href="${base}/learn" ${current==='learn'?'aria-current="page"':''}>How it works</a><a href="${escape(memberAccountURL(config))}">Sign in</a>`:`<a href="${base}/account" ${current==='account'?'aria-current="page"':''}>Your ${brand}</a>${directory?`<span aria-current="page">${current==='sites'?'Websites':'Memberships &amp; confirmations'}</span>`:''}${exit}`;
   return versionAssets(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="robots" content="noindex,nofollow"><title>${escape(title)} · ${brand}</title><link rel="stylesheet" href="${base}/assets/front.css"><link rel="icon" href="${base}/assets/favicon.svg" type="image/svg+xml"></head><body class="developer member${directory?' member-directory':''}">
   <a class="skip" href="#main">Skip to content</a><header class="site-header"><a class="wordmark" href="${base}/" aria-label="${brand} home"><img src="${base}/assets/front-mark.svg" alt="" width="25" height="32">${mark}</a><nav class="doc-nav member-nav" aria-label="${access?'Main':'Account'}">${navigation}</nav></header>

@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-21",
+  "base_revision": "53d5cea2bb76585e1beec04bb6346fefe50c0d9d",
+  "candidate_version": "0.4.0-rc.5",
+  "classification": "Local automated fictional verification; no production changes, mail delivery or participant validation",
+  "verify": {
+    "command": "npm run verify",
+    "node_tests": 51,
+    "browser_tests": 17,
+    "result": "passed"
+  },
+  "wordpress": {
+    "checks": 16,
+    "result": "passed",
+    "report": "wordpress.json"
+  },
+  "wordpress_package_sha256": "b4b1df3039712cf776898836c8855972228a2dda69518354f2b87ffc962575d9",
+  "production_deployed": false,
+  "privacy_notice": "draft; operator details supplied; provider and retention review pending",
+  "remaining": [
+    "Trusted-proxy deployment configuration and real-chain check",
+    "Recipient-wide email quota can still delay requests before a code is issued",
+    "Privacy notice operational approval",
+    "Merge deployed history into canonical main and synchronise public source",
+    "Issuer retirement and real community pilot are separate work"
+  ]
+}

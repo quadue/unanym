@@ -17,6 +17,7 @@ import {standalonePage} from './standalone/views.js';
 import {frontPage,developerPage,displayName,developerURL} from './presentation.js';
 import {docsIndex,guidePage,guideNames,referencePage,referenceDocs} from './portal.js';
 import {mountExample} from './example-site.js';
+import {privacyView} from './privacy-view.js';
 
 const ROOT=fileURLToPath(new URL('../',import.meta.url));
 const VERSION=JSON.parse(readFileSync(resolve(ROOT,'package.json'),'utf8')).version;
@@ -90,18 +91,20 @@ export function createService(config,pact,{mountRoutes,memberDetails}={}) {
   const formOrigins=[...new Set(config.clients.flatMap(c=>[new URL(c.homepage).origin,...c.redirect_uris.map(u=>new URL(u).origin)]))].join(' ');
   app.disable('x-powered-by');
   app.enable('strict routing');
-  app.set('trust proxy','loopback');
+  app.set('trust proxy',config.trustProxy??'loopback');
   app.use((req,res,next)=>{
     res.set({'Cache-Control':'no-store','Referrer-Policy':'same-origin','X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY',
       'Content-Security-Policy':`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self' ${formOrigins}; frame-ancestors 'none'`});
+    if(new URL(config.origin).protocol==='https:')res.set('Strict-Transport-Security','max-age=31536000');
     next();
   });
   // Bound attempts without retaining IP addresses beyond the short window.
   const rates=new Map();
   app.use((req,res,next)=>{
-    const k=req.socket.remoteAddress,at=Date.now();
+    // Walk forwarded addresses only through explicitly trusted proxies.
+    const k=req.ip,at=Date.now();
     let entry=rates.get(k);if(!entry || entry.until<at){entry={until:at+60_000,count:0};rates.set(k,entry);}
-    if(++entry.count>600) return res.status(429).send('Please wait a minute and try again.');
+    if(++entry.count>600) return res.set('Retry-After',String(Math.max(1,Math.ceil((entry.until-at)/1000)))).status(429).send('Please wait a minute and try again.');
     if(rates.size>5000) for(const [key,value] of rates) if(value.until<at)rates.delete(key);
     next();
   });
@@ -124,6 +127,7 @@ export function createService(config,pact,{mountRoutes,memberDetails}={}) {
   app.get(base,(_req,res)=>res.redirect(base+'/'));
   app.get(base+'/',(_req,res)=>standalone?res.redirect(303,base+'/account'):res.send(frontPage(config,{home:base+'/',signIn:pact.loginURL(base+'/sites')})));
   app.get(base+'/about',(_req,res)=>res.send(standalone?standalonePage(config,'about'):about(config)));
+  if(config.privacyNotice)app.get(base+'/privacy',(_req,res)=>res.send(privacyView(config)));
   app.get(base+'/developers',(_req,res)=>res.send(developerPage(config)));
   app.get(base+'/wordpress',(_req,res)=>res.send(developerPage(config)));
   app.get(base+'/presentation',(_req,res)=>res.json({display_name:displayName(config),developer_url:developerURL(config)}));

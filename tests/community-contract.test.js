@@ -9,6 +9,18 @@ const now=Date.parse('2026-09-24T12:00:00Z');
 const details={issuer:'https://identity.example/identity/oidc',subject:'pairwise-subject',audience:'website-a',organisation:{id:'urn:uuid:organisation-a',name:'Example association'},approvedAt:'2026-09-24T11:00:00Z',now};
 const trust=async jwk=>({signer:details.issuer,organisationId:details.organisation.id,subject:details.subject,audience:details.audience,mode:'operator_attested',publicKey:await membershipKey(jwk),now});
 
+test('membership disclosure carries the approval day, never the source timestamp',async()=>{
+  const jwk=key(),source={...details,approvedAt:'2026-09-24T11:22:33.456Z'};
+  for(const audience of ['website-a','website-b']){
+    const subject=audience+'-subject';
+    const token=await issueMembership(jwk,{...source,audience,subject});
+    const p=await verifyMembership(token,{...await trust(jwk),audience,subject});
+    assert.equal(p.membership.approved_at,'2026-09-24T00:00:00.000Z');
+  }
+  assert.equal(source.approvedAt,'2026-09-24T11:22:33.456Z');
+  await assert.rejects(issueMembership(jwk,{...source,approvedAt:'2026-09-24T13:00:00.000Z'}),'rounding must not hide an invalid future approval');
+});
+
 test('v1 statement proves an operator assertion, bound to receiver, subject, organisation and time',async()=>{
   const jwk=key(),token=await issueMembership(jwk,details),expected=await trust(jwk);
   const p=await verifyMembership(token,expected);

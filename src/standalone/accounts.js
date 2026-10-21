@@ -48,11 +48,17 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
   async function requestCode(email,binding,address) {
     email=emailAddress(email);
     if(typeof binding!=='string'||binding.length<32)throw new Error('Start again from the sign-in page.');
-    db.transaction(()=>{rate('ip:'+address,30,3600_000);rate('hour:'+email,6,3600_000);rate('minute:'+email,1,60_000);})();
+    // Count requests separately, including repeats and recipient-limited ones.
+    rate('ip:'+address,30,3600_000);
+    const bindingHash=hash(binding);
+    const existing=db.prepare('SELECT id FROM challenges WHERE email=? AND binding=? AND used=0 AND attempts<5 AND expires>? ORDER BY expires DESC LIMIT 1').get(email,bindingHash,now());
+    // A repeated request resumes this browser's challenge. It sends no new mail,
+    // consumes no recipient quota and does not extend the original expiry.
+    if(existing)return existing.id;
     const id=randomUUID(),code=String(randomInt(100_000_000)).padStart(8,'0');
-    // Reissuing invalidates earlier codes for this email. No code is stored in plaintext.
     db.transaction(()=>{
-      db.prepare('UPDATE challenges SET used=1 WHERE email=?').run(email);
+      rate('hour:'+email,6,3600_000);rate('minute:'+email,1,60_000);
+      // Other browsers' issued codes stay valid. Only HMACs are stored.
       db.prepare('INSERT INTO challenges(id,email,binding,digest,expires) VALUES(?,?,?,?,?)').run(id,email,hash(binding),hmac(id+'\0'+code),now()+600_000);
     })();
     try{await sendCode({email,code});}catch{db.prepare('UPDATE challenges SET used=1 WHERE id=?').run(id);throw new Error('We could not send a code. Please try again later.');}

@@ -109,6 +109,7 @@ not an operational support plan.
 
 Automated rehearsals use real local WordPress installations and fictional
 members. Real-member acceptance and independent security review remain pending.
-The source repository is currently private. Pricing, hosting, maintenance,
+The source is public; its published revision can lag the hosted service.
+Check which revision an operator runs. Pricing, hosting, maintenance,
 incident response and support commitments are not settled by this package;
 agree them explicitly with the proposed operator.

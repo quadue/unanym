@@ -9,6 +9,13 @@ const exact=(o,keys)=>o&&typeof o==='object'&&!Array.isArray(o)&&Object.keys(o).
 const uri=s=>{try{return text(s,500)&&['https:','urn:','http:'].includes(new URL(s).protocol);}catch{return false;}};
 const date=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(s)&&Number.isFinite(Date.parse(s));
 
+// The private approval audit retains its timestamp. Receivers get only the UTC
+// day, represented as midnight to preserve v1's date-time wire format.
+export function disclosureDay(value,now) {
+  if(!date(value)||Date.parse(value)>Math.floor(now/1000)*1000+1000)fail();
+  return new Date(value).toISOString().slice(0,10)+'T00:00:00.000Z';
+}
+
 export function validateMembership(p) {
   if(!exact(p,['ver','iss','sub','aud','iat','nbf','exp','jti','organisation','membership','authority']))fail();
   if(p.ver!==1||!uri(p.iss)||!text(p.sub)||!text(p.aud)||!text(p.jti))fail();
@@ -31,7 +38,7 @@ export async function membershipKey(jwk) {
 export async function issueMembership(jwk,{issuer,subject,audience,organisation,approvedAt,validUntil=null,authorityMode='operator_attested',now=Date.now()}) {
   const iat=Math.floor(now/1000),exp=Math.min(iat+300,validUntil===null?Infinity:Math.floor(Date.parse(validUntil)/1000));
   const payload=validateMembership({ver:1,iss:issuer,sub:subject,aud:audience,iat,nbf:iat,exp,jti:randomUUID(),organisation,
-    membership:{kind:'member',status:'active',approved_at:approvedAt,valid_until:validUntil},authority:{mode:authorityMode}});
+    membership:{kind:'member',status:'active',approved_at:disclosureDay(approvedAt,now),valid_until:validUntil},authority:{mode:authorityMode}});
   const publicKey=await membershipKey(jwk);
   return new SignJWT(payload).setProtectedHeader({typ:communityContract.membershipType,alg:'EdDSA',kid:publicKey.kid}).sign(createPrivateKey({key:jwk,format:'jwk'}));
 }

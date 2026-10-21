@@ -45,7 +45,7 @@ public JWK SHA-256 thumbprint. Payload is exactly:
   "exp": 1790251500,
   "jti": "unique-statement-id",
   "organisation": {"id": "urn:uuid:stable-organisation-id", "name": "Example organisation"},
-  "membership": {"kind": "member", "status": "active", "approved_at": "2026-09-24T11:00:00Z", "valid_until": null},
+  "membership": {"kind": "member", "status": "active", "approved_at": "2026-09-24T00:00:00.000Z", "valid_until": null},
   "authority": {"mode": "operator_attested"}
 }
 ```
@@ -56,6 +56,13 @@ keeps its approval audit privately; the receiver identifies an organisation by
 its stable ID. Statements expire after at most five minutes and no later than
 membership expiry. `valid_until:null` means the approved record has no scheduled
 end; it does not make the signed statement perpetual.
+
+New statements disclose `approved_at` (and an introduction's `confirmed_at`)
+only to the UTC day, encoded as midnight for the existing v1 date-time shape.
+Midnight is not the exact time of approval. Precise timestamps remain in the
+private audit; already issued statements keep their original signed bytes.
+This removes an unnecessary cross-site fingerprint, not all possible correlation:
+the disclosed organisation and day can still be compared. Expiry remains exact.
 
 Two evidence modes are deliberately distinct:
 

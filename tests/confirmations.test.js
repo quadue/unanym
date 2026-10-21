@@ -11,6 +11,8 @@ test('introduction proof is distinct, audience-bound, expiring and checked indep
  const details={issuer:'https://identity.example/identity/oidc',subject:'site-a-person',audience:'website-a',organisation:{id:'urn:uuid:fictional-provider',name:'Example association'},confirmedAt:new Date(now-1000).toISOString(),now};
  const trust={signer:details.issuer,organisationId:details.organisation.id,subject:details.subject,audience:details.audience,publicKey,now};
  const token=await issueConfirmation(jwk,details),valid=await verifyConfirmation(token,trust);
+ assert.equal(valid.confirmation.confirmed_at,details.confirmedAt.slice(0,10)+'T00:00:00.000Z');
+ await assert.rejects(issueConfirmation(jwk,{...details,confirmedAt:new Date(now+60_000).toISOString()}));
  assert.equal(valid.confirmation.kind,'community_introduction');assert.equal(valid.authority.mode,'operator_attested');
  const php=`define('ABSPATH',true);function drop_identity_b64($s){return rtrim(strtr(base64_encode($s),'+/','-_'),'=');}require 'integrations/wordpress/drop-identity/memberships.php';require 'integrations/wordpress/drop-identity/confirmations.php';$v=json_decode(stream_get_contents(STDIN),true);echo json_encode(unanym_confirmations($v['claim'],$v['sub'],$v['config'],$v['now']));`;
  const input={claim:{version:1,statements:[token]},sub:details.subject,config:{issuer:details.issuer,client_id:details.audience,membership_key:publicKey,organisations:[details.organisation.id]},now:Math.floor(now/1000)};

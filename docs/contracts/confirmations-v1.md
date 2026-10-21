@@ -60,7 +60,7 @@ The payload has exactly these fields:
   "confirmation": {
     "kind": "community_introduction",
     "status": "confirmed",
-    "confirmed_at": "2026-09-24T11:00:00Z",
+    "confirmed_at": "2026-09-24T00:00:00.000Z",
     "valid_until": null
   },
   "authority": {"mode": "operator_attested"}

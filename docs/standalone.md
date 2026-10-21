@@ -24,6 +24,7 @@ IDENTITY_CLIENTS=/etc/unanym/clients.json
 IDENTITY_CLIENT_SECRETS=/etc/unanym/client-secrets.json
 IDENTITY_SMTP_FILE=/etc/unanym/smtp.json
 HOST=127.0.0.1
+IDENTITY_TRUST_PROXY=loopback
 PORT=4080
 ```
 
@@ -39,6 +40,26 @@ overwrite forwarded headers, enforce HTTPS, and never cache account/OIDC pages.
 Restrict the environment, JSON secrets and data to the service account. The
 service refuses non-HTTPS remote origins and uses secure host-only account
 cookies on HTTPS. Exposing the Node port directly bypasses this deployment design.
+
+`IDENTITY_TRUST_PROXY` defaults to `loopback`. For a container proxy, list its
+actual source IP or a narrowly bounded CIDR, separated by commas. Include any
+upstream proxies whose addresses appear in the forwarded chain. Do not trust a
+hop count or all senders. The rate limiter and email-code request limit use
+Express's verified client address, walking from the socket through these trusted
+proxies to the first untrusted address. Check the real chain before deploying:
+two visitors must have different budgets, and a forged left-hand forwarded
+address must not change the effective visitor. Restrict direct access to the
+application port to the proxy. HTTPS installations send one-year HSTS without
+assuming control of every subdomain; local HTTP fixtures do not.
+
+An installation can serve its own reviewed Markdown privacy notice with
+`IDENTITY_PRIVACY_NOTICE_FILE=/etc/unanym/privacy.md`. It appears at
+`/identity/privacy`, linked from sign-in and member footers without requiring a
+session. The separate public site uses `PUBLIC_PRIVACY_NOTICE_FILE` and serves
+`/privacy`. Point both at the same approved text. These options do not change
+keys, claims or records. Other installations do not inherit Mavie.uk as their
+operator. `docs/privacy-unanym-org.md` is the hosted service's preparation draft,
+not an approved notice for a fresh installation.
 
 Start with `clients.json` containing `[]` and `client-secrets.json` containing
 `{}`. Add a WordPress client when its administrator supplies the exact callback:
@@ -140,7 +161,13 @@ not a public release. New HTML distribution is out of scope.
 
 Email-code sign-in recovers access while the person controls that mailbox.
 Codes have a ten-minute lifetime, five attempts, browser binding and persistent
-email/IP throttles. Account sessions last one day. Duplicate account cookies
+email/IP throttles. An unused code stays valid if another browser requests one.
+Repeating a request in the same browser resumes its live challenge without
+resending mail, extending expiry or spending recipient quota. A recipient-wide
+mail cap still protects against unwanted mail: someone can exhaust that cap
+before a new sign-in starts. This mitigation preserves already issued codes;
+it does not eliminate targeted denial of email delivery. Account sessions last
+one day. Duplicate account cookies
 fail closed. No master code or public reset endpoint exists. Lost-mailbox
 recovery, self-service deletion and administrator transfer need an agreed,
 reviewed process before a broader release; do not improvise identity merges.

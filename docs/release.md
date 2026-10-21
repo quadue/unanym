@@ -1,5 +1,32 @@
 # Candidate evidence — 2026-09-24
 
+## 0.4.0-rc.5 — hosted-service risk fixes — 2026-10-21
+
+Prepared from the deployed rc.4 source. Ordinary WordPress URLs can no longer
+skip connection validation by carrying the OpenID callback action. The real
+Generic Client AJAX callback remains available. A rate-limited refresh now
+returns temporary unavailability while preserving the session, matching the
+existing UserInfo failure behaviour.
+
+Service request limits use the verified visitor address. Container and upstream
+proxies require an explicit trusted-address configuration; the default stays
+loopback. New membership and introduction statements disclose the UTC approval
+or confirmation day while the private source keeps its exact timestamp. The v1
+claim shapes, issuer, signing keys, subjects and expiry enforcement are retained.
+This removes one timestamp fingerprint, not every possible cross-site inference.
+
+Requesting an email code no longer cancels another browser's issued code.
+Same-browser repeats reuse a live challenge without another message or a renewed
+expiry. Recipient mail throttling can still delay a sign-in that has no issued
+code; this is a bounded mitigation, not a claim of eliminating targeted denial.
+HTTPS installations send HSTS. Local HTTP fixtures remain usable.
+
+The public documentation no longer says the source is private. Synchronising
+the public repository with deployed source is separate work. Both front doors
+can serve an operator-supplied privacy notice; the Mavie.uk draft records the
+owner-provided contact and remaining operational facts to settle before approval.
+No production change or issuer consolidation is made by this candidate.
+
 ## 0.4.0-rc.4 — passkeys and private account updates — 2026-10-02
 
 Standalone members can enroll and name up to ten browser passkeys after recent

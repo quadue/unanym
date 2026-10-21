@@ -1,6 +1,7 @@
 import {readFileSync,mkdirSync,writeFileSync,existsSync,chmodSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {randomBytes,generateKeyPairSync} from 'node:crypto';
+import {isIP} from 'node:net';
 
 export function configuration(env=process.env) {
   const contract=env.IDENTITY_CONTRACT??'legacy-firn';
@@ -17,6 +18,12 @@ export function configuration(env=process.env) {
   }
   if(contract==='community-v1'&&(!env.IDENTITY_ORIGIN||!operatorName||operatorName.length>120))throw new Error('Standalone hosts need IDENTITY_ORIGIN and IDENTITY_OPERATOR_NAME');
   const origin=env.IDENTITY_ORIGIN ?? 'http://localhost:4080';
+  const trustProxy=(env.IDENTITY_TRUST_PROXY??'loopback').split(',').map(s=>s.trim());
+  if(!trustProxy.length||trustProxy.some(s=>{
+    if(s==='loopback')return false;
+    const [address,prefix,...extra]=s.split('/'),family=isIP(address);
+    return !family||extra.length>0||(prefix!==undefined&&(!/^\d+$/.test(prefix)||Number(prefix)<1||Number(prefix)>(family===4?32:128)));
+  }))throw new Error('IDENTITY_TRUST_PROXY must list trusted proxy IPs or bounded CIDRs');
   const parsed=new URL(origin);
   if(parsed.pathname!=='/' || parsed.search || parsed.hash || parsed.username || parsed.password) throw new Error('IDENTITY_ORIGIN must be an origin');
   if(parsed.protocol!=='https:' && !(parsed.protocol==='http:' && ['localhost','127.0.0.1'].includes(parsed.hostname))) throw new Error('HTTPS required outside localhost');
@@ -37,7 +44,8 @@ export function configuration(env=process.env) {
   const clients=JSON.parse(readFileSync(env.IDENTITY_CLIENTS ?? './clients.json','utf8'));
   const secrets=env.IDENTITY_CLIENT_SECRETS ? JSON.parse(readFileSync(env.IDENTITY_CLIENT_SECRETS,'utf8')) : {};
   registeredClients(clients,secrets);
-  return {origin,basePath,wordpressDownload:contract==='community-v1'&&env.IDENTITY_WORDPRESS_DOWNLOAD==='1',issuer:origin+basePath+'/oidc',dir,keys,clients,contract,operatorName,displayName,developerURL,port:Number(env.PORT ?? 4080),host:env.HOST ?? '127.0.0.1',
+  const privacyNotice=env.IDENTITY_PRIVACY_NOTICE_FILE?readFileSync(resolve(env.IDENTITY_PRIVACY_NOTICE_FILE),'utf8'):null;
+  return {origin,basePath,trustProxy,privacyNotice,wordpressDownload:contract==='community-v1'&&env.IDENTITY_WORDPRESS_DOWNLOAD==='1',issuer:origin+basePath+'/oidc',dir,keys,clients,contract,operatorName,displayName,developerURL,port:Number(env.PORT ?? 4080),host:env.HOST ?? '127.0.0.1',
     pactDb:env.PACT_DB_PATH,pactMode:env.PACT_MODE_FILE,
     demo:env.IDENTITY_DEMO==='1' && ['localhost','127.0.0.1'].includes(parsed.hostname)};
 }

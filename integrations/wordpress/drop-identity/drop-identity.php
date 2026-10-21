@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Unanym for community websites
  * Description: Guided Unanym setup, PKCE, explicit account linking and connection checks for OpenID Connect Generic Client.
- * Version: 0.4.0-rc.3
+ * Version: 0.4.0-rc.5
  * Requires PHP: 8.1
  * Requires Plugins: daggerhart-openid-connect-generic
  */
@@ -186,8 +186,14 @@ add_action('admin_post_drop_identity_link',function(){
 });
 
 // Only sessions established through Unanym are affected. Native WP admin access survives.
+function drop_identity_is_callback() {
+    // Generic Client handles state/code verification on this AJAX endpoint. An
+    // ordinary page must never skip session checks because of a query string.
+    return wp_doing_ajax() && ($GLOBALS['pagenow']??'')==='admin-ajax.php'
+        && (($_GET['action']??'')==='openid-connect-authorize');
+}
 add_action('init',function(){
-    if (!drop_identity_config() || !is_user_logged_in() || (defined('WP_CLI') && WP_CLI) || (($_GET['action']??'')==='openid-connect-authorize')) return;
+    if (!drop_identity_config() || !is_user_logged_in() || (defined('WP_CLI') && WP_CLI) || drop_identity_is_callback()) return;
     $uid=get_current_user_id();$manager=WP_Session_Tokens::get_instance($uid);$cookie=wp_get_session_token();$session=$manager->get($cookie);$d=$session['drop_identity']??null;
     if (!$d) return;
     $c=drop_identity_config();
@@ -203,7 +209,7 @@ add_action('init',function(){
         register_shutdown_function($release);
         try {
             $r=drop_identity_http($c['token_endpoint'],['method'=>'POST','body'=>['grant_type'=>'refresh_token','refresh_token'=>$d['refresh'],'client_id'=>$c['client_id'],'client_secret'=>$c['secret']]]);
-            if (is_wp_error($r) || wp_remote_retrieve_response_code($r)>=500) drop_identity_error(drop_identity_name().' is temporarily unavailable. Please try again shortly.',503);
+            if (is_wp_error($r) || wp_remote_retrieve_response_code($r)>=500 || wp_remote_retrieve_response_code($r)===429) drop_identity_error(drop_identity_name().' is temporarily unavailable. Please try again shortly.',503);
             if (wp_remote_retrieve_response_code($r)!==200) drop_identity_end_session();
             $t=json_decode(wp_remote_retrieve_body($r),true);
             if (!is_string($t['access_token']??null)) drop_identity_error(drop_identity_name().' returned an unexpected response. Please try again.',503);
