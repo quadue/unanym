@@ -32,7 +32,7 @@ export function standaloneRoutes(app,config,accounts,passkeys) {
   const passkeyScript=`<script type="module" src="/identity/assets/passkeys.js"></script>`;
   const passkeyForm=(req,kind,next='/identity/account')=>passkeys.enabled?`<form data-passkey="${kind}" hidden><input type="hidden" name="csrf" value="${token(req,'/identity/passkeys/'+kind+'/options')}"><input type="hidden" name="verify_csrf" value="${token(req,'/identity/passkeys/'+kind+'/verify')}"><input type="hidden" name="next" value="${escape(next)}">${kind==='register'?'<label>Passkey name<input name="label" maxlength="60" value="My passkey" required></label>':''}<button type="submit">${kind==='register'?'Add a passkey':kind==='confirm'?'Confirm with a passkey':'Sign in with a passkey'}</button><p class="help" role="status" aria-live="polite"></p></form>`:'';
   function codeForm(req,res,id,next,message='Check your email for an eight-digit code.'){
-    return accessView(res,'Enter your code',`<p>${escape(message)}</p><form method="post" action="/identity/login/verify">${hidden(req,'/identity/login/verify')}<input type="hidden" name="challenge" value="${escape(id)}"><input type="hidden" name="next" value="${escape(next)}"><label>Sign-in code<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" maxlength="8" required></label><button>Sign in</button></form><p><a href="/identity/login?next=${encodeURIComponent(next)}">Back to sign-in</a></p>`);
+    return accessView(res,'Enter your code',`<p>${escape(message)}</p><form method="post" action="/identity/login/verify">${hidden(req,'/identity/login/verify')}<input type="hidden" name="challenge" value="${escape(id)}"><input type="hidden" name="next" value="${escape(next)}"><label>Sign-in code<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" maxlength="8" required></label><button>Sign in</button></form><form method="post" action="/identity/login/resend">${hidden(req,'/identity/login/resend')}<input type="hidden" name="challenge" value="${escape(id)}"><input type="hidden" name="next" value="${escape(next)}"><button>Send another code</button></form><p><a href="/identity/login?next=${encodeURIComponent(next)}">Back to sign-in</a></p>`);
   }
   app.get('/',(_req,res)=>res.redirect(303,'/identity/account'));
   app.get('/identity/login',(req,res)=>{
@@ -43,6 +43,11 @@ export function standaloneRoutes(app,config,accounts,passkeys) {
   app.post('/identity/login/request',body,protect,async(req,res)=>{
     try{const id=await accounts.requestCode(req.body.email,bind(req),req.ip);codeForm(req,res,id,safeNext(req.body.next));}
     catch(e){res.status(e.status??400);accessView(res,'Sign-in needs another try',`<p>${escape(e.message)}</p><a href="/identity/login">Return to sign-in</a>`);}
+  });
+  app.post('/identity/login/resend',body,protect,async(req,res)=>{
+    const next=safeNext(req.body.next);
+    try{const id=await accounts.resendCode(req.body.challenge,bind(req),req.ip);codeForm(req,res,id,next,'Another code was sent. Earlier codes still work until this request expires.');}
+    catch(e){res.status(e.status??400);codeForm(req,res,req.body.challenge??'',next,e.message);}
   });
   app.post('/identity/login/verify',body,protect,(req,res)=>{
     const next=safeNext(req.body.next);
@@ -61,12 +66,17 @@ export function standaloneRoutes(app,config,accounts,passkeys) {
       <details><summary>Recovery &amp; privacy</summary><p class="help">Email codes still work. Removing a passkey stops future sign-ins with it; existing signed-in sessions continue until sign-out or expiry. Your passkey provider may sync keys through its cloud. A security key lets you keep one on the device. Website identities and records remain held by the operator.</p></details><p><a href="/identity/account">Back to your account</a></p>${passkeyScript}`);
   });
   function confirmationForm(req,res,id,message='Enter the code sent to your account email.'){
-    securityView(req,res,'Confirm your account',`<p>${escape(message)}</p><form method="post" action="/identity/security/verify">${hidden(req,'/identity/security/verify')}<input type="hidden" name="challenge" value="${escape(id)}"><label>Confirmation code<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" maxlength="8" required></label><button>Confirm account</button></form><a href="/identity/security">Back to passkeys</a>`);
+    securityView(req,res,'Confirm your account',`<p>${escape(message)}</p><form method="post" action="/identity/security/verify">${hidden(req,'/identity/security/verify')}<input type="hidden" name="challenge" value="${escape(id)}"><label>Confirmation code<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" maxlength="8" required></label><button>Confirm account</button></form><form method="post" action="/identity/security/resend">${hidden(req,'/identity/security/resend')}<input type="hidden" name="challenge" value="${escape(id)}"><button>Send another code</button></form><a href="/identity/security">Back to passkeys</a>`);
   }
   app.post('/identity/security/request',body,protect,async(req,res)=>{
     const u=user(req,res);if(!u)return;
     try{const id=await accounts.requestCode(accounts.memberDetails(u.id).email,accountBinding(req),req.ip);confirmationForm(req,res,id);}
     catch(e){res.status(e.status??400);securityView(req,res,'Could not send a code',`<p>${escape(e.message)}</p><a href="/identity/security">Back to passkeys</a>`);}
+  });
+  app.post('/identity/security/resend',body,protect,async(req,res)=>{
+    const u=user(req,res);if(!u)return;
+    try{const id=await accounts.resendCode(req.body.challenge,accountBinding(req),req.ip,u.id);confirmationForm(req,res,id,'Another code was sent. Earlier codes still work until this request expires.');}
+    catch(e){res.status(e.status??400);confirmationForm(req,res,req.body.challenge??'',e.message);}
   });
   app.post('/identity/security/verify',body,protect,(req,res)=>{
     const u=user(req,res);if(!u)return;

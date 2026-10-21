@@ -162,8 +162,16 @@ not a public release. New HTML distribution is out of scope.
 Email-code sign-in recovers access while the person controls that mailbox.
 Codes have a ten-minute lifetime, five attempts, browser binding and persistent
 email/IP throttles. An unused code stays valid if another browser requests one.
-Repeating a request in the same browser resumes its live challenge without
-resending mail, extending expiry or spending recipient quota. A recipient-wide
+Repeating the email-entry form resumes its live challenge without resending mail,
+extending expiry or spending recipient quota. **Send another code** on the code
+screen explicitly sends a fresh code. Earlier codes remain valid, all sharing
+the original ten-minute expiry and five guesses; accepting any one consumes the
+request. Sending again is limited to two additional emails per request, at least
+a minute apart, and shares the recipient's six-email hourly cap. Only HMACs of
+the additional codes are stored in `challenge_resends`, removed when the request
+is consumed or cleaned up after expiry. Account-confirmation forms use the same
+flow, restricted to the signed-in account. The additive table is created on
+startup and existing challenges remain usable. A recipient-wide
 mail cap still protects against unwanted mail: someone can exhaust that cap
 before a new sign-in starts. This mitigation preserves already issued codes;
 it does not eliminate targeted denial of email delivery. Account sessions last

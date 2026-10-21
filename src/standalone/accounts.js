@@ -23,6 +23,7 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
     CREATE TABLE IF NOT EXISTS operators(account TEXT PRIMARY KEY);
     CREATE TABLE IF NOT EXISTS sessions(digest TEXT PRIMARY KEY,account TEXT NOT NULL,expires INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS challenges(id TEXT PRIMARY KEY,email TEXT NOT NULL,binding TEXT NOT NULL,digest TEXT NOT NULL,expires INTEGER NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,used INTEGER NOT NULL DEFAULT 0);
+    CREATE TABLE IF NOT EXISTS challenge_resends(challenge TEXT NOT NULL,digest TEXT NOT NULL,PRIMARY KEY(challenge,digest));
     CREATE TABLE IF NOT EXISTS limits(bucket TEXT PRIMARY KEY,start INTEGER NOT NULL,count INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS organisations(id TEXT PRIMARY KEY,name TEXT NOT NULL,authority_note TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS administrators(organisation TEXT NOT NULL,account TEXT NOT NULL,PRIMARY KEY(organisation,account));
@@ -55,13 +56,31 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
     // A repeated request resumes this browser's challenge. It sends no new mail,
     // consumes no recipient quota and does not extend the original expiry.
     if(existing)return existing.id;
-    const id=randomUUID(),code=String(randomInt(100_000_000)).padStart(8,'0');
+    const id=randomUUID(),code=String(randomInt(100_000_000)).padStart(8,'0'),expiresAt=now()+600_000;
     db.transaction(()=>{
       rate('hour:'+email,6,3600_000);rate('minute:'+email,1,60_000);
       // Other browsers' issued codes stay valid. Only HMACs are stored.
-      db.prepare('INSERT INTO challenges(id,email,binding,digest,expires) VALUES(?,?,?,?,?)').run(id,email,hash(binding),hmac(id+'\0'+code),now()+600_000);
+      db.prepare('INSERT INTO challenges(id,email,binding,digest,expires) VALUES(?,?,?,?,?)').run(id,email,hash(binding),hmac(id+'\0'+code),expiresAt);
     })();
-    try{await sendCode({email,code});}catch{db.prepare('UPDATE challenges SET used=1 WHERE id=?').run(id);throw new Error('We could not send a code. Please try again later.');}
+    try{await sendCode({email,code,expiresAt});}catch{db.prepare('UPDATE challenges SET used=1 WHERE id=?').run(id);throw new Error('We could not send a code. Please try again later.');}
+    return id;
+  }
+  async function resendCode(id,binding,address,expectedAccount=null) {
+    rate('ip:'+address,30,3600_000);
+    const row=typeof id==='string'?db.prepare('SELECT * FROM challenges WHERE id=?').get(id):null;
+    if(!row||row.used||row.expires<=now()||row.attempts>=5||typeof binding!=='string'||row.binding!==hash(binding))throw new Error('That code is unavailable. Request a new code.');
+    if(expectedAccount!==null&&db.prepare('SELECT email FROM accounts WHERE id=? AND verified=1').get(expectedAccount)?.email!==row.email)throw new Error('That code is unavailable. Request a new code.');
+    // Another code, not recoverable plaintext. All codes share the original
+    // request's expiry and five guesses; accepting one consumes the whole request.
+    const previous=[row.digest,...db.prepare('SELECT digest FROM challenge_resends WHERE challenge=?').all(id).map(r=>r.digest)];
+    let code,digest;
+    do{code=String(randomInt(100_000_000)).padStart(8,'0');digest=hmac(id+'\0'+code);}while(previous.includes(digest));
+    db.transaction(()=>{
+      rate('resend:'+id,2,600_000);rate('hour:'+row.email,6,3600_000);rate('minute:'+row.email,1,60_000);
+      db.prepare('INSERT INTO challenge_resends VALUES(?,?)').run(id,digest);
+    })();
+    try{await sendCode({email:row.email,code,expiresAt:row.expires});}
+    catch{db.prepare('DELETE FROM challenge_resends WHERE challenge=? AND digest=?').run(id,digest);throw new Error('We could not send another code. Try an earlier code, or return to sign-in.');}
     return id;
   }
   function verifyCode(id,code,binding) {
@@ -70,10 +89,12 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
     if(!row||row.used||row.expires<=now()||row.attempts>=5||row.binding!==hash(binding))throw new Error('That code is unavailable. Request a new code.');
     db.prepare('UPDATE challenges SET attempts=attempts+1 WHERE id=?').run(id);
     const actual=hmac(id+'\0'+String(code));
-    if(!/^\d{8}$/.test(String(code))||!timingSafeEqual(Buffer.from(row.digest),Buffer.from(actual)))throw new Error('That code did not match. Try again.');
+    const digests=[row.digest,...db.prepare('SELECT digest FROM challenge_resends WHERE challenge=?').all(id).map(r=>r.digest)];
+    if(!/^\d{8}$/.test(String(code))||!digests.some(digest=>timingSafeEqual(Buffer.from(digest),Buffer.from(actual))))throw new Error('That code did not match. Try again.');
     return db.transaction(()=>{
       const used=db.prepare('UPDATE challenges SET used=1 WHERE id=? AND used=0 AND expires>? AND attempts<=5').run(id,now());
       if(!used.changes)throw new Error('That code is unavailable. Request a new code.');
+      db.prepare('DELETE FROM challenge_resends WHERE challenge=?').run(id);
       const account=ensureAccount(row.email);
       db.prepare('UPDATE accounts SET verified=1 WHERE id=?').run(account.id);
       if(bootstrap===row.email&&!db.prepare('SELECT account FROM operators LIMIT 1').get()){
@@ -149,7 +170,7 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
     return db.prepare("SELECT m.*,o.name FROM memberships m JOIN organisations o ON o.id=m.organisation WHERE m.account=? AND m.status='active' AND (m.valid_until IS NULL OR m.valid_until>?) ORDER BY o.name").all(id,new Date(Math.floor(now()/1000)*1000+1000).toISOString())
       .map(m=>({slug:m.id,name:m.name,organisation:{id:m.organisation,name:m.name},approvedAt:m.approved_at,validUntil:m.valid_until}));
   }
-  function cleanup(){db.prepare('DELETE FROM challenges WHERE expires<?').run(now());db.prepare('DELETE FROM sessions WHERE expires<?').run(now());db.prepare('DELETE FROM limits WHERE start<?').run(now()-3600_000);}
+  function cleanup(){db.prepare('DELETE FROM challenges WHERE expires<?').run(now());db.prepare('DELETE FROM challenge_resends WHERE challenge NOT IN (SELECT id FROM challenges)').run();db.prepare('DELETE FROM sessions WHERE expires<?').run(now());db.prepare('DELETE FROM limits WHERE start<?').run(now()-3600_000);}
   function confirmIntroduction(actor,organisation,id,confirmed){
     requireAdministrator(actor,organisation);
     const member=db.prepare('SELECT * FROM memberships WHERE id=? AND organisation=?').get(id,organisation);
@@ -182,6 +203,6 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
         ORDER BY a.id DESC`).all(id)};
   }
   const adapter={session,account,memberships,confirmations,isOpen:()=>true,csrfBinding:req=>accountCookie(req,cookieName),loginURL:path=>'/identity/login?next='+encodeURIComponent(path),close:()=>db.close()};
-  return {db,adapter,cookieName,requestCode,verifyCode,verifyAccountCode,issueSession,isFresh,isOperator,isAdministrator,organisations,createOrganisation,approve,revoke,listMembers,confirmIntroduction,memberDetails,cleanup,
+  return {db,adapter,cookieName,requestCode,resendCode,verifyCode,verifyAccountCode,issueSession,isFresh,isOperator,isAdministrator,organisations,createOrganisation,approve,revoke,listMembers,confirmIntroduction,memberDetails,cleanup,
     logout:req=>db.prepare('DELETE FROM sessions WHERE digest=?').run(hash(accountCookie(req,cookieName)))};
 }

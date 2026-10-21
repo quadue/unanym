@@ -1,5 +1,21 @@
 # Candidate evidence — 2026-09-24
 
+## 0.4.0-rc.6 — explicit email-code resend — prepared 2026-10-21
+
+The sign-in and account-confirmation code screens gain **Send another code**.
+It sends a fresh code without cancelling earlier emails, extending the request
+or resetting its five guesses. Accepting any code consumes the whole request.
+Two additional sends are allowed per request, at least a minute apart, within
+the existing six-email recipient cap. A delivery failure preserves the earlier
+code. Email names the request's actual expiry.
+
+Only HMACs of additional codes are stored in the additive `challenge_resends`
+table; no readable or recoverable code is added to storage. Used extra digests
+are removed immediately; expired ones follow challenge cleanup. Existing
+requests remain usable after the table is introduced. Recipient-wide quota abuse
+before a first code is issued remains possible; this improves retrying delivery.
+The deployed rc.5 release and the public-source/privacy follow-up remain separate.
+
 ## 0.4.0-rc.5 — hosted-service risk fixes — 2026-10-21
 
 Prepared from the deployed rc.4 source. Ordinary WordPress URLs can no longer

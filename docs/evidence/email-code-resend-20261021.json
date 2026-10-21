@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-21",
+  "base_revision": "9b790992f6196ea7af93d035676a102db33ec241",
+  "candidate_version": "0.4.0-rc.6",
+  "classification": "Local automated fictional verification; captured email, not live delivery or participant evidence",
+  "verify": {
+    "command": "npm run verify",
+    "node_tests": 60,
+    "browser_tests": 17,
+    "result": "passed"
+  },
+  "resend_cases": [
+    "An explicit resend sends another code; the first code remains valid after restart",
+    "The additional code remains valid after database backup and restore",
+    "Adding the new table preserves an existing request from the previous schema",
+    "Account confirmation cannot resend another account's request",
+    "Two additional sends per request, one-minute spacing and shared six-email recipient cap",
+    "Resend preserves the original expiry and the shared five-guess budget",
+    "Accepting any code consumes the whole request",
+    "Delivery failure preserves the earlier code and removes the failed attempt's digest",
+    "Expired requests cannot resend; cleanup removes their extra digests",
+    "The phone form works without JavaScript and rejects forged CSRF"
+  ],
+  "storage": "Additive challenge_resends table holding only HMACs; no plaintext or recoverable codes",
+  "remaining": "Recipient-wide quota exhaustion can still delay a first request; passkeys remain an existing fallback",
+  "production_deployed": false
+}
