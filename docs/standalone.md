@@ -52,6 +52,16 @@ address must not change the effective visitor. Restrict direct access to the
 application port to the proxy. HTTPS installations send one-year HSTS without
 assuming control of every subdomain; local HTTP fixtures do not.
 
+An exact container IP is safe only if deployment keeps that address fixed.
+Docker may assign a different address when a proxy is recreated. A bounded proxy
+network can survive that change, but every container on that network can then
+forge a visitor address to evade or exhaust client rate budgets. Treat the whole
+network as trusted if choosing this trade-off. For a CDN followed by a local
+proxy, trust both the local proxy/network and the CDN's published ranges;
+trusting only the local proxy pools clients by CDN server. Test the effective
+client from two network sources and after a hypothetical proxy-address change.
+Pinning the proxy or isolating its network is a narrower future option.
+
 An installation can serve its own reviewed Markdown privacy notice with
 `IDENTITY_PRIVACY_NOTICE_FILE=/etc/unanym/privacy.md`. It appears at
 `/identity/privacy`, linked from sign-in and member footers without requiring a
