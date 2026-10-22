@@ -151,6 +151,8 @@ test('public landing shows the shape in few words and leads to details on reques
   try{
     const html=await(await fetch('http://127.0.0.1:'+other.address().port+'/')).text();
     assert.match(html,/Run by Lakeside Co-op/);assert.match(html,/href="mailto:hosts@lakeside\.example"/);assert.doesNotMatch(html,/Mavie/);
+    // Cloudflare would otherwise rewrite addresses into a script-only link; the site works without scripts.
+    assert.equal(html.match(/<!--email_off--><a [^>]*href="mailto:[^"]+"[^>]*>.*?<\/a><!--\/email_off-->/g)?.length,html.match(/mailto:/g).length);
   }finally{await new Promise(r=>other.close(r));}
   const origin='http://127.0.0.1:'+server.address().port,browser=await chromium.launch();
   try{

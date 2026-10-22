@@ -10,7 +10,8 @@ service is a release candidate without an independent security review, that it
 is open source, and who runs it. The operator section names that operator. The
 three sections that repeated the choir example are now one each for
 communities, members and the operator. The operator name and contact address are
-configurable. Not deployed.
+configurable. Contact links are marked so Cloudflare does not replace them with
+its script-only address protection.
 
 ## 0.4.0-rc.6 — explicit email-code resend — prepared 2026-10-21
 
