@@ -1,5 +1,17 @@
 # Candidate evidence — 2026-09-24
 
+## Front page for communities — prepared 2026-10-22
+
+The unanym.org landing now speaks first to the communities that adopt Unanym:
+its main action is **Bring your community**, leading to a short section with
+an organiser guide and a contact address. Member sign-in stays in the header,
+and "nym" no longer appears on the landing. A strip under the opening says the
+service is a release candidate without an independent security review, that it
+is open source, and who runs it. The operator section names that operator. The
+three sections that repeated the choir example are now one each for
+communities, members and the operator. The operator name and contact address are
+configurable. Not deployed.
+
 ## 0.4.0-rc.6 — explicit email-code resend — prepared 2026-10-21
 
 The sign-in and account-confirmation code screens gain **Send another code**.

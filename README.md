@@ -121,8 +121,9 @@ choice separate from website accounts, consent and organisational authority.
 ## Public website
 
 `npm run start:site` serves the independent Unanym overview, guides, getting-started
-explanation and WordPress download at port 4386. Create your nym and Sign in
-lead to the account host at `https://unanym.org/identity/account` by default.
+explanation and WordPress download at port 4386. The landing's main action is
+for communities; Sign in, and Create your nym on the explanation page, lead to
+the account host at `https://unanym.org/identity/account` by default.
 Set `PUBLIC_ACCOUNT_URL` to use another account host; HTTPS is required except
 for loopback development. Set `PUBLIC_ORIGIN`, `HOST` and `PORT` for deployment.
 Build assets first with `npm run build`. This entry
@@ -134,6 +135,10 @@ section at the bottom of the landing. `PUBLIC_SOURCE_URL` adds the public GitHub
 source link there, in the footer and in the operator guide. Both require HTTPS;
 leave either unset until its destination is available. These are ordinary links,
 with no embedded chat widget or third-party scripts.
+
+The landing names who runs the installation and where communities write:
+`PUBLIC_OPERATOR_NAME` (default `Mavie.uk`) and `PUBLIC_CONTACT_EMAIL` (default
+`hello@mavie.uk`). Both are plain text; markup and mail parameters are refused.
 
 Visitors can join [Unanym Community](https://t.me/unanymcommunity) to ask questions
 and share feedback. Joining the chat is separate from creating an account or

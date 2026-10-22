@@ -24,7 +24,9 @@ test('public entry creates one verified persistent account and resumes it withou
   browser=await chromium.launch();const page=await browser.newPage({javaScriptEnabled:false,viewport:{width:375,height:812},reducedMotion:'reduce'});
   const capture=async name=>{if(process.env.UNANYM_CAPTURE_DIR){mkdirSync(process.env.UNANYM_CAPTURE_DIR,{recursive:true});await page.screenshot({path:join(process.env.UNANYM_CAPTURE_DIR,name+'.png'),fullPage:true});}};
   await page.goto(publicOrigin+'/');await capture('account-entry-landing');
-  await page.locator('.landing-intro').getByRole('link',{name:'Create your nym',exact:true}).click();
+  // Members arrive from websites; the landing keeps sign-in in its header, not as its main door.
+  await expect(page.locator('main').getByRole('link',{name:'Create your nym'})).toHaveCount(0);
+  await page.getByRole('navigation',{name:'Main'}).getByRole('link',{name:'Sign in',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Your Unanym',exact:true})).toBeVisible();
   await expect(page.getByText('Confirm it to create your account', {exact:false})).toBeVisible();
   for(const width of [1220,375,320]){
@@ -65,6 +67,8 @@ test('public entry creates one verified persistent account and resumes it withou
 test('public Unanym pages have independent branding and no account or issuer endpoints',async()=>{
   for(const accountURL of ['javascript:alert(1)','https://user:secret@example.test/account','https://example.test/account#fragment','http://example.test/account'])
     assert.throws(()=>createPublicSite({accountURL}),/Account URL/);
+  for(const operator of ['','<b>Operator</b>','x'.repeat(61)])assert.throws(()=>createPublicSite({operator}),/Operator name/);
+  for(const contactEmail of ['','hello','javascript:alert(1)','a@b','"x"@example.test','x@example.test?subject=hi'])assert.throws(()=>createPublicSite({contactEmail}),/Contact email/);
   const server=createPublicSite().listen(0,'127.0.0.1');await once(server,'listening');
   const origin='http://127.0.0.1:'+server.address().port;
   try{
@@ -143,6 +147,11 @@ test('public learning explains real accounts on a phone without simulated sharin
 
 test('public landing shows the shape in few words and leads to details on request',async()=>{
   const server=createPublicSite().listen(0,'127.0.0.1');await once(server,'listening');
+  const other=createPublicSite({operator:'Lakeside Co-op',contactEmail:'hosts@lakeside.example'}).listen(0,'127.0.0.1');await once(other,'listening');
+  try{
+    const html=await(await fetch('http://127.0.0.1:'+other.address().port+'/')).text();
+    assert.match(html,/Run by Lakeside Co-op/);assert.match(html,/href="mailto:hosts@lakeside\.example"/);assert.doesNotMatch(html,/Mavie/);
+  }finally{await new Promise(r=>other.close(r));}
   const origin='http://127.0.0.1:'+server.address().port,browser=await chromium.launch();
   try{
     for(const width of [1440,860,375,320]){
@@ -167,6 +176,17 @@ test('public landing shows the shape in few words and leads to details on reques
     await expect(still.locator('.geo-chapter .cross')).toHaveCount(0);
     await still.close();
     const page=await browser.newPage();await page.goto(origin+'/');
+    // The main door is for communities; the page says who runs it and how ready it is.
+    await expect(page.locator('main')).not.toContainText(/\bnym\b/);
+    const facts=page.getByRole('list',{name:'About this service'});
+    await expect(facts).toContainText('Release candidate');await expect(facts).toContainText('Not yet independently security-reviewed');
+    await expect(facts).toContainText('Run by Mavie.uk');await expect(facts.getByRole('link',{name:'hello@mavie.uk',exact:true})).toHaveAttribute('href','mailto:hello@mavie.uk');
+    await page.locator('.landing-intro').getByRole('link',{name:'Bring your community',exact:true}).click();
+    await expect(page).toHaveURL(origin+'/#communities');await expect(page.getByRole('heading',{name:'Bring your community',exact:true})).toBeInViewport();
+    await expect(page.locator('#communities').getByRole('link',{name:'Write to us',exact:true})).toHaveAttribute('href','mailto:hello@mavie.uk');
+    await page.locator('#communities').getByRole('link',{name:'Organiser guide',exact:true}).click();
+    await expect(page.getByRole('heading',{level:1})).toContainText(/organis/i);
+    await page.goto(origin+'/');await expect(page.locator('#operator-title + p')).toHaveText(/^Mavie\.uk runs unanym\.org\./);
     await page.locator('.landing-intro').getByRole('link',{name:'How it works'}).click();
     await expect(page.getByRole('heading',{name:'How Unanym works',exact:true})).toBeVisible();
   }finally{await browser.close();await new Promise(r=>server.close(r));}
@@ -207,7 +227,7 @@ test('public explanation consolidates old entry pages and keeps setup and techni
     await expect(page.getByRole('navigation',{name:'Main'}).locator('a')).toHaveText(['How it works','Sign in']);
     await expect(page.locator('.landing-example')).toBeVisible();
     await expect(page.locator('.example-steps li')).toHaveCount(4);
-    await expect(page.locator('.chapter')).toHaveCount(4);
+    await expect(page.locator('.chapter')).toHaveCount(3);
     await expect(page.locator('main input,main form')).toHaveCount(0);
     await page.getByRole('link',{name:'What websites see',exact:true}).click();
     await expect(page).toHaveURL(origin+'/learn#sharing');
