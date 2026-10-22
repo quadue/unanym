@@ -98,7 +98,7 @@ export function memberHomeView(config,sharing,{details={},activity=[],updates,cs
   const admin=details.organisations?.length||details.isOperator?`<div class="member-admin"><h3>You organise</h3><ul>${(details.organisations??[]).map(org=>`<li><a href="${base}/organisations/${escape(encodeURIComponent(org.id))}">${escape(org.name)}</a></li>`).join('')}${details.isOperator?`<li><a href="${base}/operator">Register an organisation</a></li>`:''}</ul></div>`:'';
 
   return memberPage(config,'Your '+brand,`<section class="member-top"><h1>One you.<br>${numbers[connected]??connected} ${connected===1?'place':'places'}${connected?'':' yet'}.</h1>
-    <p>What each website gets from you.</p></section>
+    <p>What each website gets from you.</p>${!connected&&!sharing.places.length&&!organisations.length&&!details.organisations?.length&&!details.isOperator?`<p class="member-next">Nothing to do yet. When a community’s website offers Continue with ${escape(brand)}, it appears here.${frrn?'':' An account without communities, websites or an organiser role is removed after 12 months without a sign-in.'}</p>`:''}</section>
   <div class="member-map${organisations.length?'':' no-in'}${sharing.places.length?'':' no-out'}">
     <section class="member-col member-in" aria-labelledby="communities-heading"><h2 class="member-label" id="communities-heading">Communities</h2><ul class="member-nodes">${communities}</ul>${organisations.length?`<p class="member-list-more">${organisations.length>previewLimit?`Showing ${previewLimit} of ${organisations.length} communities.<br>`:''}<a href="${base}/records">Memberships &amp; confirmations →</a></p>`:''}</section>
     ${centre}

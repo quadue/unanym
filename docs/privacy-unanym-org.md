@@ -76,8 +76,11 @@ validity. It is not a promise that every expired protocol row is immediately
 erased from storage.
 
 Account, approval, per-website identity and sharing-history records remain while
-the account is maintained. There is no automatic inactive-account deletion or
-self-service account deletion today. Contact hello@mavie.uk to request deletion;
+the account is maintained. An account that has never held a community membership,
+an organiser or operator role, or a website connection is deleted automatically
+after 12 months without a sign-in, with its passkeys, sessions and passkey
+history. There is no self-service account deletion today, and accounts that were
+used are not removed automatically. Contact hello@mavie.uk to request deletion;
 disconnecting one website is a different action and retains your earlier sharing
 history. We must agree and document a bounded operational retention and erasure
 procedure before approving this notice for publication.

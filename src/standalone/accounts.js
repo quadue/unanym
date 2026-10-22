@@ -15,6 +15,8 @@ export function accountCookie(req,name='community_account') {
   return values.length===1?values[0].slice(name.length+1):'';
 }
 
+export const UNUSED_ACCOUNT_DAYS=365;
+
 export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='community_account',now=()=>Date.now()}) {
   const db=new Database(resolve(dir,'accounts.db'));
   db.pragma('journal_mode = WAL');db.pragma('busy_timeout = 5000');
@@ -30,6 +32,7 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
     CREATE TABLE IF NOT EXISTS memberships(id TEXT PRIMARY KEY,organisation TEXT NOT NULL,account TEXT NOT NULL,status TEXT NOT NULL,approved_at TEXT NOT NULL,valid_until TEXT,UNIQUE(organisation,account));
     CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY,at TEXT NOT NULL,actor TEXT NOT NULL,action TEXT NOT NULL,organisation TEXT,target TEXT,detail TEXT);
     CREATE TABLE IF NOT EXISTS introductions(membership TEXT PRIMARY KEY,actor TEXT NOT NULL,confirmed_at TEXT NOT NULL,revoked_at TEXT);
+    CREATE TABLE IF NOT EXISTS account_activity(account TEXT PRIMARY KEY,last_sign_in INTEGER NOT NULL);
   `);
   const bootstrap=bootstrapEmail?emailAddress(bootstrapEmail):null;
   const hmac=value=>createHmac('sha256',key).update(value).digest('hex');
@@ -108,6 +111,7 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
     if(!account(id))throw new Error('Account unavailable.');
     const token=randomBytes(32).toString('base64url'),expires=now()+24*3600_000;
     db.prepare('INSERT INTO sessions VALUES(?,?,?)').run(hash(token),id,expires);
+    db.prepare('INSERT INTO account_activity VALUES(?,?) ON CONFLICT(account) DO UPDATE SET last_sign_in=excluded.last_sign_in').run(id,now());
     return {account:id,token,expires};
   }
   function isFresh(req) {
@@ -171,6 +175,34 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
       .map(m=>({slug:m.id,name:m.name,organisation:{id:m.organisation,name:m.name},approvedAt:m.approved_at,validUntil:m.valid_until}));
   }
   function cleanup(){db.prepare('DELETE FROM challenges WHERE expires<?').run(now());db.prepare('DELETE FROM challenge_resends WHERE challenge NOT IN (SELECT id FROM challenges)').run();db.prepare('DELETE FROM sessions WHERE expires<?').run(now());db.prepare('DELETE FROM limits WHERE start<?').run(now()-3600_000);}
+  // An account nobody uses is only an email address held without purpose.
+  // Remove it after a year without sign-in when it has never held a membership
+  // (of any status), an organiser or operator role, or a website connection
+  // (`used`, answered by the identity store). Accounts from before sign-ins
+  // were recorded count from their creation.
+  function removeUnused({used,idle=UNUSED_ACCOUNT_DAYS*86_400_000}) {
+    const candidates=db.prepare(`SELECT a.id FROM accounts a LEFT JOIN account_activity s ON s.account=a.id WHERE COALESCE(s.last_sign_in,a.created)<?
+      AND NOT EXISTS(SELECT 1 FROM memberships WHERE account=a.id) AND NOT EXISTS(SELECT 1 FROM administrators WHERE account=a.id)
+      AND NOT EXISTS(SELECT 1 FROM operators WHERE account=a.id)`).all(now()-idle).map(r=>r.id);
+    const passkeyTables=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('passkeys','passkey_users','passkey_challenges')").all().map(r=>r.name);
+    let removed=0;
+    for(const id of candidates){
+      if(used(id))continue;
+      db.transaction(()=>{
+        // Re-check inside the transaction: a sign-in or approval may have just happened.
+        const still=db.prepare(`SELECT 1 FROM accounts a LEFT JOIN account_activity s ON s.account=a.id WHERE a.id=? AND COALESCE(s.last_sign_in,a.created)<?
+          AND NOT EXISTS(SELECT 1 FROM memberships WHERE account=a.id) AND NOT EXISTS(SELECT 1 FROM administrators WHERE account=a.id) AND NOT EXISTS(SELECT 1 FROM operators WHERE account=a.id)`).get(id,now()-idle);
+        if(!still)return;
+        for(const table of ['sessions','account_activity',...passkeyTables.filter(t=>t!=='passkey_challenges')])db.prepare(`DELETE FROM ${table} WHERE account=?`).run(id);
+        if(passkeyTables.includes('passkey_challenges'))db.prepare('DELETE FROM passkey_challenges WHERE account=?').run(id);
+        // Only this account's own passkey history; organisation records stay.
+        db.prepare('DELETE FROM audit WHERE target=? AND organisation IS NULL').run(id);
+        db.prepare('DELETE FROM accounts WHERE id=?').run(id);
+        removed++;
+      })();
+    }
+    return removed;
+  }
   function confirmIntroduction(actor,organisation,id,confirmed){
     requireAdministrator(actor,organisation);
     const member=db.prepare('SELECT * FROM memberships WHERE id=? AND organisation=?').get(id,organisation);
@@ -203,6 +235,6 @@ export function standaloneAccounts({dir,key,bootstrapEmail,sendCode,cookieName='
         ORDER BY a.id DESC`).all(id)};
   }
   const adapter={session,account,memberships,confirmations,isOpen:()=>true,csrfBinding:req=>accountCookie(req,cookieName),loginURL:path=>'/identity/login?next='+encodeURIComponent(path),close:()=>db.close()};
-  return {db,adapter,cookieName,requestCode,resendCode,verifyCode,verifyAccountCode,issueSession,isFresh,isOperator,isAdministrator,organisations,createOrganisation,approve,revoke,listMembers,confirmIntroduction,memberDetails,cleanup,
+  return {db,adapter,cookieName,requestCode,resendCode,verifyCode,verifyAccountCode,issueSession,isFresh,isOperator,isAdministrator,organisations,createOrganisation,approve,revoke,listMembers,confirmIntroduction,memberDetails,cleanup,removeUnused,
     logout:req=>db.prepare('DELETE FROM sessions WHERE digest=?').run(hash(accountCookie(req,cookieName)))};
 }

@@ -5,11 +5,11 @@ export function learnView(config) {
   const brand=escape(displayName(config)),base=config.basePath??'/identity',pictures=learnArt();
   const account=escape(memberAccountURL(config)),hosted=config.contract==='community-v1'&&config.accountSource!=='frrn';
   return memberPage(config,'How it works',`<div class="learn member-learn">
-    <section class="learn-intro"><h1>How ${brand} works</h1><p>One account. You choose what each website sees.</p>
-      <div class="landing-actions"><a class="pill accent" href="${account}">${hosted?(displayName(config)==='Unanym'?'Create your nym':'Create your '+brand):'Your '+brand+' account'}</a></div></section>
+    <section class="learn-intro"><h1>How ${brand} works</h1><p>One account. You choose what each website sees.${hosted?` It starts when a community website asks you to sign in with ${brand}.`:''}</p>
+      <div class="landing-actions"><a class="pill accent" href="${account}">${hosted?'Sign in':'Your '+brand+' account'}</a></div></section>
     <section aria-label="How it works"><div class="learn-cards">
-      <article>${pictures[0]}<span class="learn-number">1</span><h2>${hosted?'Create your account':'Sign in'}</h2><p>${hosted?'Confirm a code sent to your email.':'Use your existing account.'} Creating an account connects no websites and grants no memberships.</p></article>
-      <article>${pictures[1]}<span class="learn-number">2</span><h2>Choose what to share</h2><p>On a website, choose Continue with ${brand}. Pick a name and any memberships to share. Your email stays with your account.</p></article>
+      <article>${pictures[0]}<span class="learn-number">1</span><h2>${hosted?'Start on a website':'Sign in'}</h2><p>${hosted?`On a community’s website, choose Continue with ${brand} and confirm a code sent to your email. Your account starts there; the website receives nothing until you allow it.`:'Use your existing account. Signing in connects no websites and grants no memberships.'}</p></article>
+      <article>${pictures[1]}<span class="learn-number">2</span><h2>Choose what to share</h2><p>Pick a name and any memberships to share with that website. Your email stays with your account.</p></article>
       <article>${pictures[2]}<span class="learn-number">3</span><h2>Review or disconnect</h2><p>Your ${brand} shows what each website receives. Change your choices or disconnect.</p></article>
     </div></section>
     <section class="learn-questions" aria-labelledby="questions-heading"><h2 id="questions-heading">Questions</h2>

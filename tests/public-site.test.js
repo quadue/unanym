@@ -38,6 +38,8 @@ test('public entry creates one verified persistent account and resumes it withou
   assert.equal(mail.length,1);await page.getByLabel('Sign-in code').fill(mail[0].code);await page.getByRole('button',{name:'Sign in',exact:true}).click();
   await page.waitForURL(origin+'/identity/account');
   await expect(page.getByRole('heading',{name:'One you. No places yet.',exact:true})).toBeVisible();
+  // An empty account says what happens next, and that unused accounts do not last forever.
+  await expect(page.locator('.member-next')).toHaveText('Nothing to do yet. When a community’s website offers Continue with Unanym, it appears here. An account without communities, websites or an organiser role is removed after 12 months without a sign-in.');
   await expect(page.locator('.member-email')).toHaveText('new-member@example.test');
   await expect(page.locator('.member-site,.member-community')).toHaveCount(0);
   const account=service.accounts.db.prepare('SELECT id,verified FROM accounts').get();assert.equal(account.verified,1);
@@ -56,8 +58,8 @@ test('public entry creates one verified persistent account and resumes it withou
     await expect(page.locator('.place-select')).toHaveCount(0);
   }
   await page.goto(publicOrigin+'/learn');await capture('account-entry-learn');
-  await page.getByRole('link',{name:'Create your nym',exact:true}).click();await page.waitForURL(origin+'/identity/account');
-  assert.equal(mail.length,1,'creating again resumes the same signed-in account');
+  await page.locator('.learn-intro').getByRole('link',{name:'Sign in',exact:true}).click();await page.waitForURL(origin+'/identity/account');
+  assert.equal(mail.length,1,'signing in again resumes the same signed-in account');
   await page.getByRole('button',{name:'Sign out',exact:true}).click();await page.waitForURL(origin+'/identity/login');
   assert.equal((await page.request.get(origin+'/identity/account',{maxRedirects:0})).status(),302);
   await page.goto(origin+'/identity/');await page.waitForURL('**/identity/login?next=**');
@@ -130,7 +132,11 @@ test('public learning explains real accounts on a phone without simulated sharin
       const page=await context.newPage(),writes=[];
       page.on('request',r=>{if(r.method()!=='GET'||new URL(r.url()).origin!==origin)writes.push(r.url());});
       await page.goto(origin+'/learn');
-      await expect(page.getByRole('link',{name:'Create your nym',exact:true})).toHaveAttribute('href','https://unanym.org/identity/account');
+      // Accounts start on a community website; this page offers sign-in, not sign-up.
+      await expect(page.locator('.learn-intro').getByRole('link',{name:'Sign in',exact:true})).toHaveAttribute('href','https://unanym.org/identity/account');
+      await expect(page.locator('.learn-intro')).toContainText('It starts when a community website asks you to sign in with Unanym.');
+      await expect(page.locator('main')).not.toContainText(/\bnym\b|Create your/);
+      await expect(page.locator('.learn-cards h2').first()).toHaveText('Start on a website');
       await expect(page.locator('.learn-cards article')).toHaveCount(3);
       await expect(page.locator('#practice-app,select,input,form')).toHaveCount(0);
       await expect(page.locator('main')).not.toContainText(/practice|pretend|hypothetical|alpha/i);
@@ -208,7 +214,7 @@ test('public explanation consolidates old entry pages and keeps setup and techni
     await expect(page.locator('#privacy-details')).toContainText('can link your websites');
     await page.goto(origin+'/overview');await expect(page).toHaveURL(origin+'/learn');
     await expect(page.getByRole('heading',{level:1})).toHaveText('How Unanym works');
-    await expect(page.getByRole('link',{name:'Create your nym'})).toHaveAttribute('href','https://unanym.org/identity/account');
+    await expect(page.locator('.learn-intro').getByRole('link',{name:'Sign in'})).toHaveAttribute('href','https://unanym.org/identity/account');
     await expect(page.locator('.learn-questions details[open]')).toHaveCount(0);
     await page.getByText('Do you run a website or community?',{exact:true}).click();
     await page.getByRole('link',{name:'Connect a website',exact:true}).click();

@@ -74,7 +74,7 @@ test('versioned FRRN routes keep the legacy issuer separate and pin the new URL'
   assert.equal((await fetch(origin+homePath,{redirect:'manual'})).headers.get('location'),'/?next=%2Fidentity%2Fv1%2Faccount');
   const homeResponse=await fetch(origin+homePath,{headers:{Cookie:'pl_session='+f.login('robin')}}),home=await homeResponse.text();
   assert.equal(homeResponse.status,200);assert.equal(homeResponse.headers.get('cache-control'),'no-store');
-  assert.match(home,/<title>Your Unanym · Unanym<\/title>/);assert.match(home,/<h1>One you\.<br>No places yet\.<\/h1>/);assert.match(home,/Manage your FRRN account/);
+  assert.match(home,/<title>Your Unanym · Unanym<\/title>/);assert.match(home,/<h1>One you\.<br>No places yet\.<\/h1>/);assert.match(home,/Nothing to do yet\./);assert.doesNotMatch(home,/removed after 12 months/,'Firn accounts are not removed by this host');assert.match(home,/Manage your FRRN account/);
   assert.match(home,/<dt>Account &amp; approvals<\/dt><dd>FRRN<\/dd>/);assert.match(home,/href="\/account">FRRN account/);
   assert.doesNotMatch(home,/robin@example.invalid|Sign out/);
   assert.equal(existsSync(join(config.dir,'accounts.db')),false,'the member home creates no second account store');

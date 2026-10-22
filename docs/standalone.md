@@ -189,7 +189,10 @@ one day. Duplicate account cookies
 fail closed. No master code or public reset endpoint exists. Lost-mailbox
 recovery, self-service deletion and administrator transfer need an agreed,
 reviewed process before a broader release; do not improvise identity merges.
-Agree retention, support and account removal with the pilot organisation.
+Once a day the host deletes accounts that have gone 12 months without a sign-in
+and have never held a membership, an organiser or operator role, or a website
+connection; it logs only how many. Every other account stays until removed on
+request. Agree retention, support and account removal with the pilot organisation.
 
 ### Browser passkeys
 

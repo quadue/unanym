@@ -30,7 +30,12 @@ export function createStandalone(config,{bootstrapEmail,sendCode}) {
   }catch(e){accounts?.adapter.close();release();throw e;}
   const cleanup=()=>{accounts.cleanup();passkeys.cleanup();};
   const timer=setInterval(cleanup,60_000);timer.unref();cleanup();
-  return {...service,accounts,close(){clearInterval(timer);service.close();release();}};
+  // Once a day: an account ever connected to a website keeps its stored
+  // website identifiers, so it is never removed here.
+  const used=service.db.prepare('SELECT 1 FROM personas WHERE account=? UNION ALL SELECT 1 FROM connections WHERE account=? LIMIT 1');
+  const sweep=()=>{const removed=accounts.removeUnused({used:id=>!!used.get(id,id)});if(removed)console.log('Removed',removed,'unused accounts');};
+  const daily=setInterval(sweep,86_400_000);daily.unref();sweep();
+  return {...service,accounts,sweep,close(){clearInterval(timer);clearInterval(daily);service.close();release();}};
 }
 
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) {

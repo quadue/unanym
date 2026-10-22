@@ -1,5 +1,22 @@
 # Candidate evidence — 2026-09-24
 
+## Unused accounts and member entry — 2026-10-22
+
+Accounts start on a community website, not on unanym.org. The "How it works"
+page now offers **Sign in** instead of "Create your nym" and says the account
+starts when a community website asks. An empty account page says what happens
+next.
+
+**Unused accounts are removed.** Sign-ins are recorded in a new additive
+`account_activity` table. Once a day the standalone host deletes an account that
+has gone 12 months without a sign-in (counting from creation for accounts that
+predate the table) and has never held a membership of any status, an organiser
+or operator role, or a website connection. Its sessions, passkeys and own
+passkey history go with it; organisation records stay. An account that ever
+connected to a website keeps its stored website identifiers and is never removed
+this way. A removed person can sign in again and gets a new, empty account. The
+FRRN-backed host does not remove accounts.
+
 ## Front page for communities — 2026-10-22
 
 The unanym.org landing now speaks first to the communities that adopt Unanym:
