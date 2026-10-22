@@ -68,7 +68,6 @@ test('public Unanym pages have independent branding and no account or issuer end
   for(const accountURL of ['javascript:alert(1)','https://user:secret@example.test/account','https://example.test/account#fragment','http://example.test/account'])
     assert.throws(()=>createPublicSite({accountURL}),/Account URL/);
   for(const operator of ['','<b>Operator</b>','x'.repeat(61)])assert.throws(()=>createPublicSite({operator}),/Operator name/);
-  for(const contactEmail of ['','hello','javascript:alert(1)','a@b','"x"@example.test','x@example.test?subject=hi'])assert.throws(()=>createPublicSite({contactEmail}),/Contact email/);
   const server=createPublicSite().listen(0,'127.0.0.1');await once(server,'listening');
   const origin='http://127.0.0.1:'+server.address().port;
   try{
@@ -147,12 +146,10 @@ test('public learning explains real accounts on a phone without simulated sharin
 
 test('public landing shows the shape in few words and leads to details on request',async()=>{
   const server=createPublicSite().listen(0,'127.0.0.1');await once(server,'listening');
-  const other=createPublicSite({operator:'Lakeside Co-op',contactEmail:'hosts@lakeside.example'}).listen(0,'127.0.0.1');await once(other,'listening');
+  const other=createPublicSite({operator:'Lakeside Co-op'}).listen(0,'127.0.0.1');await once(other,'listening');
   try{
     const html=await(await fetch('http://127.0.0.1:'+other.address().port+'/')).text();
-    assert.match(html,/Run by Lakeside Co-op/);assert.match(html,/href="mailto:hosts@lakeside\.example"/);assert.doesNotMatch(html,/Mavie/);
-    // Cloudflare would otherwise rewrite addresses into a script-only link; the site works without scripts.
-    assert.equal(html.match(/<!--email_off--><a [^>]*href="mailto:[^"]+"[^>]*>.*?<\/a><!--\/email_off-->/g)?.length,html.match(/mailto:/g).length);
+    assert.match(html,/Lakeside Co-op runs unanym\.org/);assert.doesNotMatch(html,/Mavie/);
   }finally{await new Promise(r=>other.close(r));}
   const origin='http://127.0.0.1:'+server.address().port,browser=await chromium.launch();
   try{
@@ -182,10 +179,13 @@ test('public landing shows the shape in few words and leads to details on reques
     await expect(page.locator('main')).not.toContainText(/\bnym\b/);
     const facts=page.getByRole('list',{name:'About this service'});
     await expect(facts).toContainText('Release candidate');await expect(facts).toContainText('Not yet independently security-reviewed');
-    await expect(facts).toContainText('Run by Mavie.uk');await expect(facts.getByRole('link',{name:'hello@mavie.uk',exact:true})).toHaveAttribute('href','mailto:hello@mavie.uk');
+    // Communities write through the contact form; no address is published.
+    await expect(facts).toContainText('Pilots welcome');await expect(facts.getByRole('link',{name:'Get in touch',exact:true})).toHaveAttribute('href','/contact');
+    const html=await page.content();assert.doesNotMatch(html,/mailto:|[\w.+-]+@[\w-]+\.[a-z]{2,}/i);
+    await expect(page.locator('.site-footer')).not.toContainText('One you. Many places.');
     await page.locator('.landing-intro').getByRole('link',{name:'Bring your community',exact:true}).click();
     await expect(page).toHaveURL(origin+'/#communities');await expect(page.getByRole('heading',{name:'Bring your community',exact:true})).toBeInViewport();
-    await expect(page.locator('#communities').getByRole('link',{name:'Write to us',exact:true})).toHaveAttribute('href','mailto:hello@mavie.uk');
+    await expect(page.locator('#communities').getByRole('link',{name:'Get in touch',exact:true})).toHaveAttribute('href','/contact');
     await page.locator('#communities').getByRole('link',{name:'Organiser guide',exact:true}).click();
     await expect(page.getByRole('heading',{level:1})).toContainText(/organis/i);
     await page.goto(origin+'/');await expect(page.locator('#operator-title + p')).toHaveText(/^Mavie\.uk runs unanym\.org\./);
@@ -241,4 +241,62 @@ test('public explanation consolidates old entry pages and keeps setup and techni
     await page.getByText('Technical reference',{exact:true}).click();
     await expect(page.getByRole('link',{name:'Identity v1 contract',exact:true})).toBeVisible();
   }finally{await browser.close();await new Promise(r=>server.close(r));}
+});
+
+test('contact form relays one message by email without storing it or revealing the recipient',async t=>{
+  let clock=1_800_000_000_000;const sent=[],now=()=>clock;let fail=false;
+  const send=async message=>{if(fail)throw new Error('smtp down');sent.push(message);};
+  const listen=async options=>{const s=createPublicSite(options).listen(0,'127.0.0.1');await once(s,'listening');t.after(()=>new Promise(r=>s.close(r)));return 'http://127.0.0.1:'+s.address().port;};
+  const origin=await listen({contact:{send,now}});
+  const issued=async(base=origin)=>(await(await fetch(base+'/contact')).text()).match(/name="issued" value="([^"]+)"/)[1];
+  const post=(fields,{base=origin,from}={})=>fetch(base+'/contact',{method:'POST',redirect:'manual',headers:{'content-type':'application/x-www-form-urlencoded',...(from?{'x-forwarded-for':from}:{})},body:new URLSearchParams(fields)});
+  const good={name:'Robin',email:'robin@example.test',community:'Lakeside choir',message:'We would like to try Unanym with our choir.'};
+
+  const get=await fetch(origin+'/contact');assert.equal(get.status,200);
+  assert.match(get.headers.get('content-security-policy'),/form-action 'self'/);
+  assert.match((await fetch(origin+'/')).headers.get('content-security-policy'),/form-action 'none'/,'only the contact page may submit');
+  const html=await get.text();assert.doesNotMatch(html,/mailto:|hello@|mavie/i);assert.doesNotMatch(html,/<script/);
+
+  // Too fast, forged and expired forms are refused and keep what was typed.
+  let token=await issued();let r=await post({...good,issued:token});assert.equal(r.status,400);assert.match(await r.text(),/expired[\s\S]*Lakeside choir/);
+  clock+=5000;r=await post({...good,issued:token.replace(/.$/,c=>c==='A'?'B':'A')});assert.equal(r.status,400);
+  r=await post({...good,issued:String(clock-5000)});assert.equal(r.status,400);
+  clock+=3*3_600_000;r=await post({...good,issued:token});assert.equal(r.status,400);
+  for(const bad of [{email:'not-an-address'},{email:'a@b.co\r\nBcc: x@evil.test'},{name:'Robin\nBcc: x@evil.test'},{community:'x'.repeat(151)},{message:'short'},{message:'x'.repeat(4001)}]){
+    token=await issued();clock+=5000;r=await post({...good,...bad,issued:token});assert.equal(r.status,400,JSON.stringify(bad));
+  }
+  assert.equal(sent.length,0);
+
+  // A filled hidden field looks like success to a bot, and nothing is sent.
+  token=await issued();clock+=5000;r=await post({...good,website:'http://spam.test',issued:token});
+  assert.equal(r.status,303);assert.equal(r.headers.get('location'),'/contact/sent');assert.equal(sent.length,0);
+
+  // A real visitor without scripts: one message, then the thank-you page.
+  const browser=await chromium.launch();t.after(()=>browser.close());
+  const page=await browser.newPage({javaScriptEnabled:false,viewport:{width:375,height:812}});
+  await page.goto(origin+'/');await page.locator('#communities').getByRole('link',{name:'Get in touch',exact:true}).click();
+  await expect(page.getByRole('heading',{level:1})).toHaveText('Get in touch');
+  await page.getByLabel('Your name').fill(good.name);await page.getByLabel('Your email').fill(good.email);
+  await page.getByLabel('Community or website').fill(good.community);await page.getByLabel('Message').fill(good.message);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  clock+=5000;await page.getByRole('button',{name:'Send message',exact:true}).click();
+  await expect(page.getByRole('heading',{level:1})).toHaveText('Message sent');assert.equal(page.url(),origin+'/contact/sent');
+  assert.deepEqual(sent,[good]);
+
+  // Delivery failure keeps the message on screen.
+  fail=true;token=await issued();clock+=5000;r=await post({...good,issued:token});
+  assert.equal(r.status,503);assert.match(await r.text(),/could not be sent[\s\S]*We would like to try/);fail=false;
+
+  // Limits: three per visitor per hour, and a daily cap that protects the sign-in mail allowance.
+  const limited=await listen({contact:{send,now,perVisitor:3,perDay:5}});sent.length=0;
+  const statuses=[];
+  for(const from of ['198.51.100.1','198.51.100.1','198.51.100.1','198.51.100.1','198.51.100.2','198.51.100.3','198.51.100.4']){
+    token=await issued(limited);clock+=5000;statuses.push((await post({...good,issued:token},{base:limited,from})).status);
+  }
+  assert.deepEqual(statuses,[303,303,303,429,303,303,429]);assert.equal(sent.length,5);
+
+  // Without a configured recipient the page says so and nothing can be posted.
+  const none=await listen({});
+  assert.match(await(await fetch(none+'/contact')).text(),/no contact address/);
+  assert.equal((await post({...good,issued:'1.x'},{base:none})).status,503);
 });

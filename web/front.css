@@ -327,3 +327,7 @@
 .member-form-page .consent-bridge{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:14px}
 .member-form-page .consent-arrow{display:none}
 @media(max-width:760px){.member-form-page{margin:28px 0 50px}.member-form-page .consent-flow{grid-template-columns:1fr;gap:18px}.member-form-page .consent-you,.member-form-page .consent-site{padding:20px}.member-form-page .consent-preview{padding:18px}.member-form-page .consent-bridge{gap:12px}.member-form-page .connection{padding:18px}}
+.site-footer>div:only-child{margin-left:auto}
+.member-form-page textarea{display:block;width:100%;min-width:0;min-height:180px;margin:10px 0 20px;padding:12px 15px;border:1px solid #575d6d;border-radius:10px;background:var(--panel);color:var(--ink);font:inherit;line-height:1.6;resize:vertical}
+.member-form-page .form-error{color:#ffb4a3;border-left:3px solid #ff8469;padding-left:12px}
+.contact-trap{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}

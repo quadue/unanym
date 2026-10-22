@@ -1,17 +1,23 @@
 # Candidate evidence — 2026-09-24
 
-## Front page for communities — prepared 2026-10-22
+## Front page for communities — 2026-10-22
 
 The unanym.org landing now speaks first to the communities that adopt Unanym:
 its main action is **Bring your community**, leading to a short section with
-an organiser guide and a contact address. Member sign-in stays in the header,
-and "nym" no longer appears on the landing. A strip under the opening says the
+an organiser guide and **Get in touch**. Member sign-in stays in the header, and
+"nym" no longer appears on the landing. A strip under the opening says the
 service is a release candidate without an independent security review, that it
-is open source, and who runs it. The operator section names that operator. The
-three sections that repeated the choir example are now one each for
-communities, members and the operator. The operator name and contact address are
-configurable. Contact links are marked so Cloudflare does not replace them with
-its script-only address protection.
+is open source, and that pilots are welcome. The operator section names who runs
+the service. The three sections that repeated the choir example are now one each
+for communities, members and the operator. The footer no longer repeats the
+tagline.
+
+**Contact form.** `/contact` is the public site's only form. It relays each
+message by email to a configured address that is never published, and keeps
+nothing. Only that page allows form submission; every other page still refuses
+it. Forms expire after two hours and cannot be posted within three seconds; a
+hidden field catches simple bots; three messages per visitor per hour and twenty
+per day protect the mail allowance shared with sign-in codes.
 
 ## 0.4.0-rc.6 — explicit email-code resend — prepared 2026-10-21
 

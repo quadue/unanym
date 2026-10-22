@@ -7,9 +7,11 @@ import {developerPage,homePage} from './presentation.js';
 import {docsIndex,guidePage,guideNames,referencePage,referenceDocs} from './portal.js';
 import {learnView} from './learn-view.js';
 import {privacyView} from './privacy-view.js';
+import {contactRoutes,plainAddress} from './contact.js';
+import {contactMailer} from './standalone/mail.js';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
-export function createPublicSite({origin='https://unanym.org',accountURL='https://unanym.org/identity/account',sourceURL='',communityURL='',privacyNoticeFile,operator='Mavie.uk',contactEmail='hello@mavie.uk'}={}) {
+export function createPublicSite({origin='https://unanym.org',accountURL='https://unanym.org/identity/account',sourceURL='',communityURL='',privacyNoticeFile,operator='Mavie.uk',contact={},trustProxy='loopback'}={}) {
   const account=new URL(accountURL);
   if(account.username||account.password||account.hash||(account.protocol!=='https:'&&!(account.protocol==='http:'&&['localhost','127.0.0.1'].includes(account.hostname))))throw new Error('Account URL must use HTTPS or a loopback host');
   const externalURL=(value,label)=>{
@@ -18,13 +20,12 @@ export function createPublicSite({origin='https://unanym.org',accountURL='https:
     if(url.protocol!=='https:'||url.username||url.password||url.hash||url.search)throw new Error(label+' URL must use HTTPS without credentials, query or fragment');
     return url.href;
   };
-  // The landing names who runs this installation and where communities write.
+  // The landing names who runs this installation; its contact address stays private.
   if(typeof operator!=='string'||!/^[\p{L}\p{N}][\p{L}\p{N} .&'-]{0,59}$/u.test(operator))throw new Error('Operator name must be a short plain name');
-  if(typeof contactEmail!=='string'||!/^[^\s@<>"'?#&]{1,64}@[a-z0-9.-]{1,190}\.[a-z]{2,}$/i.test(contactEmail))throw new Error('Contact email must be a plain address');
-  const config={publicDocs:true,origin,accountURL:account.href,privacyNotice:privacyNoticeFile?readFileSync(resolve(privacyNoticeFile),'utf8'):null,sourceURL:externalURL(sourceURL,'Source'),communityURL:externalURL(communityURL,'Community'),publicOperator:operator,contactEmail,basePath:'',developerURL:'/developers',displayName:'Unanym',
+  const config={publicDocs:true,origin,accountURL:account.href,privacyNotice:privacyNoticeFile?readFileSync(resolve(privacyNoticeFile),'utf8'):null,sourceURL:externalURL(sourceURL,'Source'),communityURL:externalURL(communityURL,'Community'),publicOperator:operator,basePath:'',developerURL:'/developers',displayName:'Unanym',
     contract:'community-v1',operatorName:'your identity service operator',
     issuer:'Supplied by your identity operator',clients:[],wordpressDownload:true};
-  const app=express();app.disable('x-powered-by');
+  const app=express();app.disable('x-powered-by');app.set('trust proxy',trustProxy);
   app.use((_req,res,next)=>{
     if(new URL(config.origin).protocol==='https:')res.set('Strict-Transport-Security','max-age=31536000');
     res.set({'X-Content-Type-Options':'nosniff','Referrer-Policy':'strict-origin-when-cross-origin',
@@ -50,12 +51,17 @@ export function createPublicSite({origin='https://unanym.org',accountURL='https:
   app.get('/identity/v1/developers',(_req,res)=>res.redirect(308,'/developers'));
   app.get('/identity/v1/docs/:name',(req,res)=>res.redirect(308,'/docs/'+encodeURIComponent(req.params.name)));
   app.get('/identity/v1/wordpress.zip',(_req,res)=>res.redirect(308,'/wordpress.zip'));
+  app.use(contactRoutes(config,contact));
   app.use((_req,res)=>res.status(404).type('text/plain').send('Page not found. Visit / for Unanym guides.'));
   return app;
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
+  const contactTo=process.env.PUBLIC_CONTACT_TO;
+  if(contactTo&&!plainAddress(contactTo))throw new Error('PUBLIC_CONTACT_TO must be a plain address');
+  if(contactTo&&!process.env.PUBLIC_SMTP_FILE)throw new Error('PUBLIC_CONTACT_TO needs PUBLIC_SMTP_FILE');
   const app=createPublicSite({origin:process.env.PUBLIC_ORIGIN??'https://unanym.org',accountURL:process.env.PUBLIC_ACCOUNT_URL,sourceURL:process.env.PUBLIC_SOURCE_URL,communityURL:process.env.PUBLIC_COMMUNITY_URL,privacyNoticeFile:process.env.PUBLIC_PRIVACY_NOTICE_FILE,
-    operator:process.env.PUBLIC_OPERATOR_NAME||undefined,contactEmail:process.env.PUBLIC_CONTACT_EMAIL||undefined});
+    operator:process.env.PUBLIC_OPERATOR_NAME||undefined,contact:{send:contactTo?contactMailer(process.env.PUBLIC_SMTP_FILE,contactTo):undefined},
+    trustProxy:process.env.PUBLIC_TRUST_PROXY?process.env.PUBLIC_TRUST_PROXY.split(',').map(s=>s.trim()):undefined});
   const server=app.listen(Number(process.env.PORT??4386),process.env.HOST??'127.0.0.1',()=>console.log('Unanym public site listening'));
   for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>server.close(()=>process.exit(0)));
 }

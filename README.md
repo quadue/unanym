@@ -136,9 +136,15 @@ source link there, in the footer and in the operator guide. Both require HTTPS;
 leave either unset until its destination is available. These are ordinary links,
 with no embedded chat widget or third-party scripts.
 
-The landing names who runs the installation and where communities write:
-`PUBLIC_OPERATOR_NAME` (default `Mavie.uk`) and `PUBLIC_CONTACT_EMAIL` (default
-`hello@mavie.uk`). Both are plain text; markup and mail parameters are refused.
+The landing names who runs the installation with `PUBLIC_OPERATOR_NAME`
+(default `Mavie.uk`; plain text only). Its contact form at `/contact` relays each
+message by email to `PUBLIC_CONTACT_TO`, through the SMTP settings file named by
+`PUBLIC_SMTP_FILE` (the same format as `IDENTITY_SMTP_FILE`). The address is never
+shown, and messages are not stored. Without `PUBLIC_CONTACT_TO` the page says the
+installation has no contact address. A signed issue time, a hidden field and
+limits of three messages per visitor per hour and twenty per day keep it from
+spending the mail allowance that sign-in codes rely on. Set `PUBLIC_TRUST_PROXY`
+to the same proxy list as `IDENTITY_TRUST_PROXY` so limits see visitor addresses.
 
 Visitors can join [Unanym Community](https://t.me/unanymcommunity) to ask questions
 and share feedback. Joining the chat is separate from creating an account or

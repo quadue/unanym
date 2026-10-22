@@ -1,16 +1,32 @@
 import nodemailer from 'nodemailer';
 import {readFileSync,statSync} from 'node:fs';
 
-export function smtpMailer(path) {
-  if(!path)throw new Error('IDENTITY_SMTP_FILE is required; codes are never printed to logs');
+function smtp(path) {
   if((statSync(path).mode&0o077)!==0)throw new Error('Restrict SMTP settings to their owner (chmod 600)');
   const c=JSON.parse(readFileSync(path,'utf8'));
   if(typeof c.host!=='string'||!c.host||!Number.isInteger(c.port)||c.port<1||c.port>65535||typeof c.from!=='string'||!c.from||/[\r\n]/.test(c.from)||!c.auth?.user||!c.auth?.pass)throw new Error('Invalid SMTP configuration');
-  const transport=nodemailer.createTransport({host:c.host,port:c.port,secure:c.port===465,requireTLS:c.port!==465,auth:c.auth,
-    connectionTimeout:10_000,greetingTimeout:10_000,socketTimeout:15_000,disableFileAccess:true,disableUrlAccess:true});
+  return {c,transport:nodemailer.createTransport({host:c.host,port:c.port,secure:c.port===465,requireTLS:c.port!==465,auth:c.auth,
+    connectionTimeout:10_000,greetingTimeout:10_000,socketTimeout:15_000,disableFileAccess:true,disableUrlAccess:true})};
+}
+
+export function smtpMailer(path) {
+  if(!path)throw new Error('IDENTITY_SMTP_FILE is required; codes are never printed to logs');
+  const {c,transport}=smtp(path);
   return async({email,code,expiresAt=Date.now()+600_000})=>{
     const until=new Date(expiresAt).toISOString().slice(0,19).replace('T',' ')+' UTC';
     const result=await transport.sendMail({from:c.from,to:email,subject:'Your sign-in code',text:`Your sign-in code is ${code}. This sign-in request expires at ${until}. Only enter it on the sign-in page you opened. If you did not request this, ignore this message.`});
+    if(!result.accepted?.length)throw new Error('Mail not accepted');
+  };
+}
+
+// Relays one public contact-form message to the operator. The visitor is the
+// Reply-To; the sender stays this installation's own address.
+export function contactMailer(path,to) {
+  const {c,transport}=smtp(path),address=c.from.match(/<([^>]+)>/)?.[1]??c.from;
+  return async({name,email,community,message})=>{
+    const result=await transport.sendMail({from:{name:'Unanym contact form',address},to,replyTo:{name,address:email},
+      subject:'Unanym contact'+(community?': '+community:''),
+      text:`From: ${name||'(no name given)'} <${email}>\nCommunity or website: ${community||'(not given)'}\n\n${message}\n\nSent from the contact form at unanym.org. Reply to this email to answer.`});
     if(!result.accepted?.length)throw new Error('Mail not accepted');
   };
 }

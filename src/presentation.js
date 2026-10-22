@@ -141,7 +141,7 @@ export const receiptArt=()=>svg('geo receipt-art',64,32,face('left','coral',16,1
 
 export function homePage(config,{assets='/assets/'}={}) {
   const page=render(template('home.html'),{assets,guides:'/docs/',account_url:memberAccountURL(config),developers:developerURL(config),privacy:config.privacyNotice?'/privacy':'/learn#privacy',
-    operator:config.publicOperator,contact:config.contactEmail,contact_href:'mailto:'+config.contactEmail});
+    operator:config.publicOperator});
   const source=config.sourceURL?`<a class="pill" href="${escape(config.sourceURL)}">Source on GitHub</a>`:'';
   const chat=config.communityURL?`<a class="pill" href="${escape(config.communityURL)}">Telegram discussion</a>`:'';
   const community=chat||source?`<section class="landing-community" aria-labelledby="community-title"><div><h2 id="community-title">${chat?'Join the conversation':'Build with Unanym'}</h2><p>${chat?'Ask questions, share feedback, or help build Unanym.':'Run it yourself, adapt it, or contribute. Unanym is available under Apache 2.0.'}</p></div><div class="landing-actions">${chat}${source}</div></section>`:'';
@@ -185,5 +185,5 @@ export function memberPage(config,title,body,{csrf,canSignOut,current='account',
   <a class="skip" href="#main">Skip to content</a><header class="site-header"><a class="wordmark" href="${base}/" aria-label="${brand} home"><img src="${base}/assets/front-mark.svg" alt="" width="25" height="32">${mark}</a><nav class="doc-nav member-nav" aria-label="${access?'Main':'Account'}">${navigation}</nav></header>
   ${config.demo?'<aside class="member-demo">Local demonstration · fictional accounts</aside>':''}
   <main id="main">${body}</main>
-  <footer class="site-footer"><span>One you. Many places.</span><div><a href="${privacy}">Privacy</a><a href="${base}/learn">Help</a></div></footer></body></html>`);
+  <footer class="site-footer"><div><a href="${privacy}">Privacy</a><a href="${base}/learn">Help</a></div></footer></body></html>`);
 }
