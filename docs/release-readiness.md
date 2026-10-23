@@ -40,6 +40,28 @@ resolve its findings, and agree the maintenance and support commitments.
 
 ## Before inviting real members
 
+Owner direction, 22 October 2026: pause new features until the independent pilot
+provides evidence of usefulness. Keep the separate organisation-signing proposal
+unmerged until a real organisation wants to hold its own key. Correcting copy
+and completing operational preparation remain in scope.
+
+Before the pilot, publish an installation-specific privacy notice covering both
+sign-in and the contact form. Confirm hosting, processors, backups and retention;
+contact-form collection already needs this work before a member joins. Write
+lost-mailbox recovery and organiser-handover procedures, complete a restore drill
+with another responsible operator, and obtain an independent security review or
+agree a scoped review plan and budget. A plan is not a completed review.
+
+The participating network must name its decision makers and approvers, agree
+recognition and appeal responsibilities, choose its outage/withdrawal trade-off,
+and specify the actual pages, directories, files and calendars to protect. Test
+those resources directly, including copied media URLs and caches. Do not infer
+file protection from successful access control on a selected page.
+
+Agree success/failure criteria, measurement denominators, a named prospective
+payer and an explicit priced offer before the pilot. Keep participant reports,
+prospect details and commercial proposals out of this public repository.
+
 1. Configure a real operator and prove email delivery to authorised recipients.
 2. Record the organisation mandate and appoint its actual administrator.
 3. Test the actual WordPress site's admission rules, plugins, cache and account links.

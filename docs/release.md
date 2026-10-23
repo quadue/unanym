@@ -1,5 +1,14 @@
 # Candidate evidence — 2026-09-24
 
+## Cross-site example — prepared locally, 2026-10-22
+
+The landing now addresses networks of community websites. Its fictional example
+follows one Amsterdam membership recognised by independently run workshop and
+Berlin resource websites, with separate member disclosure choices. It explains
+that receiving sites keep local accounts while avoiding duplicate approval lists.
+Each website still chooses whose approvals count. This is a copy change, with
+no change to authentication, admission, protection or withdrawal behavior.
+
 ## Unused accounts and member entry — 2026-10-22
 
 Accounts start on a community website, not on unanym.org. The "How it works"
