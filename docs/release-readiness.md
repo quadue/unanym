@@ -51,6 +51,8 @@ contact-form collection already needs this work before a member joins. Write
 lost-mailbox recovery and organiser-handover procedures, complete a restore drill
 with another responsible operator, and obtain an independent security review or
 agree a scoped review plan and budget. A plan is not a completed review.
+Drafts: [account procedures](account-procedures.md) and the updated
+[privacy notice](privacy-unanym-org.md), both awaiting the operator's approval.
 
 The participating network must name its decision makers and approvers, agree
 recognition and appeal responsibilities, choose its outage/withdrawal trade-off,
