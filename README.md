@@ -180,8 +180,9 @@ External contributors can use [GitHub](https://github.com/quadue/unanym) for
 issues and pull requests. Maintainers keep the canonical release source in
 Gitea and carry reviewed changes between the two repositories. Each forge has
 a pinned verification workflow. Passing CI does not deploy the public site or
-an identity service. See [repository and release workflow](docs/repository.md)
-and the [ordered development backlog](docs/roadmap.md).
+an identity service. See [repository and release workflow](docs/repository.md),
+the [ordered development backlog](docs/roadmap.md) and the
+[target architecture](docs/vision.md).
 
 ```sh
 npm ci

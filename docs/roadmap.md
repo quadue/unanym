@@ -2,7 +2,9 @@
 
 This is an ordered backlog, not a promise of dates or supported features.
 The [release checklist](release-readiness.md) tracks acceptance; completed
-participant reports belong outside the public repository.
+participant reports belong outside the public repository. The
+[vision](vision.md) describes the separable-authority target that the bounded
+experiments below move toward; it is not current behaviour.
 
 ## Current foundation
 
