@@ -1,13 +1,6 @@
 # Privacy at unanym.org
 
-Draft updated 25 October 2026. Not yet approved for publication. Before
-publishing, the operator confirms the item below, then removes this heading
-block so the notice starts at "Who runs this service".
-
-Confirmed by the operator on 25 October 2026: the controller's name and postal
-address, the contact routes, the R2 storage location and the 12-month message
-retention. Still to confirm: the deletion and post-restore procedures in
-[account procedures](account-procedures.md) are adopted.
+Updated 25 October 2026.
 
 ## Who runs this service
 

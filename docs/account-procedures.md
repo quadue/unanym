@@ -1,8 +1,8 @@
 # Account procedures
 
-Draft 24 October 2026, for the first pilot. The standalone service has no
-screens for these actions, so the operator carries them out on the account
-database by hand. Each procedure says who may ask, what evidence is needed,
+Adopted by the operator on 25 October 2026, for the first pilot. The standalone
+service has no screens for these actions. The operator carries them out on the
+account database by hand, or with the deletion script for sections 3 and 4. Each procedure says who may ask, what evidence is needed,
 the exact change, and what is recorded.
 
 ## Rules for every procedure
@@ -161,18 +161,42 @@ control the account's mailbox.
 
 **Before deleting:** tell the member that deletion ends every website
 connection, that websites keep what they already received, and that their
-organisers will see the membership disappear. Record the account ID and date in
-the private deletion list (section 4). Then delete the account from both
-databases, following the same tables the automatic unused-account sweep clears,
-plus its memberships, website identities and connections.
+organisers will see the membership disappear.
 
-Until this has a tested script, carry it out only with the second responsible
-person present, after a backup, and check afterwards that the email address can
-start a fresh, empty account.
+**Delete:** find the account ID (`SELECT id FROM accounts WHERE email=...;`
+with the account's address). Then, with the host stopped and a backup taken,
+run:
+
+```sh
+IDENTITY_DATA_DIR=$S/data node scripts/delete-account.js \
+  --account <account-id> --case <ref> --list $S/operations/deletions.tsv
+```
+
+The script refuses operator accounts and organisers (hand over the role first).
+It adds the account ID, time and case reference to the deletion list before
+deleting anything, then removes the account, its sign-in codes, sessions,
+passkeys, memberships, website identities, connections and grants. Organisation
+audit records stay. Copy the updated list to the second machine (section 4),
+start the host, and check that the email address can start a fresh, empty
+account.
 
 ## 4. Restoring from a backup
 
-Backups can contain accounts deleted since they were taken. Keep a private
-deletion list of account IDs and deletion dates. After any restore, and before
-the service is reopened, delete again every account on that list that was
-deleted after the backup's date. Record in the case notes that this was done.
+Backups can contain accounts deleted since they were taken. The deletion list
+holds only account IDs, times and case references, no email addresses. Keep it
+outside the data directory, and after every deletion copy it to a second
+machine that does not depend on this host's backups. A restored host holds a
+list as old as its backup, so always use the newest copy.
+
+After any restore, and before the service is reopened, delete those accounts
+again, giving the backup's date:
+
+```sh
+IDENTITY_DATA_DIR=$S/data node scripts/delete-account.js \
+  --replay <newest deletions.tsv> --since <YYYY-MM-DD>
+```
+
+If it reports an account that organised a community, redo that handover from
+the case records. Record in the case notes that the replay was done. Accounts
+removed by the automatic unused-account sweep are not listed; the host removes
+them again when it starts.

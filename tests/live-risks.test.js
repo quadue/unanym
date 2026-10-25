@@ -98,7 +98,9 @@ test('an operator notice opens from public and sign-in footers without scripts a
   for(const entry of [publicOrigin+'/',origin+'/identity/login']){
     await page.goto(entry);await page.getByRole('link',{name:'Privacy',exact:true}).click();
     await expect(page.getByRole('heading',{name:'Who runs this service',exact:true})).toBeVisible();
-    await expect(page.locator('main')).toContainText('Mavie.uk');await expect(page.locator('main')).toContainText('hello@mavie.uk');
+    await expect(page.locator('main')).toContainText('Mavie.uk');
+    // No published address: requests go through the contact form.
+    assert.doesNotMatch(await page.locator('main').innerText(),/@/);assert.equal(await page.locator('main a[href="https://unanym.org/contact"]').count(),2);
     assert.equal(new URL(page.url()).pathname,entry.startsWith(publicOrigin)?'/privacy':'/identity/privacy');
     assert.equal(await page.locator('main script').count(),0);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
