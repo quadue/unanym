@@ -1,17 +1,13 @@
 # Privacy at unanym.org
 
-Draft updated 24 October 2026. Not yet approved for publication. Before
-publishing, the operator confirms the items below, then removes this heading
+Draft updated 25 October 2026. Not yet approved for publication. Before
+publishing, the operator confirms the item below, then removes this heading
 block so the notice starts at "Who runs this service".
 
-- Mavie.uk is the correct legal name of the controller, and the postal address
-  is current.
-- Contact: the contact form and postal address are the published routes; no
-  email address is published.
-- The Cloudflare R2 bucket's storage location.
-- How long contact messages are kept in the Mavie.uk mailbox (12 months below).
-- The deletion and post-restore procedures in
-  [account procedures](account-procedures.md) are adopted.
+Confirmed by the operator on 25 October 2026: the controller's name and postal
+address, the contact routes, the R2 storage location and the 12-month message
+retention. Still to confirm: the deletion and post-restore procedures in
+[account procedures](account-procedures.md) are adopted.
 
 ## Who runs this service
 
@@ -86,7 +82,7 @@ These providers process information for us:
 | Provider | What it does | Where |
 | --- | --- | --- |
 | ITP-Solutions | Hosts the service and its data | Frankfurt, Germany |
-| Cloudflare | Carries web traffic, including network addresses and request details; stores encrypted backups (R2) | Global network; Cloudflare, Inc. is in the United States |
+| Cloudflare | Carries web traffic, including network addresses and request details; stores backups encrypted before upload (R2) | Global network; backups in a region Cloudflare chooses, not limited to Europe; Cloudflare, Inc. is in the United States |
 | Brevo | Delivers sign-in codes and contact-form messages | France |
 | Tuta | Holds the Mavie.uk mailbox that receives contact-form messages | Germany |
 | Heart Internet | Hosts a separate server holding encrypted backups | United Kingdom |
