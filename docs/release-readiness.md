@@ -40,10 +40,10 @@ resolve its findings, and agree the maintenance and support commitments.
 
 ## Before inviting real members
 
-Owner direction, 22 October 2026: pause new features until the independent pilot
-provides evidence of usefulness. Keep the separate organisation-signing proposal
-unmerged until a real organisation wants to hold its own key. Correcting copy
-and completing operational preparation remain in scope.
+Owner direction, 26 October 2026: the independent pilot finished successfully,
+which ends the 22 October pause on new features. Keep the separate
+organisation-signing proposal unmerged until a real organisation wants to hold
+its own key.
 
 Before the pilot, publish an installation-specific privacy notice covering both
 sign-in and the contact form. Confirm hosting, processors, backups and retention;
