@@ -20,6 +20,24 @@ export function validateSources(sources) {
   return structuredClone(sources);
 }
 
+/**
+ * What a binding can no longer stand behind. None of this may stop the host: one
+ * binding must not end every other space on it, and an ordinary organiser handover
+ * must not end anything. FRRN allows only a current organiser to approve, so what a
+ * former organiser approved was approved with authority, and a recorded approval
+ * stays until withdrawal, exit, lapsed readiness or lapsed consent (docs/frrn-host.md).
+ * Problems reach the log, so they name no person.
+ */
+export function sourceProblems(db,bindings) {
+  const community=db.prepare('SELECT 1 FROM communities WHERE id=?');
+  const organiser=db.prepare("SELECT 1 FROM memberships WHERE community_id=? AND user_id=? AND role='steward' AND status='active'");
+  return bindings.flatMap(source=>{
+    const organisation=source.organisation.id;
+    if(!community.get(source.community_id))return [{organisation,kind:'unknown-community'}];
+    return source.approvers.filter(a=>!organiser.get(source.community_id,a.user_id)).map(()=>({organisation,kind:'former-organiser'}));
+  });
+}
+
 /** Local read-only FRRN account source. No standalone account/admin store is opened. */
 export function frrnAccounts({path,modeFile,sources}) {
   const bindings=validateSources(sources);
@@ -31,12 +49,8 @@ export function frrnAccounts({path,modeFile,sources}) {
     const read=db.prepare('SELECT * FROM identity_memberships_v1 WHERE user_id=? AND community_id=?');
     const confirmationSources=bindings.filter(s=>s.confirmation_kinds?.includes(confirmationKind));
     const readConfirmations=confirmationSources.length?db.prepare('SELECT * FROM identity_confirmations_v1 WHERE user_id=? AND community_id=?'):null;
-    for (const source of bindings) {
-      if (!db.prepare('SELECT 1 FROM communities WHERE id=?').get(source.community_id)) throw new Error('Unknown source community');
-      for (const approver of source.approvers) if (!db.prepare("SELECT 1 FROM memberships WHERE community_id=? AND user_id=? AND role='steward' AND status='active'").get(source.community_id,approver.user_id)) throw new Error('An authorised approver must be a current FRRN organiser at setup');
-    }
     base=pactAdapter({path,modeFile});
-    return {...base,sourceInstance:instance,
+    return {...base,sourceInstance:instance,sourceProblems:sourceProblems(db,bindings),
       memberships(id) {
         if (!base.account(id)) return [];
         return bindings.flatMap(source=>read.all(id,source.community_id)

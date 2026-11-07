@@ -1,7 +1,8 @@
 /**
  * Account adapter v1 (synchronous, fail closed).
  * session(req) -> {id}|null; account(id) -> {id}|null; memberships(id) -> array.
- * isOpen() must be false while unavailable. A read error must throw, not look
+ * isOpen() must be false while unavailable: the host then answers "unavailable"
+ * and treats account(id) as evidence of nothing. A read error must throw, not look
  * like deletion. IDs are stable opaque strings, never reassigned.
  * csrfBinding(req) binds forms to the authenticated browser session.
  * loginURL(path) returns a local sign-in path preserving the return location.

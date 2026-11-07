@@ -21,7 +21,7 @@ export function createFrrn(config,{path,modeFile,sources}) {
       writeFileSync(profilePath,JSON.stringify(profile),{mode:0o600,flag:'wx'});
     }
     service=createService({...config,accountSource:'frrn'},adapter);
-    return {...service,close(){service.close();release();}};
+    return {...service,sourceProblems:adapter.sourceProblems,close(){service.close();release();}};
   } catch(error) {adapter?.close();release();throw error;}
 }
 
@@ -30,6 +30,7 @@ if(process.argv[1] && resolve(process.argv[1])===fileURLToPath(import.meta.url))
   if(!process.env.FRRN_MEMBERSHIP_SOURCES) throw new Error('FRRN_MEMBERSHIP_SOURCES is required');
   const config=configuration({...process.env,IDENTITY_DISPLAY_NAME:process.env.IDENTITY_DISPLAY_NAME??'FRRN',IDENTITY_CONTRACT:'community-v1'});
   const service=createFrrn(config,{path:config.pactDb,modeFile:config.pactMode,sources:JSON.parse(readFileSync(process.env.FRRN_MEMBERSHIP_SOURCES,'utf8'))});
+  for(const {organisation,kind} of service.sourceProblems)console.error('FRRN membership source needs review:',organisation,kind);
   const server=service.app.listen(config.port,config.host,()=>console.log('Unanym FRRN account host listening on port',config.port));
   for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>server.close(()=>{service.close();process.exit(0);}));
 }

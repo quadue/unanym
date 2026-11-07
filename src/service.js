@@ -1,6 +1,6 @@
 import {learnView} from './learn-view.js';
 import express from 'express';
-import Provider,{interactionPolicy} from 'oidc-provider';
+import Provider,{errors,interactionPolicy} from 'oidc-provider';
 import {createHmac,timingSafeEqual} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
@@ -21,6 +21,13 @@ import {privacyView} from './privacy-view.js';
 
 const ROOT=fileURLToPath(new URL('../',import.meta.url));
 const VERSION=JSON.parse(readFileSync(resolve(ROOT,'package.json'),'utf8')).version;
+// The library's TemporarilyUnavailable is a 400, which a website must read as a
+// final refusal. A closed source has refused nothing, so this has to be a 503.
+function sourceUnavailable(){
+  const error=new errors.OIDCProviderError(503,'temporarily_unavailable');
+  error.expose=true;error.error_description='The account source is closed. Try again later.';
+  return error;
+}
 export function createService(config,pact,{mountRoutes,memberDetails}={}) {
   validateAccountAdapter(pact);
   const base=config.basePath??'/identity';
@@ -62,12 +69,16 @@ export function createService(config,pact,{mountRoutes,memberDetails}={}) {
     interactions:{policy,url:(_ctx,interaction)=>base+'/interaction/'+interaction.uid},
     clientBasedCORS:(_ctx,origin,client)=>registry.get(client.clientId)?.redirect_uris.some(u=>new URL(u).origin===origin) ?? false,
     async findAccount(ctx,id) {
+      // undefined means "no such account" and ends the connection, so ask only an open source.
+      if(!pact.isOpen())throw sourceUnavailable();
       if(!pact.account(id)) return undefined;
       return {accountId:id,async claims(){
         const clientId=ctx.oidc.client.clientId,consent=connection(db,id,clientId);
         if(!consent?.active) throw new Error('Website disconnected');
         const person=await persona(db,id,clientId,encryption);
         const shared=pact.memberships(id).filter(m=>consent.memberships.includes(m.slug));
+        // A source closing mid-request reads as an empty list, which would mean "withdrawn".
+        if(!pact.isOpen())throw sourceUnavailable();
         if(standalone)return {sub:id,name:consent.name,
           identity_v1:{version:1,public_key:person.signer.pub,custody:'operator',operator:{id:config.issuer,name:config.operatorName}},
           memberships_v1:{version:1,statements:await Promise.all(shared.map(m=>issueMembership(config.keys.drop,{

@@ -83,8 +83,12 @@ fail. Verify organisation keys and rotations through an authenticated authority
 process; key control alone does not establish organisational legitimacy.
 
 Receivers fetch current UserInfo for current access. Revoked or expired
-membership disappears there immediately. Cached statements last until expiry;
-they are not a revocation oracle. Disclosure withdrawal revokes this connection's
+membership disappears there immediately. A `5xx` or `429` from UserInfo or the
+token endpoint says nothing about the member: deny the protected page for now,
+keep the connection and try again. Only a current answer can end access; a host
+whose account source is closed answers `503` `temporarily_unavailable`, never as
+if the account were gone. Cached statements last until expiry; they are not a
+revocation oracle. Disclosure withdrawal revokes this connection's
 access tokens. Neither operation erases a recipient's earlier copies.
 
 ## Changing the underlying engine

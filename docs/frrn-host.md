@@ -48,7 +48,10 @@ Use a FRRN release that provides `identity_source_instance` and the read-only
 the only writer. The adapter needs a read-only view of its SQLite database and
 WAL files, plus the source pause file. Keep that file in sync with the FRRN
 release configuration: `alpha`, `beta` or `live` permits identity reads; missing
-or `closed` denies them. FRRN itself reads its release mode from the environment,
+or `closed` denies them. While denied, the host answers websites with a `503`
+`temporarily_unavailable`: connections, personas and refresh tokens stay, and the
+member returns without reconnecting when the source reopens. A deleted account
+still ends its connection. FRRN itself reads its release mode from the environment,
 so changing only that environment does not update the adapter pause file.
 It is a co-hosted integration, not a
 remote-database protocol.
@@ -76,9 +79,26 @@ Create a restricted source binding file using stable IDs supplied by FRRN:
 The operator records a genuine mandate when installing a real organisation;
 software configuration is not evidence that the mandate exists. No particular
 organisation, organiser, site URL or community practice is built into the code.
-Approvers must be active organisers at setup. Replacing the approved source list
-requires a restart; removing an approver also stops sharing their earlier
-approvals until a recognised organiser makes a new decision.
+Approvers must be active organisers at setup. Check a binding before relying on
+it, and after every edit:
+
+```sh
+node scripts/check-frrn-sources.js /restricted/frrn-sources.json /restricted/frrn.db
+```
+
+It exits non-zero if a community ID is unknown or an approver is not a current
+organiser. Replacing the approved source list requires a restart; removing an
+approver also stops sharing their earlier approvals until a recognised organiser
+makes a new decision.
+
+An organiser who later steps down is an ordinary handover, not a broken binding.
+FRRN only lets a current organiser approve, so their earlier approvals stand, and
+the host keeps starting. It logs `FRRN membership source needs review` for that
+organisation. Leave the former organiser listed to keep sharing those approvals;
+remove them to stop. A community ID that FRRN no longer knows is logged the same
+way and shares nothing, and no other binding on the host is affected. A source
+file that cannot be parsed still stops the host, because no binding in it can be
+trusted.
 
 Configure ordinary operator/client settings from [the operator guide](standalone.md),
 then use:
