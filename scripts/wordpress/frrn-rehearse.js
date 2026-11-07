@@ -44,7 +44,7 @@ if(twoSites)clients.push({client_id:'wordpress-second',name:'Example local websi
 writeFileSync(registry,JSON.stringify(clients));
 writeFileSync(secrets,JSON.stringify({'wordpress-pilot':secret,...(twoSites?{'wordpress-second':secondSecret}:{})}),{mode:0o600});
 const basePath=process.env.IDENTITY_BASE_PATH??'/identity';
-const config=configuration({IDENTITY_ORIGIN:issuer,IDENTITY_BASE_PATH:basePath,IDENTITY_CONTRACT:'community-v1',IDENTITY_OPERATOR_NAME:'Example service operator',IDENTITY_DATA_DIR:join(dir,'identity'),IDENTITY_CLIENTS:registry,IDENTITY_CLIENT_SECRETS:secrets});
+const config=configuration({IDENTITY_ORIGIN:issuer,IDENTITY_BASE_PATH:basePath,IDENTITY_CONTRACT:'community-v1',IDENTITY_OPERATOR_NAME:'Example service operator',IDENTITY_DISPLAY_NAME:'FRRN',IDENTITY_DATA_DIR:join(dir,'identity'),IDENTITY_CLIENTS:registry,IDENTITY_CLIENT_SECRETS:secrets});
 const service=createFrrn(config,{path:database,modeFile:mode,sources});
 const child=spawn(process.execPath,['dist/server/entry.mjs'],{cwd:root,env:{...process.env,HOST:'127.0.0.1',PORT:'4341',PACTLOOM_DB_PATH:database,PACTLOOM_RELEASE_MODE:'alpha',PACTLOOM_ALPHA_EMAILS:'organiser@example.test',PACTLOOM_DEV_LINKS:'1',PACTLOOM_DISABLE_WORKERS:'1',PACTLOOM_CODE_PEPPER:'synthetic-rehearsal-only',BREVO_API_KEY:'',MAIL_FROM:'',TURN_HOST:'',TURN_SHARED_SECRET:''},stdio:'ignore'});
 const childExit=once(child,'exit');
@@ -173,6 +173,22 @@ try {
  if(twoSites){expect((await secondPage.goto(secondOrigin+'/?page_id='+secondId)).status()).toBe(403);expect(await secondPage.content()).not.toContain(secondMarker);}
  await organiser.locator('#membership-approvals summary').click();await organiser.locator('#membership-approvals .resource-permission').filter({hasText:'Robin in practice'}).getByRole('button',{name:'Approve membership',exact:true}).click();await expect(organiser.getByText('Saved.',{exact:true})).toBeVisible();expect((await person.goto(area)).status()).toBe(200);
  pass('Withdrawing the FRRN approval closes WordPress access on the next request; explicit reapproval restores it.');
+ // A closed source says nothing about the member: the session waits and returns unchanged.
+ const expireAccess=()=>wp('eval',"$u=get_users(['role'=>'subscriber'])[0];$s=get_user_meta($u->ID,'session_tokens',true);foreach($s as $k=>$v)if(isset($v['drop_identity']))$s[$k]['drop_identity']['expires']=time()-60;update_user_meta($u->ID,'session_tokens',$s);");
+ const connections=()=>JSON.stringify(service.db.prepare('SELECT * FROM connections').all());
+ const before=connections();
+ for(const refreshing of [false,true]){
+  if(refreshing)expireAccess();
+  writeFileSync(mode,'closed\n');
+  try{
+   const paused=await person.goto(area);expect(paused.status()).toBe(503);
+   const body=await person.content();expect(body).toContain('temporarily unavailable');expect(body).not.toContain(marker);
+   expect(person.url()).not.toContain('drop_disconnected');
+  }finally{writeFileSync(mode,'alpha\n');}
+  expect((await person.goto(area)).status()).toBe(200);await expect(person.getByText(marker,{exact:true})).toBeVisible();
+ }
+ expect(connections()).toBe(before);
+ pass('Closing the FRRN source shows temporarily unavailable, during UserInfo and token refresh alike, and reopening restores access with no new sign-in or consent.');
  await reconnect(person,false);expect((await person.goto(area)).status()).toBe(403);expect(db.prepare('SELECT COUNT(*) n FROM identity_memberships_v1').get().n).toBe(1);
  if(twoSites)expect((await secondPage.goto(secondOrigin+'/?page_id='+secondId)).status()).toBe(200);
  pass('The member can withhold membership while keeping their FRRN approval and the other website’s access.');
